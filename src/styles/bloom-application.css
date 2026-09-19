@@ -340,3 +340,5 @@ dialog.cleaner-city-dialog { width:min(480px,calc(100vw - 24px)); border-radius:
 .maintenance-report-card .maintenance-options { grid-template-columns:repeat(2,minmax(0,1fr)); }
 .maintenance-report-card .maintenance-choice { transition:background-color 180ms ease,color 180ms ease; overflow-wrap:anywhere; }
 @media(prefers-reduced-motion:reduce) { .maintenance-report-card .maintenance-choice { transition:none; } }
+.onboarding-city-field { display:grid; gap:8px; }
+.onboarding-city-field > button { width:100%; max-width:none; }
