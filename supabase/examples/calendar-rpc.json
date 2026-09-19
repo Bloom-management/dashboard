@@ -1,0 +1,70 @@
+{
+  "bloom_calendar_add_source": {
+    "p_actor": "00000000-0000-4000-8000-000000000101",
+    "p_input": {
+      "propertyId": "00000000-0000-4000-8000-000000000102",
+      "provider": "airbnb",
+      "encryptedUrl": "v1.aaaaaaaaaaaaaaaa.bbbbbbbbbbbbbbbbbbbbbb.cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "fingerprint": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "urlDigest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+    },
+    "p_key": "synthetic-source-setup"
+  },
+  "bloom_calendar_sources": {
+    "p_actor": "00000000-0000-4000-8000-000000000101",
+    "p_cursor": null
+  },
+  "bloom_calendar_begin_sync": {
+    "p_actor": "00000000-0000-4000-8000-000000000101",
+    "p_source": "00000000-0000-4000-8000-000000000103",
+    "p_key": "synthetic-sync-1"
+  },
+  "bloom_calendar_finish_sync": {
+    "p_actor": "00000000-0000-4000-8000-000000000101",
+    "p_source": "00000000-0000-4000-8000-000000000103",
+    "p_run": "00000000-0000-4000-8000-000000000104",
+    "p_version": 1,
+    "p_snapshot": {
+      "events": [
+        {
+          "uid": "synthetic-stay",
+          "recurrenceKey": "",
+          "startDate": "2030-05-01",
+          "endDate": "2030-05-03",
+          "kind": "reservation",
+          "status": "active",
+          "evidence": "airbnb-reservation-link",
+          "reviewRequired": false,
+          "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "issues": [],
+      "complete": true,
+      "coverage": null
+    },
+    "p_validators": {
+      "etag": "synthetic-etag"
+    }
+  },
+  "bloom_calendar_fail_sync": {
+    "p_actor": "00000000-0000-4000-8000-000000000101",
+    "p_source": "00000000-0000-4000-8000-000000000103",
+    "p_run": "00000000-0000-4000-8000-000000000104",
+    "p_version": 1,
+    "p_code": "FETCH_TIMEOUT"
+  },
+  "bloom_calendar_enabled_sources": {
+    "p_actor": null,
+    "p_cursor": null
+  },
+  "bloom_owner_source_freshness": {
+    "p_cursor": null
+  },
+  "bloom_assigned_job_detail": {
+    "p_job": "00000000-0000-4000-8000-000000000105"
+  },
+  "bloom_provision_display_name": {
+    "p_subject": "synthetic_clerk_subject",
+    "p_display_name": "Synthetic Account"
+  }
+}

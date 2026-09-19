@@ -1,0 +1,20 @@
+// Isolated transport boundary checks; no live accounts, network, or database writes.
+import {mock} from 'node:test';
+import assert from 'node:assert/strict';
+let role='admin';
+const actor={id:'actual-admin',get role(){return role;}};
+const property={id:'property',name:'Unit',timezone:'America/Detroit',active:true,cleaning_config:{supplies:[{id:'soap',name:'Soap'}]},instructions:'PRIVATE'};
+const db={from(table:string){const q={select(){return q;},order(){return q;},limit(){return q;},gt(){return q;},eq(){return q;},maybeSingle:async()=>({data:null,error:null}),then(resolve:(v:unknown)=>unknown){return Promise.resolve({data:table==='properties'?[property]:[],error:null}).then(resolve);}};return q;}};
+mock.module(new URL('../../../src/server/auth/session.ts',import.meta.url).href,{namedExports:{currentUser:async()=>actor,requireAdmin:async()=>{if(role!=='admin')throw new Error('FORBIDDEN');return actor;},authenticatedDatabase:async()=>({db})}});
+mock.module(new URL('../../../src/server/db/rpc.ts',import.meta.url).href,{namedExports:{userRpc:async(name:string)=>{assert.equal(role,'admin');assert.equal(name,'bloom_admin_property_calendar_review');return {items:[{id:'stay',startDate:'2026-09-18',endDate:'2026-09-20',kind:'reservation',status:'active',provider:'airbnb',reviewRequired:false,guestName:'PRIVATE',cleanerName:'PRIVATE'}],nextCursor:null};}}});
+mock.module(new URL('../../../src/server/calendar/store.ts',import.meta.url).href,{namedExports:{serviceRpc:()=>()=>{throw new Error('Unexpected transport');}}});
+mock.module(new URL('../../../src/server/calendar/property.ts',import.meta.url).href,{namedExports:{propertyCalendarService:(id:string,userId:string)=>{assert.equal(id,'property');assert.equal(userId,'actual-admin');return {list:async()=>({items:[{id:'source',propertyId:id,provider:'airbnb',enabled:true,lastSuccessAt:null,lastAttemptAt:null,errorMessage:null,url:'PRIVATE'}],nextCursor:null})};}}});
+const api=await import('../../../src/server/owner/admin-view');
+const listings=await api.adminOwnerListings(null);
+assert.equal(listings.items[0].suppliesUnavailable,true);
+assert.doesNotMatch(JSON.stringify(listings),/PRIVATE|instructions|cleanerName/);
+const calendar=await api.adminOwnerCalendar('2026-09-01','2026-09-30');
+assert.equal(calendar.length,1);assert.doesNotMatch(JSON.stringify(calendar),/PRIVATE|guestName|cleanerName/);
+assert.equal((await api.adminOwnerFreshness(null))[0].lastSuccessAt,null);
+assert.equal(actor.role,'admin');
+for(role of ['owner','cleaner'])for(const call of [()=>api.adminOwnerListings(null),()=>api.adminOwnerCalendar('2026-09-01','2026-09-30'),()=>api.adminOwnerPerformance('2026-09-01','2026-10-01',null),()=>api.adminOwnerFreshness(null)])await assert.rejects(call,/FORBIDDEN/);

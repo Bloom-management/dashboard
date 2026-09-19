@@ -1,0 +1,82 @@
+.calendar { --calendar-accent: #cf7f8d; color: #302f26; font-family: inherit; }
+.root { width: fit-content; max-width: 100%; padding: 8px; border-radius: 16px; background: #fff; }
+.months { position: relative; }
+.month { width: 100%; }
+.nav { position: absolute; inset: 0 0 auto; display: flex; justify-content: space-between; pointer-events: none; }
+.navButton { display: grid; place-items: center; width: 36px; height: 36px; padding: 8px; border: 0; border-radius: 10px; background: transparent; color: inherit; cursor: pointer; pointer-events: auto; }
+.navButton:hover, .dayButton:hover { background: #f2eee7; }
+.navButton:focus-visible, .dayButton:focus-visible, .dropdown:focus-visible { outline: 3px solid var(--calendar-accent); outline-offset: 2px; }
+.caption { display: flex; align-items: center; justify-content: center; height: 36px; margin-bottom: 12px; padding: 0 38px; }
+.captionLabel { display: inline-flex; align-items: center; gap: 8px; line-height: 1.4; white-space: nowrap; font-size: 14px; font-weight: 600; }
+.dropdowns { display: flex; gap: 12px; align-items: center; }
+.dropdownRoot { position: relative; }
+.dropdown { position: absolute; inset: 0; width: 100%; opacity: 0; cursor: pointer; }
+.grid { width: 100%; table-layout: fixed; border-collapse: collapse; }
+.weekday { height: 32px; color: #8d8879; font-size: 12px; font-weight: 500; text-align: center; }
+.day { padding: 2px; text-align: center; vertical-align: top; }
+.dayButton { display: grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 10px; color: inherit; background: transparent; font: inherit; font-size: 14px; cursor: pointer; }
+.today .dayButton { background: #f2eee7; font-weight: 700; }
+.selected .dayButton { background: var(--calendar-accent); color: #fff; }
+.outside { color: #aaa598; }
+.disabled { opacity: .4; }
+.hidden { display: none; }
+.chevron { display: block; flex-shrink: 0; width: 16px; height: 16px; fill: currentColor; }
+.bookings { width: 100%; padding: 0; background: transparent; }
+.bookings .grid { border-collapse: separate; border-spacing: 6px; }
+.bookings .weekday { text-transform: uppercase; letter-spacing: .05em; }
+.bookings .day { padding: 0; width: calc(100% / 7); border-radius: 16px; background: #fff; box-shadow: 0 2px 5px #302f2608; overflow: hidden; }
+.bookings .outside { background: #eeebe4; box-shadow: none; }
+.bookingCell { box-sizing: border-box; width: 100%; aspect-ratio: 1; min-height: var(--booking-cell-min-height, 0); min-width: 0; display: flex; flex-direction: column; padding: 8px; gap: 6px; overflow: hidden; }
+.dateNumber { align-self: flex-end; display: grid; place-items: center; width: 26px; height: 26px; flex-shrink: 0; font-size: 13px; color: #8d8879; }
+.currentDate { border-radius: 50%; background: var(--calendar-accent); color: #fff; }
+.events { min-height: 0; min-width: 0; overflow: auto; scrollbar-width: thin; margin-top: auto; }
+.events > * { min-width: 0; max-width: 100%; }
+.events button { width: 100%; min-width: 0; max-width: 100%; overflow: hidden; }
+.events button span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 600px) {
+  .bookings .grid { border-spacing: 3px; }
+  .bookings .day { border-radius: 9px; }
+  .bookingCell { padding: 3px; gap: 3px; }
+  .bookings .weekday { font-size: 10px; }
+}
+.root:not(.bookings) { width: 296px; min-width: 280px; max-width: calc(100vw - 40px); }
+
+.bookings .day[data-current-date] { box-shadow: inset 0 0 0 2px var(--calendar-accent); }
+
+@media(max-width:600px) {
+ .bookings .bookingCell { min-height: 0; aspect-ratio: 1; gap: 2px; padding: 3px; }
+ .bookings .dateNumber { width: 18px; height: 18px; font-size: 10px; }
+ .bookings .events button[class] { min-height: 18px; height: 18px; padding: 1px 3px; border-radius: 5px; font-size: 9px; line-height: 14px; }
+ .bookings .events button[class] :global(.dp-plus) { display: none; }
+ .bookings .events button[class] :global(.dp-label) { display: block; font-size: 9px; line-height: 14px; }
+}
+
+.rangeMiddle { background:#f7dde4; }
+.rangeMiddle.selected .dayButton { background:transparent; color:#302f26; border-radius:0; }
+.rangeStart { background:#f7dde4; border-start-start-radius:10px; border-end-start-radius:10px; }
+.rangeEnd { background:#f7dde4; border-start-end-radius:10px; border-end-end-radius:10px; }
+.rangeStart.rangeEnd { background:transparent; }
+.dropdownRoot { display:inline-flex; align-items:center; }
+.captionLabel .chevron { margin-inline-start:2px; }
+
+.root.multipleMonths:not(.bookings) { width:608px; max-width:100%; min-width:0; padding:12px; }
+.multipleMonths .months { display:flex; gap:24px; }
+.multipleMonths .month { width:280px; min-width:0; flex:1; }
+.multipleMonths .caption { padding:0 28px; }
+.multipleMonths .dropdowns { gap:10px; }
+.multipleMonths .dayButton { width:100%; }
+.rangeMiddle:first-child { border-start-start-radius:10px; border-end-start-radius:10px; }
+.rangeMiddle:last-child { border-start-end-radius:10px; border-end-end-radius:10px; }
+@media(max-width:650px) {
+ .root.multipleMonths:not(.bookings) { width:304px; max-width:100%; }
+ .multipleMonths .months { flex-direction:column; gap:20px; }
+ .multipleMonths .month { width:100%; }
+}
+/* Range endpoints fill the same cell footprint as the connecting range band. */
+.rangeStart, .rangeEnd { padding:0; }
+.rangeStart .dayButton, .rangeEnd .dayButton { width:100%; height:40px; border-radius:10px; }
+/* Separate selected weeks without introducing an inset around range endpoints. */
+.calendar:not(.bookings) .grid { border-collapse:separate; border-spacing:0 4px; }
+.calendar:not(.bookings) .day { padding-top:0; padding-bottom:0; }
+.calendar:not(.bookings) .rangeStart .dayButton,
+.calendar:not(.bookings) .rangeEnd .dayButton { height:36px; }

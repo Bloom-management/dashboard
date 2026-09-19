@@ -1,0 +1,17 @@
+node_modules/
+.next/
+out/
+coverage/
+.env*
+!.env.example
+.DS_Store
+.design-reference/
+*.tsbuildinfo
+
+.bloom-local/
+
+# Local documentation, design references, and editor/deployment metadata.
+*.[mM][dD]
+docs/
+.zed/
+.vercel/

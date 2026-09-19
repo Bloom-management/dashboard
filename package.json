@@ -1,0 +1,54 @@
+{
+  "name": "bloom-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=24.5.0 <25"
+  },
+  "scripts": {
+    "dev": "node scripts/local-dev.mjs",
+    "build": "next build",
+    "start": "next start --hostname 127.0.0.1",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src tests --max-warnings=0",
+    "test": "npm run test:backend && npm run test:calendar && npm run test:ui",
+    "test:backend": "NODE_OPTIONS=--conditions=react-server tsx --test src/server/photos/validation.test.ts src/server/db/http.test.ts src/server/auth/proxy-response.test.ts src/server/auth/token-configuration.test.ts src/server/auth/account-lookup.test.ts src/server/auth/account-diagnostics.test.ts src/server/owner/query.test.ts",
+    "test:calendar": "node --import tsx --test tests/calendar/*.test.ts",
+    "test:ui": "node --import tsx --test tests/ui/*.test.mjs && node --import ./tests/ui/register-css.mjs --import tsx --test tests/ui/recovery-render.test.tsx tests/ui/calendar-review.test.tsx tests/ui/owner-render.test.tsx tests/ui/owner-create-render.test.tsx",
+    "test:db": "supabase/tests/run-local.sh",
+    "calendar:sync": "node --env-file=.env.local --import tsx src/server/calendar/cli.ts",
+    "test:http": "node tests/integration/http-smoke.mjs",
+    "db:start": "node --env-file=.env.local scripts/local-db.mjs start",
+    "db:check": "node --env-file=.env.local scripts/local-db.mjs check",
+    "db:apply": "node --env-file=.env.local scripts/local-db.mjs apply",
+    "test:calendar:http": "node --env-file=.env.local --import tsx tests/integration/calendar-http.ts",
+    "hooks:install": "node scripts/install-hooks.mjs",
+    "local:stop": "node scripts/local-dev.mjs stop"
+  },
+  "dependencies": {
+    "@base-ui/react": "1.8.0",
+    "@clerk/nextjs": "7.9.2",
+    "@supabase/supabase-js": "2.116.0",
+    "ical.js": "2.2.1",
+    "ipaddr.js": "2.5.0",
+    "luxon": "3.7.2",
+    "next": "16.3.5",
+    "react": "19.3.0",
+    "react-day-picker": "10.0.1",
+    "react-dom": "19.3.0",
+    "react-resizable-panels": "^4.12.4",
+    "server-only": "0.0.1",
+    "sharp": "0.35.4"
+  },
+  "devDependencies": {
+    "@types/luxon": "3.7.5",
+    "@types/node": "22.20.2",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "eslint": "10.10.0",
+    "tsx": "4.23.13",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.70.0"
+  },
+  "type": "module"
+}

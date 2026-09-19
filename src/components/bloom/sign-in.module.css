@@ -1,0 +1,661 @@
+/* Layout adapted from Fleety dashboard2 sign-in; Bloom branding and typography. */
+.root {
+  --bg: #f5f5f5;
+  --surface: #ffffff;
+  --fg: #111111;
+  --muted: #565656;
+  --border: #e0e0e0;
+  --accent: #b85563;
+  --accent-dark: oklch(from var(--accent) calc(l - 0.1) c h);
+  --font-display: "Plus Jakarta Sans", "Avenir Next", system-ui, sans-serif;
+  --font-body: "Plus Jakarta Sans", "Helvetica Neue", system-ui, sans-serif;
+}
+.root * {
+  box-sizing: border-box;
+}
+.root {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 400 15px/1.6 var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+.root button,
+.root input,
+.root a {
+  font: inherit;
+}
+.root a {
+  color: inherit;
+  text-underline-offset: 4px;
+}
+.root button,
+.root a {
+  touch-action: manipulation;
+}
+.root button {
+  cursor: pointer;
+}
+.root button:focus-visible,
+.root a:focus-visible,
+.root input:focus-visible {
+  outline: 3px solid var(--fg);
+  outline-offset: 4px;
+}
+.root h1,
+.root h2,
+.root p {
+  margin: 0;
+}
+.root h1,
+.root h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+}
+.root {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: 52px 32px;
+}
+.root .shell {
+  width: min(1200px, 100%);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  padding: 12px;
+  box-shadow: 0 24px 70px oklch(from var(--fg) l c h / 0.06);
+}
+.root .story {
+  min-width: 0;
+  min-height: 720px;
+  border-radius: 18px;
+  background: var(--fg);
+  color: var(--surface);
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.root .story-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.root .logo {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  border-radius: 11px;
+}
+.root .back {
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+}
+.root .back:hover {
+  text-decoration: underline;
+}
+.root .story-copy {
+  padding-top: 48px;
+}
+.root .eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  margin-bottom: 18px;
+}
+.root .story h2 {
+  font-size: 44px;
+  max-width: 10ch;
+}
+.root .story-copy > p:last-child {
+  max-width: 35ch;
+  margin-top: 20px;
+  color: var(--border);
+}
+.root .board {
+  margin-top: 40px;
+  border: 1px solid var(--muted);
+  border-radius: 18px;
+  background: var(--surface);
+  color: var(--fg);
+  box-shadow: 0 16px 36px oklch(from var(--fg) l c h / 0.15);
+  transform: none;
+}
+.root .board-head {
+  padding: 18px 20px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  font-weight: 600;
+}
+.root .status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  letter-spacing: 0.01em;
+}
+.root .status i {
+  width: 7px;
+  height: 7px;
+  background: var(--accent);
+  border-radius: 50%;
+}
+.root .jobs {
+  padding: 4px 20px;
+}
+.root .job {
+  padding: 15px 0;
+  border-bottom: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: 48px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  font-size: 13px;
+}
+.root .job:last-child {
+  border-bottom: 0;
+}
+.root .time {
+  font-size: 11px;
+  letter-spacing: 0.01em;
+  color: var(--muted);
+}
+.root .job strong {
+  font-weight: 600;
+  display: block;
+}
+.root .job small {
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.01em;
+}
+.root .avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--bg);
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+}
+.root .board-foot {
+  padding: 12px 20px;
+  background: var(--bg);
+  border-radius: 0 0 18px 18px;
+  font-size: 11px;
+  letter-spacing: 0.01em;
+  color: var(--muted);
+}
+.root .login {
+  padding: 42px clamp(24px, 4.8vw, 72px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+.root .login .eyebrow {
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+.root h1 {
+  font-size: 40px;
+}
+.root .help {
+  margin-top: 36px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--muted);
+}
+.root .help a {
+  color: var(--fg);
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+.root [hidden] {
+  display: none !important;
+}
+.root .mobile-logo {
+  display: none;
+  width: 90px;
+  margin-bottom: 36px;
+}
+.root .page {
+  width: min(1200px, 100%);
+}
+@media (max-width: 900px) {
+  .root {
+    padding: 24px;
+  }
+  .root .story {
+    padding: 24px;
+  }
+  .root .story h2 {
+    font-size: 36px;
+  }
+  .root .login {
+    padding: 36px 28px;
+  }
+  .root .job {
+    grid-template-columns: 40px 1fr;
+  }
+  .root .avatar {
+    display: none;
+  }
+}
+@media (max-width: 680px) {
+  .root {
+    padding: 16px;
+    display: block;
+  }
+  .root .shell {
+    display: block;
+    padding: 0;
+    border-radius: 18px;
+  }
+  .root .story {
+    display: none;
+  }
+  .root .login {
+    min-height: 650px;
+    padding: 36px 24px;
+  }
+  .root .mobile-logo {
+    display: block;
+  }
+  .root h1 {
+    font-size: 36px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .root * {
+    transition: none !important;
+  }
+}
+.root .product-slide {
+  min-height: 548px;
+}
+.root .product-slide > p:not(.eyebrow) {
+  max-width: 36ch;
+  margin-top: 20px;
+  color: var(--border);
+  min-height: 72px;
+}
+.root .product-slide h2 {
+  max-width: 100%;
+  font-size: clamp(32px, 3.25vw, 44px);
+}
+.root .product-slide .board {
+  margin-top: 28px;
+  height: 348px;
+  min-height: 348px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.root .product-slide .jobs,
+.root .product-slide .conversation,
+.root .product-slide .caller-details {
+  flex: 1;
+}
+.root .product-slide .board-foot {
+  margin-top: auto;
+  flex-shrink: 0;
+}
+.root .carousel-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 28px;
+}
+.root .product-tabs {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.root .product-tabs button,
+.root .carousel-arrows button {
+  min-height: 44px;
+  border: 1px solid var(--muted);
+  background: var(--fg);
+  color: var(--surface);
+  border-radius: 999px;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  padding: 0 12px;
+}
+.root .product-tabs button[aria-selected="true"] {
+  background: var(--surface);
+  color: var(--fg);
+  border-color: var(--surface);
+}
+.root .product-tabs button:hover,
+.root .carousel-arrows button:hover {
+  border-color: var(--surface);
+  box-shadow: 0 0 0 1px var(--surface);
+}
+.root .story :focus-visible {
+  outline-color: var(--surface);
+}
+.root .carousel-arrows {
+  display: flex;
+  gap: 6px;
+}
+.root .carousel-arrows button {
+  width: 44px;
+  font-size: 18px;
+  padding: 0;
+}
+.root .conversation,
+.root .caller-details {
+  padding: 16px 20px;
+}
+.root .lead-context {
+  font-size: 12px;
+  letter-spacing: 0.01em;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.root .lead-context span {
+  color: var(--muted);
+}
+.root .bubble {
+  padding: 10px 12px;
+  background: var(--bg);
+  border-radius: 11px;
+  font-size: 12px;
+  line-height: 1.5;
+  max-width: 90%;
+}
+.root .bubble small,
+.root .caller-name small {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.01em;
+  margin-top: 4px;
+}
+.root .bubble.reply {
+  margin: 10px 0 0 auto;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+.root .caller-name {
+  font-size: 15px;
+  font-weight: 600;
+}
+.root .caller-name small {
+  font-weight: 400;
+}
+.root .caller-details dl {
+  margin: 12px 0 0;
+  font-size: 12px;
+}
+.root .caller-details dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  border-top: 1px solid var(--border);
+  padding: 8px 0;
+}
+.root .caller-details dt {
+  color: var(--muted);
+}
+.root .caller-details dd {
+  margin: 0;
+  text-align: right;
+  font-weight: 600;
+}
+.root .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+.root .brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font: 600 26px/1 var(--font-display);
+  letter-spacing: -0.02em;
+}
+.root .product-stage {
+  display: grid;
+  min-width: 0;
+}
+.root .product-stage > .product-slide {
+  grid-area: 1 / 1;
+  min-width: 0;
+}
+.root .product-stage > .product-slide[hidden] {
+  display: block !important;
+  visibility: hidden;
+  pointer-events: none;
+}
+.root .login {
+  justify-content: flex-start;
+}
+.root .login-content {
+  margin-block: auto;
+  padding-block: 16px 32px;
+}
+.root .mobile-logo {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  border-radius: 11px;
+}
+
+.root {
+  color-scheme: light;
+}
+.root .clerk-root,
+.root .clerk-card-box {
+  width: 100%;
+  max-width: 100%;
+}
+.root .clerk-card {
+  padding: 0;
+  background: var(--surface);
+  box-shadow: none;
+  border: 0;
+}
+.root .clerk-card-box {
+  box-shadow: none;
+  border: 0;
+}
+.root .clerk-title {
+  font-family: var(--font-display);
+  font-size: 40px;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  font-weight: 600;
+  color: var(--fg);
+}
+.root .clerk-subtitle {
+  color: var(--muted);
+  margin-top: 16px;
+}
+.root .clerk-input {
+  width: 100%;
+  min-height: 50px;
+  border: 1px solid var(--muted);
+  border-radius: 11px;
+  background: var(--surface);
+  color: var(--fg);
+}
+.root .clerk-input:focus,
+.root .clerk-input:focus-visible {
+  outline: none !important;
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent) !important;
+}
+.root .clerk-primary {
+  min-height: 50px;
+  background: var(--accent) !important;
+  color: var(--surface) !important;
+  border: 0 !important;
+  border-radius: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  box-shadow: var(--shadow-action) !important;
+  transform: translateY(0);
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease,
+    background-color 150ms ease;
+}
+.root .clerk-primary:hover {
+  background: var(--accent-dark) !important;
+  color: var(--surface) !important;
+  box-shadow: var(--shadow-action-hover) !important;
+  transform: translateY(-1px);
+}
+.root .clerk-primary:active {
+  box-shadow: 0 1px 0 var(--accent-dark) !important;
+  transform: translateY(2px);
+}
+.root .clerk-primary:focus-visible {
+  outline: 2px solid var(--accent-dark);
+  outline-offset: 4px;
+}
+.root .clerk-secondary {
+  min-height: 44px;
+  color: var(--fg);
+}
+.root .clerk-footer {
+  background: var(--surface);
+}
+.root .clerk-footer-link {
+  color: var(--fg);
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+.root .clerk-footer-link:hover {
+  color: var(--fg);
+  text-decoration: underline;
+}
+.root .board-head {
+  flex-wrap: wrap;
+}
+.root .board {
+  box-shadow: 0 16px 36px oklch(from var(--fg) l c h / 0.15);
+}
+
+/* Keep the complete auth shell within a typical laptop viewport. */
+@media (min-width: 681px) {
+  .root {
+    padding: 24px;
+  }
+  .root .story {
+    min-height: min(720px, calc(100svh - 48px));
+    padding: 28px;
+  }
+  .root .story-copy {
+    padding-top: 28px;
+  }
+  .root .product-slide {
+    min-height: 500px;
+  }
+  .root .product-slide .board {
+    height: 292px;
+    min-height: 292px;
+    margin-top: 20px;
+  }
+  .root .carousel-nav {
+    margin-top: 20px;
+  }
+  .root .login {
+    padding-block: 28px;
+  }
+  .root .login-content {
+    padding-block: 8px 20px;
+  }
+  .root .clerk-title {
+    font-size: 36px;
+  }
+  .root .clerk-subtitle {
+    margin-top: 10px;
+  }
+  .root .clerk-input,
+  .root .clerk-primary {
+    min-height: 46px;
+  }
+  .root .help {
+    margin-top: 24px;
+    padding-top: 16px;
+  }
+}
+
+@media (max-width: 680px) {
+  .root {
+    min-height: 100svh;
+    padding: 0;
+    background: var(--surface);
+  }
+  .root .shell {
+    min-height: 100svh;
+    border: 0;
+    border-radius: 0;
+  }
+  .root .login {
+    min-height: 100svh;
+    padding: 24px clamp(18px, 6vw, 28px);
+  }
+  .root .login-content {
+    padding-block: 0 16px;
+  }
+  .root .mobile-logo {
+    margin-bottom: 24px;
+  }
+  .root .clerk-title {
+    font-size: 32px;
+  }
+  .root .clerk-subtitle {
+    margin-top: 8px;
+  }
+  .root .clerk-input,
+  .root .clerk-primary {
+    min-height: 46px;
+  }
+  .root .help {
+    margin-top: 20px;
+    padding-top: 12px;
+  }
+}
+
+.root .brand-lockup svg { flex-shrink: 0; }
+.root .job > div { min-width: 0; }
+
+.recovery h1 { margin: 0 0 16px; font-size: clamp(26px, 3vw, 34px); line-height: 1.2; letter-spacing: -1px; }
+.recovery p { margin: 0 0 24px; color: var(--muted); }
+.root .recovery-primary { display: flex; justify-content: center; align-items: center; min-height: 48px; padding: 12px 20px; border-radius: 11px; background: var(--accent); color: #fff; font-weight: 700; text-decoration: none; }
+.recovery-primary:hover { background: var(--accent-dark); }
+.recovery-retry { display: block; margin: 16px auto; padding: 10px; min-height: 44px; border: 0; background: transparent; color: var(--muted); text-decoration: underline; }
+.recovery details { margin-top: 24px; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+.recovery summary { cursor: pointer; padding-block: 8px; }

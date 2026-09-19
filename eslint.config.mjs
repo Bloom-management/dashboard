@@ -1,0 +1,2 @@
+import tseslint from 'typescript-eslint';
+export default tseslint.config({ignores:['.next/**','node_modules/**','tests/ui/synthetic-browser.js']}, ...tseslint.configs.recommended, {rules:{'@typescript-eslint/no-unused-vars':['error',{argsIgnorePattern:'^_',varsIgnorePattern:'^_'}]}});

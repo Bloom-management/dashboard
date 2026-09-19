@@ -1,0 +1,30 @@
+.jobsPage.jobsPage { max-width: 1680px; }
+.split { display: grid; grid-template-columns: minmax(320px, .8fr) minmax(0, 1.5fr); align-items: start; gap: 24px; margin-top: 24px; }
+.panel { min-width: 0; background: #fff; border: 1px solid #e5e0d6; border-radius: 20px; overflow: hidden; }
+.panel:focus-visible { outline: 3px solid #cf7f8d; outline-offset: 3px; }
+.detail { min-width: 0; }
+.detailToolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 20px; border-bottom: 1px solid #e5e0d6; }
+.detailToolbar h2 { font-size: 17px; margin: 0; }
+.calendar { min-width: 0; }
+.hint { color: #777164; font-size: 13px; margin: 0 0 12px; }
+.cleaning { display: flex; flex-direction: column; gap: 3px; padding: 7px 8px; margin-bottom: 5px; border: 1px solid #e9c5cc; border-radius: 9px; background: #fbf0f2; color: #803c4b; font: inherit; font-size: 12px; text-align: left; cursor: pointer; }
+.cleaning:hover { background: #f5dde2; }
+.cleaning[data-selected='true'] { background: #cf7f8d; color: #fff; border-color: #ae596a; box-shadow: inset 0 0 0 1px #ae596a; }
+.cleaning:focus-visible { outline: 2px solid #803c4b; outline-offset: -2px; }
+.property, .status { display: block; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.property { font-weight: 700; }
+.status { font-size: 10px; }
+@media (max-width: 999px) {
+  .split { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .calendar { grid-row: 1; }
+  .panel { grid-row: 2; scroll-margin-top: 20px; }
+}
+
+.filters { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 16px; }
+
+.propertiesSplit { display: grid; grid-template-columns: minmax(280px, .8fr) minmax(0, 1.5fr); align-items: start; gap: 24px; margin-top: 24px; }
+.propertyList, .propertySettings { min-width: 0; }
+.propertySettings { scroll-margin-top: 20px; }
+.propertySettings:focus-visible { outline: 2px solid #cf7f8d; outline-offset: 6px; border-radius: 16px; }
+.selectedProperty.selectedProperty { box-shadow: inset 0 0 0 2px #cf7f8d; }
+@media (max-width: 999px) { .propertiesSplit { grid-template-columns: minmax(0, 1fr); } }

@@ -1,0 +1,13 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Bloom synthetic fixture//EN
+BEGIN:VEVENT
+UID:synthetic-reservation@airbnb.com
+DTSTAMP:20260912T000000Z
+DTSTART;VALUE=DATE:20261030
+DTEND;VALUE=DATE:20261101
+SUMMARY:Reserved
+DESCRIPTION:Reservation URL: https://www.airbnb.com/hosting/reservations/
+ details/SYNTHETIC123
+END:VEVENT
+END:VCALENDAR
