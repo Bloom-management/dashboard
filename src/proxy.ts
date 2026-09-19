@@ -12,4 +12,4 @@ export default async function proxy(request: NextRequest, event: NextFetchEvent)
  const result = await clerk(request,event);
  return result instanceof Response ? resumeSelfRewrite(request,result) : result;
 }
-export const config = { matcher: ['/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)', '/(api|trpc)(.*)'] };
+export const config = { matcher: ['/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)', '/(api|trpc)(.*)', '/__clerk/(.*)'] };

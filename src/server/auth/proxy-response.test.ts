@@ -16,3 +16,15 @@ test('real rewrites and redirects retain their destination and behavior',()=>{
  const response=new Response(null,{headers});resumeSelfRewrite(request,response);assert.equal(response.headers.has('x-middleware-next'),false);assert.equal(response.headers.get('x-middleware-rewrite'),headers['x-middleware-rewrite']);
  }
 });
+
+// Clerk's production proxy serves scripts that the general static-file rule skips.
+test('Clerk scripts reach proxy while ordinary static assets remain excluded',async()=>{
+ const { unstable_doesMiddlewareMatch } = await import('next/experimental/testing/server');
+ const { config } = await import('../../proxy');
+ for(const url of ['/__clerk/npm/@clerk/clerk-js@6/dist/clerk.browser.js','/__clerk/npm/@clerk/ui@1/dist/ui.browser.js','/__clerk/v1/client','/api/me','/admin']) {
+  assert.equal(unstable_doesMiddlewareMatch({config,nextConfig:{},url}),true,url);
+ }
+ for(const url of ['/_next/static/chunks/app.js','/icon.svg','/fonts/font.woff2']) {
+  assert.equal(unstable_doesMiddlewareMatch({config,nextConfig:{},url}),false,url);
+ }
+});
