@@ -1,0 +1,6 @@
+.close { position:absolute; top:16px; right:16px; bottom:auto; left:auto; z-index:10; display:grid; place-items:center; width:44px; height:44px; min-width:44px; min-height:44px; padding:0; margin:0; border:0; border-radius:50%; background:#f6f3ec; color:#2d2a1f; line-height:1; cursor:pointer; transform:none; transition:background-color 160ms ease; }
+.close:hover { background:#ece8df; }
+.close:focus-visible { outline:2px solid #b85563; outline-offset:3px; }
+.close:disabled { opacity:.5; cursor:default; }
+.close svg { display:block; }
+@media(prefers-reduced-motion:reduce) { .close { transition:none; } }

@@ -503,3 +503,7 @@ dialog.cleaner-city-dialog { width:min(480px,calc(100vw - 24px)); border-radius:
 :is(.bloom-cleaner,.bloom-owner) .bloom-dialog.admin-job-dialog { width:min(720px,calc(100vw - 24px)); padding:52px 0 0; }
 .admin-job-dialog article { border:0; box-shadow:none; }
 .admin-calendar-layout { min-width:0; }
+
+/* Shared Modal owns its close control; day headings leave room for it. */
+:is(.bloom-cleaner,.bloom-owner) .cleaner-day-dialog:not(.admin-job-dialog) { padding-top:72px; }
+.bloom-onboarding .onboarding-modal-top { padding-right:44px; min-height:28px; }

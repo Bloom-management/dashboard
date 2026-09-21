@@ -1,5 +1,6 @@
 'use client';
 
+import { DialogClose } from './dialog-close';
 import { useRouter } from 'next/navigation';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react';
@@ -88,7 +89,7 @@ export function Modal({ title, onClose, children, className = 'detail-card' }: {
     dialog.current?.showModal();
     return () => { dialog.current?.close(); previous?.focus(); };
   }, []);
-  return <dialog ref={dialog} className={`bloom-dialog ${className}`} aria-labelledby={id} onCancel={event => { event.preventDefault(); event.stopPropagation(); close.current(); }} onClick={event => { if (event.target === event.currentTarget) { const bounds = event.currentTarget.getBoundingClientRect(); if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) close.current(); } }}><h2 id={id} className="bloom-sr-only">{title}</h2><button className="detail-close" autoFocus aria-label="Close details" onClick={onClose}><Icon name="close" /></button>{children}</dialog>;
+  return <dialog ref={dialog} className={`bloom-dialog ${className}`} aria-labelledby={id} onCancel={event => { event.preventDefault(); event.stopPropagation(); close.current(); }} onClick={event => { if (event.target === event.currentTarget) { const bounds = event.currentTarget.getBoundingClientRect(); if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) close.current(); } }}><h2 id={id} className="bloom-sr-only">{title}</h2><DialogClose autoFocus onClose={onClose}/>{children}</dialog>;
 }
 
 /** Navigation changes the view only; the server-provided account role is unchanged. */

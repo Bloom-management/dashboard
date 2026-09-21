@@ -22,7 +22,7 @@ try{
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false);
   assert.equal(await page.locator('.owner-connected-stay').first().evaluate(el=>el.getBoundingClientRect().height),20);
   await page.getByRole('button',{name:'View bookings for 2026-09-22',exact:true}).focus();await page.keyboard.press('Enter');
-  const dialog=page.getByRole('dialog');await dialog.waitFor();assert.equal(await dialog.locator('li').count(),1);assert.equal(await dialog.evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(255, 255, 255)');
+  const dialog=page.getByRole('dialog');await dialog.waitFor();const closePlacement=await dialog.evaluate(el=>{const box=el.getBoundingClientRect(),close=el.querySelector('[data-bloom-dialog-close]').getBoundingClientRect();return {top:close.top-box.top,right:box.right-close.right};});assert(Math.abs(closePlacement.top-17)<3&&Math.abs(closePlacement.right-17)<3);assert.equal(await dialog.locator('li').count(),1);assert.equal(await dialog.evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(255, 255, 255)');
   await dialog.getByRole('button',{name:/Test stay/}).click();await dialog.waitFor({state:'hidden'});
   await page.getByRole('button',{name:'View bookings for 2026-09-25',exact:true}).focus();await page.keyboard.press('Enter');await dialog.waitFor();await dialog.getByText('No bookings for this day with your current filters.').waitFor();await page.keyboard.press('Escape');
   console.log('PASS slim bars, owner day dialog, exclusive checkout, hover card and donut '+width);
