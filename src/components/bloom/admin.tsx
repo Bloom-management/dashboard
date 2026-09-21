@@ -4,6 +4,7 @@ import {calendarSaveMessage,type CalendarSaveResult} from '../../contracts/calen
 import '../../styles/bloom-owner.css';
 import { CalendarSetupSection, initialCalendars } from './calendar-setup-section';
 import { AdminPricingInbox, AdminUnitPricing, AdminPricingEditor } from './admin-pricing';
+import { CleanerDayDialog } from './cleaner-day-dialog';
 import { OwnerListings } from './owner-listings';
 import type { OwnerListing, OwnerListingsPage } from '../../contracts/owner-hub';
 import { PropertyPeoplePanel } from './property-people';
@@ -214,6 +215,7 @@ function AdminJob({ job, user, integration, close, reload }: { job: CleanerJob; 
 function Jobs({ user, integration }: { user: SessionUser; integration: BloomIntegration }) {
   const [month, setMonth] = useState(todayIn('America/Detroit').slice(0, 7));
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedDay,setSelectedDay]=useState<string|null>(null);
   const panel = useRef<HTMLElement>(null);
   useEffect(() => {
     if (!selectedId) return;
@@ -251,24 +253,25 @@ function Jobs({ user, integration }: { user: SessionUser; integration: BloomInte
   const mutation = useMutation();
   const visibleJobs = jobs.data?.filter(job => !propertyFilter || job.propertyId === propertyFilter);
   const selected = visibleJobs?.find(job => job.id === selectedId);
-  return <><div className={styles.filters}>{properties.loading ? <Loading /> : properties.error ? <ErrorNotice error={properties.error} retry={properties.reload} /> : properties.data ? <LocationDropdown label="Filter jobs by property" placeholder="All properties" searchLabel="Search properties" locations={[{ id: '', name: 'All properties' }, ...properties.data]} value={propertyFilter} onValueChange={value => { setPropertyFilter(value); setSelectedId(null); }} /> : <p>Property filtering is unavailable.</p>}</div><div className={styles.split}>
+  return <><div className={styles.filters}>{properties.loading ? <Loading /> : properties.error ? <ErrorNotice error={properties.error} retry={properties.reload} /> : properties.data ? <LocationDropdown label="Filter jobs by property" placeholder="All properties" searchLabel="Search properties" locations={[{ id: '', name: 'All properties' }, ...properties.data]} value={propertyFilter} onValueChange={value => { setPropertyFilter(value); setSelectedId(null); setSelectedDay(null); }} /> : <p>Property filtering is unavailable.</p>}</div><div className={styles.split}>
     <section className={styles.panel} ref={panel} tabIndex={-1} aria-label="Selected cleaning">
       {jobs.loading ? <Loading /> : jobs.error ? <ErrorNotice error={jobs.error} retry={jobs.reload} /> : selected ? <AdminJob key={selected.id} job={selected} user={user} integration={integration} close={() => setSelectedId(null)} reload={jobs.reload} /> : <Empty title="Select a cleaning">Choose a cleaning on the calendar to manage assignments, review booking changes, and view photos.</Empty>}
     </section>
     <section className={styles.calendar} aria-label="Cleaning calendar">
-      <MonthHead month={month} onMonth={value => { setSelectedId(null); setMonth(value); }} />
+      <MonthHead month={month} onMonth={value => { setSelectedId(null); setSelectedDay(null); setMonth(value); }} />
       <p className={styles.hint}>Cleaning dates and windows are local to each property.</p>
       {jobs.loading ? <Loading /> : jobs.error ? <ErrorNotice error={jobs.error} retry={jobs.reload} /> : <>
-        <BookingCalendar month={month}>{date => visibleJobs?.filter(job => job.checkoutDate === date).map(job => <button type="button" key={job.id} data-cleaning-job={job.id} className={styles.cleaning} data-selected={selectedId === job.id} aria-pressed={selectedId === job.id}
+        <BookingCalendar month={month} onDaySelect={setSelectedDay}>{date => visibleJobs?.filter(job => job.checkoutDate === date).map(job => <button type="button" key={job.id} data-cleaning-job={job.id} className={styles.cleaning} data-selected={selectedId === job.id} aria-pressed={selectedId === job.id}
           aria-label={`${job.propertyName}, ${formatDate(job.checkoutDate)}, ${job.status}, ${job.activeCleanerCount} of 2 assigned${job.reviewRequired ? ', needs attention' : ''}`}
           title={`${job.propertyName} · ${formatTime(job.startAt, job.timezone)}–${formatTime(job.endAt, job.timezone)} · ${job.status}`}
-          onClick={() => { setSelectedId(job.id); requestAnimationFrame(() => panel.current?.focus({ preventScroll: window.matchMedia('(min-width: 1000px)').matches })); }}>
+          onClick={() => setSelectedDay(date)}>
           <span className={styles.property}>{job.propertyName}</span><span className={styles.status}>{job.reviewRequired ? 'Needs attention' : job.status === 'open' ? `${job.activeCleanerCount}/2 assigned` : job.status}</span>
         </button>)}</BookingCalendar>
         {!visibleJobs?.length && <Empty title="No jobs in this month">Choose another month or property to browse cleanings.</Empty>}
       </>}
     </section>
   </div>
+    {selectedDay&&<CleanerDayDialog date={selectedDay} jobs={jobs.error?[]:(visibleJobs??[]).filter(job=>job.checkoutDate===selectedDay)} onSelect={job=>{setSelectedDay(null);setSelectedId(job.id);requestAnimationFrame(()=>panel.current?.focus({preventScroll:window.matchMedia('(min-width: 1000px)').matches}));}} onClose={()=>{const date=selectedDay;setSelectedDay(null);requestAnimationFrame(()=>document.querySelector<HTMLButtonElement>(`button[data-calendar-date="${date}"]`)?.focus());}}/>}
     {integration.admin?.createJob && <form className="bloom-admin-card bloom-form" onSubmit={async event => { event.preventDefault(); const input = { propertyId, checkoutDate }; if (await mutation.run(input, key => integration.admin!.createJob!(input, key))) jobs.reload(); }}><h3>Create cleaning</h3><Paginated loader={integration.admin.properties} render={properties => <fieldset><legend>Property</legend>{properties.filter(property => property.active).map(property => <label className="bloom-check" key={property.id}><input type="radio" name="job-property" checked={propertyId === property.id} onChange={() => setPropertyId(property.id)} />{property.name} · {property.timezone}</label>)}</fieldset>} /><DatePicker label="Checkout day" value={checkoutDate} onChange={setCheckoutDate} /><p>11 AM–3 PM in the property’s local timezone.</p><button className="bloom-button" disabled={mutation.busy || !propertyId}>Create job</button><Result mutation={mutation} /></form>}</>;
 }
 function AdminContent({ user, integration, initialPropertyId }: { user: SessionUser; integration: BloomIntegration; initialPropertyId?:string }) {
