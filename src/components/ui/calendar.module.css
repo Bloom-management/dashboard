@@ -82,7 +82,7 @@
 .calendar:not(.bookings) .rangeEnd .dayButton { height:36px; }
 .connected { --booking-gap:6px; }
 .connected .day,.connected .bookingCell,.connected .events { overflow:visible; }
-.connected .bookingCell { padding-left:0; padding-right:0; padding-bottom:16px; aspect-ratio:auto; min-height:clamp(110px,12vw,190px); }
+.connected .bookingCell { padding-left:0; padding-right:0; padding-bottom:16px; aspect-ratio:1; min-height:0; }
 .connected .dateNumber { margin-right:8px; }
 .connected .events { display:block; }
 .connected .events button { max-width:none; }
@@ -93,3 +93,5 @@
 .selectableCell .dateNumber { position:relative; pointer-events:none; }
 .selectableCell .events { position:relative; pointer-events:none; }
 .selectableCell .events button { pointer-events:auto; }
+
+.connected .events { flex-shrink:0; }
