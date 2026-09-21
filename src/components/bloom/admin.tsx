@@ -16,7 +16,7 @@ import { LocationDropdown } from './location-dropdown';
 import { BookingCalendar } from '../ui/calendar';
 import styles from './admin-jobs.module.css';
 
-import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { useCallback, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCalendar } from './use-calendar';
@@ -216,19 +216,6 @@ function Jobs({ user, integration }: { user: SessionUser; integration: BloomInte
   const [month, setMonth] = useState(todayIn('America/Detroit').slice(0, 7));
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedDay,setSelectedDay]=useState<string|null>(null);
-  const panel = useRef<HTMLElement>(null);
-  useEffect(() => {
-    if (!selectedId) return;
-    const dismiss = (event: MouseEvent) => {
-      const target = event.target;
-      if (!(target instanceof Element) || panel.current?.contains(target)) return;
-      // Job clicks switch selection; the rest of that calendar cell keeps it open.
-      if (target.closest('[data-cleaning-job]') || target.closest('td')?.querySelector('[data-cleaning-job][aria-pressed="true"]')) return;
-      setSelectedId(null);
-    };
-    document.addEventListener('click', dismiss, true);
-    return () => document.removeEventListener('click', dismiss, true);
-  }, [selectedId]);
   const [propertyFilter, setPropertyFilter] = useState('');
   const loadProperties = useCallback(async (signal: AbortSignal) => {
     if (!integration.admin) return null;
@@ -253,12 +240,9 @@ function Jobs({ user, integration }: { user: SessionUser; integration: BloomInte
   const mutation = useMutation();
   const visibleJobs = jobs.data?.filter(job => !propertyFilter || job.propertyId === propertyFilter);
   const selected = visibleJobs?.find(job => job.id === selectedId);
-  return <><div className={styles.filters}>{properties.loading ? <Loading /> : properties.error ? <ErrorNotice error={properties.error} retry={properties.reload} /> : properties.data ? <LocationDropdown label="Filter jobs by property" placeholder="All properties" searchLabel="Search properties" locations={[{ id: '', name: 'All properties' }, ...properties.data]} value={propertyFilter} onValueChange={value => { setPropertyFilter(value); setSelectedId(null); setSelectedDay(null); }} /> : <p>Property filtering is unavailable.</p>}</div><div className={styles.split}>
-    <section className={styles.panel} ref={panel} tabIndex={-1} aria-label="Selected cleaning">
-      {jobs.loading ? <Loading /> : jobs.error ? <ErrorNotice error={jobs.error} retry={jobs.reload} /> : selected ? <AdminJob key={selected.id} job={selected} user={user} integration={integration} close={() => setSelectedId(null)} reload={jobs.reload} /> : <Empty title="Select a cleaning">Choose a cleaning on the calendar to manage assignments, review booking changes, and view photos.</Empty>}
-    </section>
+  return <><div className={styles.filters}>{properties.loading ? <Loading /> : properties.error ? <ErrorNotice error={properties.error} retry={properties.reload} /> : properties.data ? <LocationDropdown label="Filter jobs by property" placeholder="All properties" searchLabel="Search properties" locations={[{ id: '', name: 'All properties' }, ...properties.data]} value={propertyFilter} onValueChange={value => { setPropertyFilter(value); setSelectedId(null); setSelectedDay(null); }} /> : <p>Property filtering is unavailable.</p>}</div><div className="admin-calendar-layout">
     <section className={styles.calendar} aria-label="Cleaning calendar">
-      <MonthHead month={month} onMonth={value => { setSelectedId(null); setSelectedDay(null); setMonth(value); }} />
+      <MonthHead month={month} onDaySelect={setSelectedDay} onMonth={value => { setSelectedId(null); setSelectedDay(null); setMonth(value); }} />
       <p className={styles.hint}>Cleaning dates and windows are local to each property.</p>
       {jobs.loading ? <Loading /> : jobs.error ? <ErrorNotice error={jobs.error} retry={jobs.reload} /> : <>
         <BookingCalendar month={month} onDaySelect={setSelectedDay}>{date => visibleJobs?.filter(job => job.checkoutDate === date).map(job => <button type="button" key={job.id} data-cleaning-job={job.id} className={styles.cleaning} data-selected={selectedId === job.id} aria-pressed={selectedId === job.id}
@@ -271,7 +255,8 @@ function Jobs({ user, integration }: { user: SessionUser; integration: BloomInte
       </>}
     </section>
   </div>
-    {selectedDay&&<CleanerDayDialog date={selectedDay} jobs={jobs.error?[]:(visibleJobs??[]).filter(job=>job.checkoutDate===selectedDay)} onSelect={job=>{setSelectedDay(null);setSelectedId(job.id);requestAnimationFrame(()=>panel.current?.focus({preventScroll:window.matchMedia('(min-width: 1000px)').matches}));}} onClose={()=>{const date=selectedDay;setSelectedDay(null);requestAnimationFrame(()=>document.querySelector<HTMLButtonElement>(`button[data-calendar-date="${date}"]`)?.focus());}}/>}
+    {selectedDay&&!selected&&!jobs.loading&&!jobs.error&&<CleanerDayDialog date={selectedDay} jobs={jobs.error?[]:(visibleJobs??[]).filter(job=>job.checkoutDate===selectedDay)} onSelect={job=>{setSelectedId(job.id);}} onClose={()=>{const date=selectedDay;setSelectedDay(null);requestAnimationFrame(()=>document.querySelector<HTMLButtonElement>(`button[data-calendar-date="${date}"]`)?.focus());}}/>}
+    {selected&&<Modal className="cleaner-day-dialog admin-job-dialog" title={`Manage cleaning · ${selected.propertyName}`} onClose={()=>setSelectedId(null)}><AdminJob key={selected.id} job={selected} user={user} integration={integration} close={()=>setSelectedId(null)} reload={jobs.reload}/></Modal>}
     {integration.admin?.createJob && <form className="bloom-admin-card bloom-form" onSubmit={async event => { event.preventDefault(); const input = { propertyId, checkoutDate }; if (await mutation.run(input, key => integration.admin!.createJob!(input, key))) jobs.reload(); }}><h3>Create cleaning</h3><Paginated loader={integration.admin.properties} render={properties => <fieldset><legend>Property</legend>{properties.filter(property => property.active).map(property => <label className="bloom-check" key={property.id}><input type="radio" name="job-property" checked={propertyId === property.id} onChange={() => setPropertyId(property.id)} />{property.name} · {property.timezone}</label>)}</fieldset>} /><DatePicker label="Checkout day" value={checkoutDate} onChange={setCheckoutDate} /><p>11 AM–3 PM in the property’s local timezone.</p><button className="bloom-button" disabled={mutation.busy || !propertyId}>Create job</button><Result mutation={mutation} /></form>}</>;
 }
 function AdminContent({ user, integration, initialPropertyId }: { user: SessionUser; integration: BloomIntegration; initialPropertyId?:string }) {

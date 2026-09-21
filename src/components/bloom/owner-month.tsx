@@ -31,8 +31,9 @@ export function ownerWeekSegments(month:string,blocks:OwnerCalendarBlock[]) {
  }
  return weeks;
 }
-export function OwnerMonth({month,blocks,onSelect}:{month:string;blocks:OwnerCalendarBlock[];onSelect:(block:OwnerCalendarBlock)=>void}) {
- const [selectedDay,setSelectedDay]=useState<string|null>(null);
+export function OwnerMonth({month,blocks,onSelect,day,onDayChange}:{month:string;blocks:OwnerCalendarBlock[];onSelect:(block:OwnerCalendarBlock)=>void;day?:string|null;onDayChange?:(day:string|null)=>void}) {
+ const [localDay,setLocalDay]=useState<string|null>(null);
+ const selectedDay=day===undefined?localDay:day;const setSelectedDay=onDayChange??setLocalDay;
  const dayBlocks=selectedDay?blocks.filter(block=>block.startDate<=selectedDay&&(block.endDate>selectedDay||(block.startDate===selectedDay&&block.endDate===selectedDay))):[];
  const weeks=useMemo(()=>ownerWeekSegments(month,blocks),[month,blocks]);
  const minHeight=(date:string)=>{const week=calendarDate(date);week.setUTCDate(week.getUTCDate()-week.getUTCDay());const segments=weeks.get(calendarValue(week))??[];return 40+Math.max(0,...segments.map(segment=>segment.lane+1))*24;};

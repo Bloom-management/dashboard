@@ -28,6 +28,8 @@ try{
   assert.equal(await popup.getByText(/Loading/).count(),0);
   await page.waitForTimeout(600);const box=await popup.boundingBox();assert(box.x>=0&&box.y>=0&&box.x+box.width<=width+1&&box.y+box.height<=850);
   assert(await popup.evaluate(el=>el.scrollHeight>el.clientHeight));await page.keyboard.press('Escape');
+  await page.locator('.month-btn').click();await page.locator('.month-menu').locator('button').filter({hasText:new RegExp('^'+Number(today.slice(-2))+'$')}).click();
+  await page.getByRole('dialog').waitFor();assert.equal(await page.getByRole('dialog').locator('li').count(),12);await page.keyboard.press('Escape');
   const day=page.getByRole('button',{name:'View jobs for '+today,exact:true});await day.focus();await page.keyboard.press('Enter');
   const dialog=page.getByRole('dialog');await dialog.waitFor();assert.equal(await dialog.locator('li').count(),12);
   const style=await dialog.evaluate(el=>({bg:getComputedStyle(el).backgroundColor,backdrop:getComputedStyle(el,'::backdrop').backgroundColor,blur:getComputedStyle(el,'::backdrop').backdropFilter}));assert.equal(style.bg,'rgb(255, 255, 255)');assert.equal(style.backdrop,'rgba(0, 0, 0, 0)');assert.equal(style.blur,'none');
