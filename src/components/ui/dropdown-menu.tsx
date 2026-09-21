@@ -9,7 +9,7 @@ export const DropdownMenuTrigger = Menu.Trigger;
 export const DropdownMenuRadioGroup = Menu.RadioGroup;
 
 export function DropdownMenuContent({ className, container, keepBelow = false, ...props }: ComponentProps<typeof Menu.Popup> & { container?: ComponentProps<typeof Menu.Portal>['container']; keepBelow?: boolean }) {
-  return <Menu.Portal container={container}><Menu.Positioner side="bottom" collisionAvoidance={keepBelow?{side:'none',align:'shift',fallbackAxisSide:'none'}:undefined} align="start" sideOffset={8} className={styles.positioner}>
+  return <Menu.Portal container={container ?? undefined}><Menu.Positioner side="bottom" collisionAvoidance={keepBelow?{side:'none',align:'shift',fallbackAxisSide:'none'}:undefined} align="start" sideOffset={8} className={styles.positioner}>
     <Menu.Popup className={`${styles.content} ${className ?? ''}`} {...props} />
   </Menu.Positioner></Menu.Portal>;
 }
