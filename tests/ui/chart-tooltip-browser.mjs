@@ -20,7 +20,12 @@ try{
   assert.equal(await page.locator('.owner-share-legend li').count(),2);
   assert.equal(await page.locator('.recharts-pie-sector').count(),2);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false);
-  console.log('PASS hover card and donut '+width);
+  assert.equal(await page.locator('.owner-connected-stay').first().evaluate(el=>el.getBoundingClientRect().height),20);
+  await page.getByRole('button',{name:'View bookings for 2026-09-22',exact:true}).focus();await page.keyboard.press('Enter');
+  const dialog=page.getByRole('dialog');await dialog.waitFor();assert.equal(await dialog.locator('li').count(),1);assert.equal(await dialog.evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(255, 255, 255)');
+  await dialog.getByRole('button',{name:/Test stay/}).click();await dialog.waitFor({state:'hidden'});
+  await page.getByRole('button',{name:'View bookings for 2026-09-25',exact:true}).focus();await page.keyboard.press('Enter');await dialog.waitFor();await dialog.getByText('No bookings for this day with your current filters.').waitFor();await page.keyboard.press('Escape');
+  console.log('PASS slim bars, owner day dialog, exclusive checkout, hover card and donut '+width);
   await page.close();
  }
 }finally{await browser.close();await new Promise(resolve=>server.close(resolve));}
