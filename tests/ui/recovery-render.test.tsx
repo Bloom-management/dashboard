@@ -1,4 +1,7 @@
 import React from 'react';
+import { AppRouterContext } from 'next/dist/shared/lib/app-router-context.shared-runtime';
+const router={back(){},forward(){},refresh(){},push(){},replace(){},prefetch:async()=>{}};
+const renderHub=(node:React.ReactNode)=>renderToStaticMarkup(<AppRouterContext.Provider value={router}>{node}</AppRouterContext.Provider>);
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -21,14 +24,14 @@ test('confirmed account onboarding, access denial, and retry have distinct actio
 
 test('hub switching keeps the actual admin identity and is absent for ordinary accounts', () => {
   const admin: SessionUser = Object.freeze({ id: 'unit-test-admin', role: 'admin', displayName: 'Unit test', approvedCityId: null });
-  const markup = renderToStaticMarkup(<HubSelector user={admin} view="cleaner" />);
-  assert.match(markup, /href="\/admin"/);
-  assert.match(markup, /aria-current="page" href="\/cleaner"/);
-  assert.match(markup, /href="\/owner"/);
-  assert.match(renderToStaticMarkup(<HubSelector user={admin} view="owner" />), /aria-current="page" href="\/owner"/);
+  const markup = renderHub(<HubSelector user={admin} view="cleaner" />);
+  assert.match(markup, /Switch hub/);
+  assert.match(markup, /Cleaner Hub/);
+  assert.match(markup, /aria-haspopup="menu"/);
+  assert.match(renderHub(<HubSelector user={admin} view="owner" />), /Owner Hub/);
   assert.equal(admin.role, 'admin');
   for (const role of ['cleaner', 'owner'] as const) {
-    assert.equal(renderToStaticMarkup(<HubSelector user={{ ...admin, role }} view="cleaner" />), '');
+    assert.equal(renderHub(<HubSelector user={{ ...admin, role }} view="cleaner" />), '');
   }
 });
 

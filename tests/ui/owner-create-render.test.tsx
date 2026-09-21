@@ -14,6 +14,7 @@ test('owner add listing opens a modal action; admin uses existing admin property
 test('creation dialog has property fields, zero-to-twenty counts and no financial or owner selector',()=>{
  const html=renderToStaticMarkup(<OwnerCreateListing open listings={[]} onClose={()=>{}} onCreated={()=>{}} onChanged={()=>{}}/>);
  assert.match(html,/<dialog/);assert.match(html,/Listing name/);assert.match(html,/Address \/ unit/);assert.match(html,/America\/Detroit/);assert.match(html,/Bedrooms/);assert.match(html,/Bathrooms/);assert.equal((html.match(/class="owner-room-count-card"/g)||[]).length,2);assert.match(html,/aria-label="Decrease bedrooms" disabled/);assert.match(html,/aria-label="Increase bathrooms"/);
+ assert.match(html,/Calendar links \(optional\)/);assert.match(html,/Private Airbnb iCal export link/);assert.match(html,/Private Vrbo iCal export link/);
  assert.doesNotMatch(html,/ownerId|soloRate|payout|Cleaner pay|Select owner/);
 });
 

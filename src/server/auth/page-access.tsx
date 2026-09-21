@@ -14,7 +14,7 @@ export async function pageSession() {
   try { return await currentUser(); }
   catch (error) {
     if (error instanceof ClerkIntegrationRequired) redirect('/setup/clerk');
-    if (error instanceof BloomAccountRequired) redirect('/onboarding');
+    if (error instanceof BloomAccountRequired || (error instanceof BackendError && error.code==='INVALID_STATE')) redirect('/onboarding');
     if (error instanceof BackendError && error.code === 'UNAUTHENTICATED') redirect('/sign-in');
     // Missing schema/service configuration is an expected setup state, not a render crash.
     if (error instanceof BackendError && error.code === 'CONFIGURATION_ERROR') return null;

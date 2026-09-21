@@ -36,7 +36,7 @@
 
 /* Required application states/extensions. Export values live in the two hub stylesheets. */
 .bloom-cleaner.app, .bloom-owner.app { min-height: 100dvh; height: 100dvh; }
-:is(.bloom-cleaner, .bloom-owner) :is(button, a, input, select, textarea):focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+:is(.bloom-cleaner, .bloom-owner) :is(button, a, input, select, textarea):focus-visible { outline: 2px solid #cf7f8d; outline-offset: 3px; }
 :is(.bloom-cleaner, .bloom-owner) button:disabled { opacity: .5; cursor: not-allowed; }
 :is(.bloom-cleaner, .bloom-owner) .bloom-button { display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: var(--r-full); padding: 12px 20px; background: var(--ink); color: #fff; font: inherit; font-weight: 700; text-decoration: none; min-height: 44px; }
 :is(.bloom-cleaner, .bloom-owner) .bloom-button.secondary { background: var(--cream-2); color: var(--ink); }
@@ -185,9 +185,9 @@ body:has(.bloom-cleaner), body:has(.bloom-owner) { margin: 0; padding: 0; }
  .bloom-owner .cal-nav > button { min-height:44px; }
  .bloom-owner .month-menu { max-width:calc(100vw - 32px); }
 }
-.bloom-owner .owner-month-event { display:flex; flex-direction:column; width:100%; min-width:0; gap:2px; padding:5px 9px; border:1px solid transparent; border-radius:var(--r-full); background:var(--bloom-soft); color:var(--bloom-deep); text-align:left; font-size:11px; font-weight:600; }
+.bloom-owner .owner-month-event { display:flex; flex-direction:row; align-items:center; width:100%; min-width:0; gap:4px; padding:3px 7px; border:1px solid transparent; border-radius:var(--r-full); background:var(--bloom-soft); color:var(--bloom-deep); text-align:left; font-size:11px; font-weight:600; }
 .bloom-owner .owner-month-label,.bloom-owner .owner-month-status { max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.bloom-owner .owner-month-status { font-size:10px; }
+.bloom-owner .owner-month-status { display:none; }
 .bloom-owner .owner-month-event.blocked { background:var(--gray-fill); color:var(--ink-2); }
 .bloom-owner .owner-month-event.unknown,.bloom-owner .owner-month-event.conflict { background:var(--cream-2); color:var(--ink-2); border:1px dashed var(--bloom); }
 .bloom-owner .owner-month-event.removed { text-decoration:line-through; opacity:.7; }
@@ -330,7 +330,8 @@ dialog.cleaner-city-dialog { width:min(480px,calc(100vw - 24px)); border-radius:
 .maintenance-report-card textarea { resize:none; }
 /* Property co-owner identity and invitation controls. */
 .property-card-footer { display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%; }
-.property-avatars { display:inline-flex;align-items:center;flex-shrink:0;gap:3px; }
+.property-avatars { display:inline-flex;align-items:center;flex-shrink:0;gap:0; }
+.property-avatars > .property-avatar + .property-avatar { margin-left:-9px; }
 .property-avatar { display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:#efece3;border:2px solid white;overflow:hidden;color:#2d2a1f;font-size:13px; }
 .property-avatar img,.property-people-list img { border-radius:50%;object-fit:cover; }
 .property-avatar-count { min-width:30px;width:auto;padding:0 4px; }
@@ -342,3 +343,98 @@ dialog.cleaner-city-dialog { width:min(480px,calc(100vw - 24px)); border-radius:
 @media(prefers-reduced-motion:reduce) { .maintenance-report-card .maintenance-choice { transition:none; } }
 .onboarding-city-field { display:grid; gap:8px; }
 .onboarding-city-field > button { width:100%; max-width:none; }
+.owner-week-lanes { position:relative; min-width:0; }
+.bloom-owner .owner-month-event.owner-connected-stay { position:absolute; z-index:1; height:22px; min-height:22px; padding:2px 7px; border-radius:7px; font-size:11px; line-height:16px; }
+.bloom-owner .owner-connected-stay[data-continues-before] { border-top-left-radius:0; border-bottom-left-radius:0; }
+.bloom-owner .owner-connected-stay[data-continues-after] { border-top-right-radius:0; border-bottom-right-radius:0; }
+.bloom-booking-tooltip { display:grid; gap:6px; max-width:min(320px,calc(100vw - 24px)); padding:14px 18px; border:1px solid #e7e2da; border-radius:14px; background:white; color:#2d2a1f; box-shadow:0 6px 24px #2d2a1f1f; font-family:"Plus Jakarta Sans",system-ui,sans-serif; font-size:13px; line-height:1.5; }
+.bloom-booking-tooltip span { color:#777367; }
+.bloom-dialog.bk-card { position:relative; padding:0; overflow-x:hidden; overflow-y:auto; }
+.bloom-dialog.bk-card > .detail-close { position:absolute; top:12px; right:12px; width:36px; height:36px; display:grid; place-items:center; padding:0; border:0; border-radius:50%; background:#ffffffd9; z-index:2; }
+.bloom-dialog.bk-card .bk-banner { padding-right:64px; }
+.bloom-dialog.bk-card .bk-stay { display:grid; grid-template-columns:minmax(0,1fr) 24px minmax(0,1fr); gap:12px; }
+.bloom-dialog.bk-card .bk-stay-date { font-size:16px; font-weight:600; text-align:center; }
+.bloom-dialog.bk-card .bk-stay-line { width:100%; }
+.owner-share-chart { display:flex; gap:28px; align-items:center; padding:20px; border-radius:20px; background:#fff; }
+.owner-share-donut { width:250px; height:250px; flex-shrink:0; }
+.owner-share-legend { list-style:none; padding:0; margin:0; display:grid; gap:18px; }
+.owner-share-legend li { display:flex; align-items:center; gap:12px; }
+.owner-share-legend li > span:last-child { display:grid; gap:4px; }
+.owner-share-legend li > span:last-child > span { color:#777367; font-size:13px; }
+.owner-share-swatch { width:14px; height:14px; border:2px solid; border-radius:5px; flex-shrink:0; }
+.owner-share-empty { box-sizing:border-box; height:100%; border:25px solid #eeebe4; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:8px; font-size:28px; }
+.owner-share-empty span { font-size:12px; text-align:center; padding:0 12px; }
+@media(max-width:650px) { .owner-share-chart { flex-direction:column; align-items:center; } }
+
+/* Native controls and portalled dialogs share Bloom keyboard focus styling. */
+:where(button, a, input, select, textarea, [tabindex]):focus-visible { outline:2px solid #cf7f8d; outline-offset:3px; }
+:where(button, a, input, select, textarea, [tabindex]):focus:not(:focus-visible) { outline:none; }
+.cleaning-room-toolbar { margin:8px 0 20px; }
+.cleaning-room-arrows { gap:10px; }
+.cleaning-room-arrows .bloom-button.secondary,.bloom-owner .owner-room-stepper button { display:grid; place-items:center; background:#fff; border:0; border-radius:50%; box-shadow:0 2px 7px #302f2610; }
+.nightly-rate-grid { display:grid; gap:20px; padding:24px; margin:0; border:1px solid #eeebe4; border-radius:20px; background:#fff; }
+.nightly-rate-stepper { display:grid; grid-template-columns:44px minmax(0,1fr) 44px; align-items:center; gap:16px; }
+.nightly-rate-stepper .icon-btn { width:44px; height:44px; background:#fff; border:0; border-radius:50%; box-shadow:0 2px 7px #302f2618; font-size:24px; }
+.nightly-rate-amount { display:flex; align-items:center; justify-content:center; gap:4px; font-size:28px; }
+.nightly-rate-amount input { width:140px; max-width:100%; border:0!important; padding:8px 0!important; text-align:center; font:inherit; appearance:textfield; }
+.nightly-rate-amount input::-webkit-inner-spin-button { appearance:none; }
+.nightly-rate-slider-control { display:flex; align-items:center; height:32px; touch-action:none; cursor:pointer; }
+.nightly-rate-track { width:100%; height:6px; position:relative; background:#eee9e3; border-radius:99px; }
+.nightly-rate-fill { background:#c78090; border-radius:99px; }
+.nightly-rate-thumb { width:22px; height:22px; border:3px solid white; border-radius:50%; background:#c78090; box-shadow:0 1px 6px #302f2630; }
+.nightly-rate-grid small { text-align:center; color:#8d8879; }
+
+.bloom-booking-tooltip strong { font-size:14px; font-weight:600; letter-spacing:-.02em; }
+.property-owner-picker { display:flex; align-items:center; flex-wrap:wrap; gap:12px 20px; margin:24px 0; }
+.property-owner-picker select { min-width:220px; max-width:100%; }
+@media(max-width:600px) { .property-owner-picker { align-items:stretch; flex-direction:column; gap:10px; } .property-owner-picker select { width:100%; min-width:0; } }
+.nightly-rate-heading { display:flex; align-items:center; gap:8px; }
+.nightly-rate-heading p { margin:0; }
+.nightly-rate-info { display:grid; place-items:center; width:28px; height:28px; padding:0; flex-shrink:0; border:0; border-radius:50%; background:transparent; color:#8d8879; cursor:pointer; }
+.nightly-rate-info:hover { background:#f5f2ec; }
+.bloom-booking-tooltip p { margin:0; }
+.owner-people-page > section[aria-label="Invitations for you"] { padding:20px 24px; margin:20px 0; border:1px solid var(--line); border-radius:18px; background:var(--card); }
+.owner-people-page > section[aria-label="Invitations for you"] h3 { margin:0 0 12px; }
+.owner-people-page .bloom-admin-card { padding:24px; }
+.owner-people-page .bloom-admin-card h3 { font-size:20px; margin:0 0 12px; }
+.owner-person-name { display:flex; align-items:center; gap:12px; font-weight:500; }
+.owner-person-name img { border-radius:50%; object-fit:cover; }
+.owner-people-table tbody th { font-weight:500; }
+.owner-people-table td { overflow-wrap:anywhere; }
+@media(max-width:600px) { .owner-people-page .bloom-admin-card { padding:18px; } .owner-people-table { min-width:360px; } }
+
+/* Keep People controls comfortable in both full pages and narrow listing panels. */
+.bloom-owner .property-owner-picker { display:flex; flex-wrap:wrap; align-items:center; gap:12px 24px; margin:24px 0; min-width:0; }
+.bloom-owner .property-owner-picker select { flex:0 1 420px; width:100%; min-width:0; max-width:100%; }
+.property-invite-form { min-width:0; max-width:100%; box-sizing:border-box; }
+.property-invite-form .admin-invite-fields { display:flex; flex-wrap:wrap; align-items:flex-end; gap:20px; min-width:0; }
+.property-invite-form .admin-invite-fields > label { flex:1 1 240px; min-width:0; max-width:100%; }
+.property-invite-form .admin-invite-fields > .property-invite-context { flex:1 1 200px; min-width:0; margin:0; padding-bottom:12px; overflow-wrap:anywhere; }
+.property-invite-form .admin-invite-fields > button { flex:0 0 auto; max-width:100%; }
+@media(max-width:600px) {
+ .bloom-owner .property-owner-picker { align-items:stretch; flex-direction:column; gap:12px; }
+ .bloom-owner .property-owner-picker select { flex:auto; }
+ .property-invite-form .admin-invite-fields > label,.property-invite-form .admin-invite-fields > .property-invite-context { flex-basis:100%; }
+ .property-invite-form .admin-invite-fields > button { width:100%; }
+}
+
+.bloom-dialog.owner-create-dialog { background:#fff; }
+.bloom-owner .owner-create-dialog { background:#fff; }
+.admin-create-property .property-create-fields { display:grid; gap:14px; padding:0; margin:0; border:0; min-width:0; }
+.listing-calendar-setup { min-width:0; padding:18px; }
+.listing-calendar-setup .owner-create-supply-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr)); gap:16px; margin-bottom:16px; }
+.listing-calendar-setup .owner-calendar-setup-card { min-width:0; }
+.listing-calendar-setup input,.listing-calendar-setup select { width:100%; min-width:0; box-sizing:border-box; }
+
+.bloom-hub-trigger { display:inline-flex; align-items:center; justify-content:space-between; gap:24px; min-width:170px; padding:12px 20px; border:0; border-radius:999px; background:#fff; color:var(--ink); font:inherit; font-weight:600; box-shadow:var(--shadow-sm); cursor:pointer; }
+.bloom-hub-trigger:hover { background:var(--cream-2); }
+
+.admin-inbox-trigger { display:inline-flex; align-items:center; justify-content:center; gap:6px; min-width:42px; height:42px; border:0; border-radius:999px; background:#fff; color:var(--ink); box-shadow:var(--shadow-sm); cursor:pointer; font:inherit; }
+.admin-inbox-trigger span { border-radius:99px; background:#b45666; color:#fff; padding:2px 6px; font-size:11px; }
+.admin-pricing-inbox { width:360px; max-width:calc(100vw - 32px); padding:24px; box-sizing:border-box; border:1px solid #e5e3dc; border-radius:24px; background:#fff; color:#302f26; font:14px/1.6 "Plus Jakarta Sans",sans-serif; box-shadow:0 8px 32px #302f2620; }
+.admin-pricing-inbox h2 { font:600 20px/1.4 "Plus Jakarta Sans",sans-serif; margin:0 0 16px; }
+.admin-pricing-inbox ul { list-style:none; padding:0; margin:0; }
+.admin-pricing-inbox li+li { border-top:1px solid #e5e3dc; }
+.admin-pricing-inbox a { display:block; padding:14px 0; color:inherit; text-decoration:none; overflow-wrap:anywhere; }
+.admin-pricing-inbox a span { display:block; color:#b45666; font-size:12px; margin-top:6px; }
+.admin-cleaner-pricing { min-width:0; }

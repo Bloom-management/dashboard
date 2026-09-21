@@ -22,6 +22,7 @@ class PendingOwners(unittest.TestCase):
   self.assertTrue(all(r.returncode==0 for r in results),[r.stderr for r in results]);u=data(results[0]);self.assertEqual(data(results[1]),u);self.assertEqual(u['role'],'owner')
   self.assertEqual(scalar(f"select count(*) from public.property_owners where owner_id='{u['id']}';"),'2')
   sub='pending_'+self.email;other,_=make_user('owner')
+  completed=rpc('bloom_complete_onboarding',dict(p_subject=sub,p_role='owner',p_city=None,p_home_base='Detroit',p_name='LOCAL TEST Owner',p_primary_email=self.email,p_key='complete'));self.assertEqual(completed.returncode,0,completed.stderr)
   self.assertEqual(scalar(f"select count(*) from public.properties where id in ('{pid}','{pid2}');",sub),'2')
   self.assertEqual(scalar(f"select count(*) from public.properties where id='{pid}';",other),'0')
   self.assertNotEqual(sql('select * from private.pending_property_owners;',sub,ok=False).returncode,0)

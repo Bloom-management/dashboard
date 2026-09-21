@@ -15,7 +15,9 @@ export async function ownerListings(request: Request): Promise<OwnerListingsPage
  const {db}=await authenticatedDatabase();
  const {data,error}=await db.from('properties').select('id,city_id,cities(name)').in('id',page.items.map(p=>p.id));
  if(error)databaseError(error);
- return {...page,items:page.items.map(p=>{const row=data?.find(r=>r.id===p.id);const city=row?.cities as unknown as {name:string}|null;return {...p,cityId:row?.city_id??null,cityName:city?.name??null};})};
+ const rates=await db.from('property_nightly_rates').select('property_id,cents').in('property_id',page.items.map(p=>p.id));
+ if(rates.error)databaseError(rates.error);
+ return {...page,items:page.items.map(p=>{const row=data?.find(r=>r.id===p.id);const city=row?.cities as unknown as {name:string}|null;return {...p,nightlyGuestRateCents:rates.data?.find(rate=>rate.property_id===p.id)?.cents??null,cityId:row?.city_id??null,cityName:city?.name??null};})};
 }
 export async function ownerPerformance(request: Request) {
  const {from,toExclusive,properties} = performanceQuery(request);

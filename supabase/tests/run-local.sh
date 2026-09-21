@@ -16,6 +16,9 @@ trap cleanup EXIT
 "$BLOOM_PG_BIN/pg_ctl" -D "$BLOOM_TEST_ROOT/data" -l "$BLOOM_TEST_ROOT/server.log" -o "-p $BLOOM_TEST_PORT -h 127.0.0.1" start >/dev/null
 "$BLOOM_PSQL" -h 127.0.0.1 -p "$BLOOM_TEST_PORT" -d postgres -X -q -v ON_ERROR_STOP=1 -f "$BLOOM_REPO/supabase/tests/platform.sql"
 for migration in "$BLOOM_REPO"/supabase/migrations/*.sql; do
+  if [[ "$migration" == *202609200027_onboarding.sql ]]; then
+    "$BLOOM_PSQL" -h 127.0.0.1 -p "$BLOOM_TEST_PORT" -d postgres -X -q -v ON_ERROR_STOP=1 -f "$BLOOM_REPO/supabase/tests/onboarding_legacy.sql"
+  fi
   "$BLOOM_PSQL" -h 127.0.0.1 -p "$BLOOM_TEST_PORT" -d postgres -X -q -v ON_ERROR_STOP=1 -f "$migration"
 done
 python3 -B "$BLOOM_REPO/supabase/tests/test_database.py"
@@ -48,3 +51,5 @@ python3 -B "$BLOOM_REPO/supabase/tests/test_practice_withdrawal.py"
 python3 -B "$BLOOM_REPO/supabase/tests/test_maintenance.py"
 
 python3 -B "$BLOOM_REPO/supabase/tests/test_property_people.py"
+
+python3 -B "$BLOOM_REPO/supabase/tests/test_onboarding.py"

@@ -1,6 +1,7 @@
 'use client';
 
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import type { InlineChange, Role, SessionUser } from '../../contracts';
 import { api, ApiError } from './api';
@@ -92,6 +93,8 @@ export function Modal({ title, onClose, children, className = 'detail-card' }: {
 
 /** Navigation changes the view only; the server-provided account role is unchanged. */
 export function HubSelector({ user, view }: { user: SessionUser; view: 'admin' | 'cleaner' | 'owner' }) {
+  const router=useRouter();
   if (user.role !== 'admin') return null;
-  return <nav className="bloom-hub-selector" aria-label="Hub view"><Link href="/admin" className={`city-tab${view === 'admin' ? ' active' : ''}`} aria-current={view === 'admin' ? 'page' : undefined}>Admin Hub</Link><Link href="/cleaner" className={`city-tab${view === 'cleaner' ? ' active' : ''}`} aria-current={view === 'cleaner' ? 'page' : undefined}>Cleaner Hub</Link><Link href="/owner" className={`city-tab${view === 'owner' ? ' active' : ''}`} aria-current={view === 'owner' ? 'page' : undefined}>Owner Hub</Link></nav>;
+  const hubs=[{id:'admin',label:'Admin Hub'},{id:'cleaner',label:'Cleaner Hub'},{id:'owner',label:'Owner Hub'}];
+  return <nav className="bloom-hub-selector" aria-label="Hub view"><DropdownMenu><DropdownMenuTrigger className="bloom-hub-trigger" aria-label="Switch hub">{hubs.find(hub=>hub.id===view)?.label}<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m4 6 4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg></DropdownMenuTrigger><DropdownMenuContent><DropdownMenuRadioGroup value={view} onValueChange={value=>{if(value!==view&&hubs.some(hub=>hub.id===value))router.push(`/${value}`);}} aria-label="Hub view">{hubs.map(hub=><DropdownMenuRadioItem key={hub.id} value={hub.id} label={hub.label}>{hub.label}</DropdownMenuRadioItem>)}</DropdownMenuRadioGroup></DropdownMenuContent></DropdownMenu></nav>;
 }

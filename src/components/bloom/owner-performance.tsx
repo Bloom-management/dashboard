@@ -1,4 +1,5 @@
 'use client';
+import { PieChart, Pie, Cell, Label, Tooltip, ResponsiveContainer } from 'recharts';
 import { useCallback, useState } from 'react';
 import type { DateRange } from 'react-day-picker';
 import { Calendar, calendarDate, calendarValue } from '../ui/calendar';
@@ -9,7 +10,10 @@ import { Empty, ErrorNotice, Icon, Loading, useResource } from './primitives';
 import { occupancyLabel, ownerRangeValid } from './owner-utils';
 
 export function OwnerPlatformShare({totals}:{totals:OwnerMetricTotals}) {
- return <><h4>Share of known occupied nights</h4><ul className="owner-share">{totals.platformShare.map(item=><li key={item.platform}>{item.platform==='airbnb'?'Airbnb':item.platform==='vrbo'?'Vrbo':'Off-platform / unknown'}: {item.nights} nights · {item.share===null?'N/A':occupancyLabel(item.share)}</li>)}</ul><p>Based on known observations, including blocks as Off-platform / unknown. This is not a measure of complete calendar coverage.</p></>;
+ const colors=[{fill:'#edcbd3',stroke:'#b85563'},{fill:'#cdd9e7',stroke:'#577b9f'},{fill:'#e0dfcd',stroke:'#93926a'}];
+ const data=totals.platformShare.map((item,index)=>({...item,name:item.platform==='airbnb'?'Airbnb':item.platform==='vrbo'?'Vrbo':'Off-platform / unknown',...colors[index%colors.length]}));
+ const total=data.reduce((sum,item)=>sum+item.nights,0);
+ return <section aria-label="Share of known occupied nights"><h4>Share of known occupied nights</h4><div className="owner-share-chart"><div className="owner-share-donut" role="img" aria-label={`${total} known occupied nights. Platform breakdown in legend.`}>{total>0?<ResponsiveContainer width="100%" height="100%"><PieChart><Tooltip contentStyle={{background:'#fff',border:'1px solid #e7e2da',borderRadius:14,fontFamily:'inherit'}}/><Pie data={data} dataKey="nights" nameKey="name" innerRadius="62%" outerRadius="88%" strokeWidth={2} isAnimationActive={false}>{data.map(item=><Cell key={item.platform} fill={item.fill} stroke={item.stroke}/>)}<Label position="center" content={({viewBox})=>viewBox&&'cx' in viewBox?<text x={viewBox.cx} y={viewBox.cy} textAnchor="middle" fill="#2d2a1f"><tspan x={viewBox.cx} dy="-2" fontSize="28" fontWeight="600">{total.toLocaleString()}</tspan><tspan x={viewBox.cx} dy="23" fontSize="12">Known nights</tspan></text>:null}/></Pie></PieChart></ResponsiveContainer>:<div className="owner-share-empty">0<span>No known occupied nights</span></div>}</div><ul className="owner-share-legend">{data.map(item=><li key={item.platform}><span className="owner-share-swatch" style={{background:item.fill,borderColor:item.stroke}}/><span><strong>{item.name}</strong><span>{item.nights} nights · {item.share===null?'N/A':occupancyLabel(item.share)}</span></span></li>)}</ul></div><p>Based on known observations, including blocks as Off-platform / unknown. This is not a measure of complete calendar coverage.</p></section>;
 }
 export function OwnerTotals({totals}:{totals:OwnerMetricTotals}){
  const incomplete=totals.coverage.status!=='complete';

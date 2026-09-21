@@ -3,7 +3,7 @@ import type { JobPhoto, PhotoCategory, Role, SessionUser } from '../../contracts
 /** UI ports, NOT additional HTTP contracts. Main must implement these against approved DTOs.
  * No guessed routes or production fixtures are supplied for missing shared interfaces.
  */
-export type AdminPerson = SessionUser & { email?: string | null };
+export type AdminPerson = SessionUser & { email?: string | null; location?: string | null };
 export type CityOption = { id: string; name: string; active: boolean };
 export type PropertyOption = { id: string; name: string; cityId: string; timezone: string; address: string; isBloomOwned: boolean; active: boolean; ownerIds: string[]; pendingOwnerEmail?: string | null; instructions: string; soloRateCents: number };
 export type SourceHealth = { id: string; propertyId: string; provider: 'airbnb' | 'vrbo'; enabled: boolean; lastSuccessAt: string | null; lastAttemptAt?: string | null; errorMessage: string | null };

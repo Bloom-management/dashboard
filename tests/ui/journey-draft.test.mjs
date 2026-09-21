@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {completionInput,uncertainCompletion} from '../../src/components/bloom/journey-draft.ts';
-test('every configured supply requires an explicit level, including not found',()=>{
- assert.equal(completionInput(2,['soap','paper'],{soap:'full'},''),null);
+test('unanswered supplies default to full while explicit levels are preserved',()=>{
+ assert.deepEqual(completionInput(2,['soap','paper'],{soap:'low'},'').answers,[{supplyId:'soap',level:'low'},{supplyId:'paper',level:'full'}]);
  assert.deepEqual(completionInput(2,['soap'],{soap:'not_found'},'Missing'),{configVersion:2,answers:[{supplyId:'soap',level:'not_found'}],notes:'Missing'});
  assert.deepEqual(completionInput(2,[],{},''),{configVersion:2,answers:[],notes:''});
  assert.equal(completionInput(2,['soap'],{soap:'unknown'},''),null);

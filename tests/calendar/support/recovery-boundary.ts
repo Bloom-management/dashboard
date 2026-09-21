@@ -18,7 +18,7 @@ delete process.env.SUPABASE_SERVICE_ROLE_KEY;
 delete process.env.CALENDAR_ENCRYPTION_KEY;
 delete process.env.CALENDAR_SYNC_SECRET;
 const token = `header.${Buffer.from(JSON.stringify({ role: 'authenticated' })).toString('base64url')}.synthetic`;
-mock.module('@clerk/nextjs/server', { namedExports: { currentUser: async () => { assert.fail('Unexpected profile lookup'); }, auth: async () => ({ userId: 'synthetic-subject', getToken: async () => token }) } });
+mock.module('@clerk/nextjs/server', { namedExports: { createClerkClient: () => { assert.fail('Calendar/account read checks must not construct an admin identity client'); }, currentUser: async () => { assert.fail('Unexpected profile lookup'); }, auth: async () => ({ userId: 'synthetic-subject', getToken: async () => token }) } });
 mock.module('@supabase/supabase-js', { namedExports: { createClient: () => ({ rpc: async (name: string, args: Record<string, unknown>) => {
   calls.push(name);
   if (name === 'bloom_me') return { data: user, error: null, status: 200 };

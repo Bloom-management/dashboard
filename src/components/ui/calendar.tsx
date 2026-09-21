@@ -25,7 +25,7 @@ export function Calendar({ className, classNames, ...props }: ComponentProps<typ
     {...props} />;
 }
 
-export function BookingCalendar({ month, today = todayIn('America/Detroit'), children }: { month: string; today?: string; children: (date: string) => ReactNode }) {
+export function BookingCalendar({ month, today = todayIn('America/Detroit'), children, connected = false }: { month: string; today?: string; connected?: boolean; children: (date: string) => ReactNode }) {
   // Stable cell sizing and a scrollable event area keep long names from resizing columns.
   function BookingDay({ day, modifiers, ...props }: DayProps) {
     const value = calendarValue(day.date);
@@ -35,5 +35,5 @@ export function BookingCalendar({ month, today = todayIn('America/Detroit'), chi
     </div></td>;
   }
   return <Calendar month={calendarDate(month)} today={today ? calendarDate(today) : undefined} disableNavigation hideNavigation
-    className={styles.bookings} classNames={{ month_caption: styles.hidden }} components={{ Day: BookingDay }} />;
+    className={`${styles.bookings} ${connected ? styles.connected : ''}`} classNames={{ month_caption: styles.hidden }} components={{ Day: BookingDay }} />;
 }

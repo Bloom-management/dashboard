@@ -29,8 +29,8 @@
 .bookingCell { box-sizing: border-box; width: 100%; aspect-ratio: 1; min-height: var(--booking-cell-min-height, 0); min-width: 0; display: flex; flex-direction: column; padding: 8px; gap: 6px; overflow: hidden; }
 .dateNumber { align-self: flex-end; display: grid; place-items: center; width: 26px; height: 26px; flex-shrink: 0; font-size: 13px; color: #8d8879; }
 .currentDate { border-radius: 50%; background: var(--calendar-accent); color: #fff; }
-.events { min-height: 0; min-width: 0; overflow: auto; scrollbar-width: thin; margin-top: auto; }
-.events > * { min-width: 0; max-width: 100%; }
+.events { display:flex; flex-direction:column; gap:4px; min-height: 0; min-width: 0; overflow: auto; scrollbar-width: thin; margin-top: auto; }
+.events > * { flex-shrink:0; min-width: 0; max-width: 100%; }
 .events button { width: 100%; min-width: 0; max-width: 100%; overflow: hidden; }
 .events button span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 600px) {
@@ -80,3 +80,10 @@
 .calendar:not(.bookings) .day { padding-top:0; padding-bottom:0; }
 .calendar:not(.bookings) .rangeStart .dayButton,
 .calendar:not(.bookings) .rangeEnd .dayButton { height:36px; }
+.connected { --booking-gap:6px; }
+.connected .day,.connected .bookingCell,.connected .events { overflow:visible; }
+.connected .bookingCell { padding-left:0; padding-right:0; padding-bottom:16px; aspect-ratio:auto; min-height:clamp(110px,12vw,190px); }
+.connected .dateNumber { margin-right:8px; }
+.connected .events { display:block; }
+.connected .events button { max-width:none; }
+@media(max-width:600px) { .connected { --booking-gap:3px; } }

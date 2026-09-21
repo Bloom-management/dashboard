@@ -17,6 +17,13 @@ class PropertyPeople(unittest.TestCase):
   return iid
  def accept(self,iid,subject=None,email=None):
   return self.service(f"select bloom_property_invite_accept('{iid}','{subject or self.other}',array['{email or self.email}'],'TEST co-owner');",False)
+ def test_home_base_is_visible_only_to_property_members_and_admin(self):
+  sql(f"update users set home_base='Chicago' where id='{self.oid}';")
+  for subject in [self.owner,self.admin]:
+   members=json.loads(scalar(f"select bloom_property_people('{self.pid}');",subject))['members']
+   self.assertEqual(members[0]['location'],'Chicago')
+  for subject in [self.other,self.cleaner]:
+   self.assertIn('NOT_FOUND',sql(f"select bloom_property_people('{self.pid}');",subject,ok=False).stderr)
  def test_invitation_scope_replay_and_no_early_access(self):
   for subject in [self.other,self.cleaner]:self.assertIn('NOT_FOUND',self.invite(subject=subject).stderr)
   with concurrent.futures.ThreadPoolExecutor(2) as pool:results=list(pool.map(lambda _:self.invite(),range(2)))

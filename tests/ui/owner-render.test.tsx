@@ -20,7 +20,7 @@ test('listing supplies distinguish configuration from missing reports and exclud
  assert.match(renderToStaticMarkup(<OwnerSupplySummary listing={listing}/>),/No supplies are configured/);
  const withUnknownFields={...listing,cleanerName:'DO-NOT-RENDER',pay:7500,instructions:'SECRET',supplies:[{supplyId:'s',name:'Paper towels',level:null,reportedAt:null},{supplyId:'soap',name:'Soap',level:'low' as const,reportedAt:'2026-09-18T15:00:00Z'}]};
  const html=renderToStaticMarkup(<OwnerSupplySummary listing={withUnknownFields}/>);
- assert.match(html,/Not reported yet/);assert.match(html,/Low/);assert.match(html,/data-level="unknown"/);assert.match(html,/data-level="low"/);assert.match(html,/owner-supply-bar/);assert.doesNotMatch(html,/DO-NOT-RENDER|7500|SECRET/);
+ assert.match(html,/Default level · No cleaner report yet/);assert.match(html,/Low/);assert.match(html,/data-level="full"/);assert.match(html,/data-level="low"/);assert.match(html,/owner-supply-bar/);assert.doesNotMatch(html,/DO-NOT-RENDER|7500|SECRET/);
 });
 
 test('listing source controls offer Airbnb and Vrbo sync',()=>{

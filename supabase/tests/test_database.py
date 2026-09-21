@@ -28,7 +28,7 @@ def scalar(statement, subject=None):
 
 def make_user(role='cleaner', city=CITY):
     subject='test_'+uuid.uuid4().hex
-    uid=scalar(f"insert into public.users(clerk_user_id,role,approved_city_id,initial_city_selected_at) values('{subject}','{role}','{city}',now()) returning id;")
+    uid=scalar(f"insert into public.users(clerk_user_id,role,approved_city_id,initial_city_selected_at,onboarding_completed_at) values('{subject}','{role}','{city}',now(),now()) returning id;")
     return subject,uid
 
 def make_job(day=None, city=CITY, review=False):
@@ -67,9 +67,10 @@ class BackendDatabaseTests(unittest.TestCase):
         self.error(sql("select public.bloom_onboard('"+CITY+"','x');",'anonymous','anon',False),'permission denied')
     def test_initial_city_no_profile_bypass(self):
         sub='new_'+uuid.uuid4().hex
-        first=json.loads(scalar(f"select public.bloom_onboard('{CITY}','first');",sub))
+        call=f"select public.bloom_complete_onboarding('{sub}','cleaner','{CITY}',null,'Synthetic cleaner',null,'first');"
+        first=json.loads(sql(call,'server','service_role').stdout)
         self.assertEqual(first['role'],'cleaner')
-        self.assertEqual(json.loads(scalar(f"select public.bloom_onboard('{CITY}','first');",sub)),first)
+        self.assertEqual(json.loads(sql(call,'server','service_role').stdout),first)
         self.error(sql(f"select public.bloom_onboard('{CITY}','second');",sub,ok=False),'INVALID_STATE')
         self.error(sql("update public.users set role='admin';",sub,ok=False),'permission denied')
         self.error(sql("update public.users set approved_city_id=null;",sub,ok=False),'permission denied')

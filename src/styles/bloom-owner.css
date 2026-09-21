@@ -655,7 +655,7 @@
 .bloom-owner .owner-stay.conflict { background: #faf0ce; color: #6c5718; border: 1px dashed #ae8746; }
 .bloom-owner .owner-stay.same-day { transform:translateX(-50%); border-radius:50%; text-align:center; padding:3px 0; }
 
-.bloom-owner .owner-create-dialog { width:min(640px,calc(100vw - 32px)); max-height:calc(100dvh - 48px); overflow-y:auto; border-radius:var(--r-lg); padding:0; background:var(--cream); }
+.bloom-owner .owner-create-dialog { width:min(640px,calc(100vw - 32px)); max-height:calc(100dvh - 48px); overflow-y:auto; border-radius:var(--r-lg); padding:0; background:#fff; }
 .bloom-owner .owner-create-body { padding:64px 28px 28px; }
 .bloom-owner .owner-create-fields { display:grid; gap:16px; border:0; padding:0; margin:0; min-width:0; }
 .bloom-owner .owner-create-fields label { display:grid; gap:8px; }

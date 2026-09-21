@@ -96,7 +96,7 @@ export function MaintenanceCheck({answers,onChange,disabled}:{answers:Partial<Re
  </div>;
 }
 export function SupplyReferenceGrid({supplies,reports=[]}:{supplies:CleaningConfig['supplies'];reports?:{supplyId:string;level:SupplyLevel;reportedAt:string}[]}){
- return supplies.length?<div className="maintenance-grid owner-supply-grid">{supplies.map(s=>{const r=reports.find(x=>x.supplyId===s.id);return <article className="maintenance-card owner-supply-card" key={s.id} data-level={r?.level??'unknown'}><SupplyIcon/><strong>{s.name}</strong><span>{r?levels[r.level]:'Not reported yet'}</span>{r&&<small>Last reported {new Date(r.reportedAt).toLocaleString()}</small>}</article>;})}</div>:<p>No supplies are configured for this cleaning.</p>;
+ return supplies.length?<div className="maintenance-grid owner-supply-grid">{supplies.map(s=>{const r=reports.find(x=>x.supplyId===s.id);return <article className="maintenance-card owner-supply-card" key={s.id} data-level={r?.level??'full'}><SupplyIcon/><strong>{s.name}</strong><span>{r?levels[r.level]:'Full'}</span>{r&&<small>Last reported {new Date(r.reportedAt).toLocaleString()}</small>}</article>;})}</div>:<p>No supplies are configured for this cleaning.</p>;
 }
 
 export function JobSupplies({jobId}:{jobId:string}){const load=useCallback((signal:AbortSignal)=>request<{supplies:CleaningConfig['supplies'];reports:{supplyId:string;level:SupplyLevel;reportedAt:string}[]}>(`/jobs/${jobId}/supplies`,{signal}),[jobId]);const data=useResource(load);return data.loading?<Loading/>:data.error?<ErrorNotice error={data.error} retry={data.reload}/>:data.data?<SupplyReferenceGrid supplies={data.data.supplies} reports={data.data.reports}/>:null;}

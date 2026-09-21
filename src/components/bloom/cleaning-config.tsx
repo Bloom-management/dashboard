@@ -46,8 +46,8 @@ function ConfigForm({section,path,owner,bedroomCount,bathroomCount,initial,saved
       <div className="cleaning-room-toolbar">
         <span role="status">{config.rooms.length ? `Room ${roomIndex+1} of ${config.rooms.length}` : 'No rooms added'}</span>
         <div className="cleaning-room-arrows">
-          <button type="button" className="bloom-button secondary" aria-label="Previous room" disabled={roomIndex===0} onClick={()=>setActiveRoom(roomIndex-1)}>‹</button>
-          <button type="button" className="bloom-button secondary" aria-label="Next room" disabled={roomIndex>=config.rooms.length-1} onClick={()=>setActiveRoom(roomIndex+1)}>›</button>
+          <button type="button" className="bloom-button secondary" aria-label="Previous room" disabled={roomIndex===0} onClick={()=>setActiveRoom(roomIndex-1)}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
+          <button type="button" className="bloom-button secondary" aria-label="Next room" disabled={roomIndex>=config.rooms.length-1} onClick={()=>setActiveRoom(roomIndex+1)}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
         </div>
       </div>
       {room&&<div className="bloom-admin-card cleaning-room-slide" role="group" aria-roledescription="slide" aria-label={`Room ${roomIndex+1} of ${config.rooms.length}`} key={room.id}>

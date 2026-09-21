@@ -39,7 +39,7 @@
 .root button:focus-visible,
 .root a:focus-visible,
 .root input:focus-visible {
-  outline: 3px solid var(--fg);
+  outline: 2px solid #cf7f8d;
   outline-offset: 4px;
 }
 .root h1,
