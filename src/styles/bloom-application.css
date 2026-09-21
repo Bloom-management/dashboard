@@ -469,3 +469,18 @@ dialog.cleaner-city-dialog { width:min(480px,calc(100vw - 24px)); border-radius:
 }
 
 @media(max-width:700px) { .bloom-cleaner .topbar.bloom-compact-header .view-toggle svg { width:16px; height:16px; } }
+/* Keep the inbox within the viewport while refreshing its existing contents. */
+.admin-pricing-inbox { max-height:min(560px,var(--available-height,calc(100dvh - 100px))); overflow-y:auto; overscroll-behavior:contain; scrollbar-gutter:stable; }
+:is(.bloom-cleaner,.bloom-owner) .bloom-dialog.cleaner-day-dialog { width:min(560px,calc(100vw - 32px)); padding:28px; box-sizing:border-box; background:#fff; border:1px solid var(--line-2); border-radius:28px; box-shadow:0 16px 64px #302f2620; overflow-y:auto; }
+.cleaner-day-dialog::backdrop { background:transparent; backdrop-filter:none; }
+.cleaner-day-dialog header { padding-right:28px; }
+.cleaner-day-dialog h2 { margin:8px 0; font-size:26px; }
+.cleaner-day-dialog header p { color:var(--muted); line-height:1.6; }
+.cleaner-day-eyebrow { text-transform:uppercase; letter-spacing:.08em; font-size:11px; }
+.cleaner-day-jobs { list-style:none; margin:24px 0 0; padding:0; display:grid; gap:12px; }
+.cleaner-day-jobs button { width:100%; display:flex; flex-direction:column; gap:8px; text-align:left; padding:20px; border:1px solid var(--line-2); border-radius:20px; background:#fff; color:var(--ink); font:inherit; cursor:pointer; }
+.cleaner-day-jobs button:hover { border-color:var(--bloom-deep); }
+.cleaner-day-jobs strong { font-size:18px; overflow-wrap:anywhere; }
+.cleaner-day-jobs span { font-size:13px; }
+.cleaner-day-link,.cleaner-day-assigned { color:var(--bloom-deep); font-weight:600; }
+.cleaner-day-empty { padding:24px 0 8px; }

@@ -87,3 +87,9 @@
 .connected .events { display:block; }
 .connected .events button { max-width:none; }
 @media(max-width:600px) { .connected { --booking-gap:3px; } }
+.selectableCell { position:relative; }
+.dayExpand { position:absolute; inset:0; width:100%; height:100%; border:0; border-radius:inherit; background:transparent; cursor:pointer; }
+.dayExpand:focus-visible { outline:2px solid var(--calendar-accent); outline-offset:-3px; }
+.selectableCell .dateNumber { position:relative; pointer-events:none; }
+.selectableCell .events { position:relative; pointer-events:none; }
+.selectableCell .events button { pointer-events:auto; }

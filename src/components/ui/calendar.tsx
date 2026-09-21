@@ -25,11 +25,12 @@ export function Calendar({ className, classNames, ...props }: ComponentProps<typ
     {...props} />;
 }
 
-export function BookingCalendar({ month, today = todayIn('America/Detroit'), children, connected = false }: { month: string; today?: string; connected?: boolean; children: (date: string) => ReactNode }) {
+export function BookingCalendar({ month, today = todayIn('America/Detroit'), children, connected = false, onDaySelect }: { month: string; today?: string; connected?: boolean; onDaySelect?: (date:string)=>void; children: (date: string) => ReactNode }) {
   // Stable cell sizing and a scrollable event area keep long names from resizing columns.
   function BookingDay({ day, modifiers, ...props }: DayProps) {
     const value = calendarValue(day.date);
-    return <td {...props} data-current-date={value === today || undefined}><div className={styles.bookingCell}>
+    return <td {...props} data-current-date={value === today || undefined}><div className={`${styles.bookingCell} ${onDaySelect?styles.selectableCell:''}`}>
+      {onDaySelect&&!modifiers.outside&&<button type="button" className={styles.dayExpand} data-calendar-date={value} aria-label={`View jobs for ${value}`} onClick={()=>onDaySelect(value)}/>}
       <span className={`${styles.dateNumber} ${value === today ? styles.currentDate : ''}`} aria-current={value === today ? 'date' : undefined}>{day.date.getUTCDate()}</span>
       {!modifiers.outside && <div className={styles.events}>{children(value)}</div>}
     </div></td>;
