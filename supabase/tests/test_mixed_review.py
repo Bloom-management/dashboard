@@ -28,6 +28,19 @@ class MixedReview(unittest.TestCase):
   self.assertNotEqual(sql(query,'anonymous','anon',ok=False).returncode,0)
   self.assertIn('NOT_FOUND',sql(f"select bloom_admin_property_calendar_review('{uuid.uuid4()}',null);",admin,ok=False).stderr)
   _,other,_,_=source(actor=aid);self.assertEqual(json.loads(scalar(f"select bloom_admin_property_calendar_review('{other}',null);",admin))['items'],[])
+ def test_admin_owner_calendar_includes_normal_reservations_without_an_owner(self):
+  admin,aid=make_user('admin');actor,prop,sid,_=source(actor=aid)
+  sync(actor,sid,[event()])
+  self.assertEqual(scalar(f"select count(*) from property_owners where property_id='{prop}';"),'0')
+  self.assertEqual(json.loads(scalar(f"select bloom_admin_property_calendar_review('{prop}',null);",admin))['items'],[])
+  query=f"select bloom_admin_property_calendar_events('{prop}',null);"
+  page=json.loads(scalar(query,admin));self.assertEqual(len(page['items']),1)
+  self.assertEqual(page['items'][0]['kind'],'reservation')
+  self.assertNotIn('uid',page['items'][0]);self.assertNotIn('encrypted_url',json.dumps(page))
+  for role in ('owner','cleaner'):
+   subject,_=make_user(role);self.assertIn('FORBIDDEN',sql(query,subject,ok=False).stderr)
+  sql(f"update properties set deleted_at=now() where id='{prop}';")
+  self.assertIn('NOT_FOUND',sql(query,admin,ok=False).stderr)
  def test_blocked_vrbo_no_job_and_review_pagination(self):
   admin,aid=make_user('admin');actor,prop,sid,_=source(actor=aid,provider='vrbo')
   start=datetime.date(2031,1,1);events=[]

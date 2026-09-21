@@ -1,4 +1,5 @@
 'use client';
+import {calendarSaveMessage,type CalendarSaveResult} from '../../contracts/calendar-save';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import type { OwnerListing,OwnerListingCreateInput,OwnerListingCreateResult } from '../../contracts/owner-hub';
@@ -29,7 +30,7 @@ export function OwnerCreateListing({open,listings,onClose,onCreated,onChanged,em
   if(calendarLock.current)return;calendarLock.current=true;setBusy(true);
   try{for(const feed of calendarAttempts.current){
    if(feed.done)continue;
-   try{await request(`/owner/properties/${propertyId}/calendar-sources`,{body:{provider:feed.provider,url:feed.url},key:feed.key});feed.done=true;setCalendarResults(current=>({...current,[feed.id]:'Saved · Ready to sync in Settings'}));}
+   try{const saved=await request<CalendarSaveResult>(`/owner/properties/${propertyId}/calendar-sources`,{body:{provider:feed.provider,url:feed.url},key:feed.key});feed.done=true;setCalendarResults(current=>({...current,[feed.id]:calendarSaveMessage(saved.sync)}));}
    catch{setCalendarResults(current=>({...current,[feed.id]:'Not confirmed · Retry saving this calendar'}));}
   }onChanged();}finally{calendarLock.current=false;setBusy(false);}
  }

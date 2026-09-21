@@ -1,4 +1,5 @@
 'use client';
+import {calendarSaveMessage,type CalendarSaveResult} from '../../contracts/calendar-save';
 
 import '../../styles/bloom-owner.css';
 import { CalendarSetupSection, initialCalendars } from './calendar-setup-section';
@@ -91,6 +92,8 @@ function PropertyForm({ integration, created }: { integration: BloomIntegration;
   const [calendars,setCalendars]=useState(initialCalendars);
   const [savedProperty,setSavedProperty]=useState<string|null>(null);
   const savedId=useRef<string|null>(null);
+  const [calendarMessages,setCalendarMessages]=useState<string[]>([]);
+  const calendarFailed=useRef(false);
   const calendarReceipts=useRef(new Map<string,{key:string;done:boolean}>());
   const [ownerMode,setOwnerMode]=useState<'existing'|'pending'>('existing');
   const [ownerEmail,setOwnerEmail]=useState('');
@@ -113,9 +116,9 @@ function PropertyForm({ integration, created }: { integration: BloomIntegration;
         let receipt=calendarReceipts.current.get(identity);
         if(!receipt){receipt={key:crypto.randomUUID(),done:false};calendarReceipts.current.set(identity,receipt);}
         if(receipt.done)continue;
-        await request(`/admin/properties/${encodeURIComponent(savedId.current)}/calendar-sources`,{body:{provider:feed.provider,url:feed.url.trim()},key:receipt.key});receipt.done=true;
+        const saved=await request<CalendarSaveResult>(`/admin/properties/${encodeURIComponent(savedId.current)}/calendar-sources`,{body:{provider:feed.provider,url:feed.url.trim()},key:receipt.key});receipt.done=true;setCalendarMessages(items=>[...items,calendarSaveMessage(saved.sync)]);if(saved.sync.status==='failed'||saved.sync.status==='partial')calendarFailed.current=true;
       }
-      created(savedId.current);});
+      if(!calendarFailed.current)created(savedId.current);});
   }
   return <form className="bloom-form admin-create-property" onSubmit={save} aria-busy={mutation.busy}><h2>Add Property</h2><fieldset className="property-create-fields" disabled={mutation.busy||!!savedProperty}>
     <label>Name<input required maxLength={200} value={draft.name} onChange={e=>setDraft({...draft,name:e.target.value})}/></label>
@@ -131,8 +134,8 @@ function PropertyForm({ integration, created }: { integration: BloomIntegration;
     <label>Cleaning instructions<textarea required maxLength={5000} value={draft.instructions} onChange={e=>setDraft({...draft,instructions:e.target.value})}/></label>
     <p>Cleaning window: 11 AM–3 PM on checkout day, in the property's timezone.</p>
     <label>Initial solo rate (USD)<input type="number" required min="0.02" step="0.02" value={rate} onChange={e=>setRate(e.target.value)}/><small>Shared rate: {rateCents === null ? 'Enter a valid solo rate' : money(rateCents/2)} per cleaner. Admins can update cleaner pricing in unit Settings.</small></label>
-    </fieldset><CalendarSetupSection calendars={calendars} onChange={setCalendars} disabled={mutation.busy}/>{savedProperty&&<p role="status">Your property is saved. A calendar link could not be confirmed. Correct or retry the link; saving again will not create another property.</p>}
-    {validation && <p className="bloom-notice" role="alert">{validation}</p>}<button className="bloom-button" disabled={mutation.busy||cities.loading||!!cities.error||!cities.data?.some(c=>c.active)||!propertyOwnership(draft.isBloomOwned,ownerMode,draft.ownerIds,ownerEmail)}>{mutation.busy?'Saving…':savedProperty?'Retry calendar links':'Save property'}</button><Result mutation={mutation}/>
+    </fieldset><CalendarSetupSection calendars={calendars} onChange={setCalendars} disabled={mutation.busy}/>{savedProperty&&<p role="status">Your property is saved. Review calendar results below; saving again will not create another property.</p>}
+    {calendarMessages.map((message,index)=><p role="status" key={index}>{message}</p>)}{savedProperty&&<button type="button" className="bloom-button secondary" onClick={()=>created(savedProperty)}>Open saved property</button>}{validation && <p className="bloom-notice" role="alert">{validation}</p>}<button className="bloom-button" disabled={mutation.busy||cities.loading||!!cities.error||!cities.data?.some(c=>c.active)||!propertyOwnership(draft.isBloomOwned,ownerMode,draft.ownerIds,ownerEmail)}>{mutation.busy?'Saving…':savedProperty?'Retry calendar links':'Save property'}</button><Result mutation={mutation}/>
   </form>;
 }
 function SourceRow({source,reload,onOutcome}:{source:SourceHealth;reload:()=>void;onOutcome:(message:string)=>void}) {
@@ -149,8 +152,8 @@ function SourceRow({source,reload,onOutcome}:{source:SourceHealth;reload:()=>voi
  return <article className="bloom-admin-card"><h3>{source.provider==='airbnb'?'Airbnb':'Vrbo'} calendar</h3><p>{source.enabled?'Enabled':'Disabled'} · Last successful sync: {source.lastSuccessAt?new Date(source.lastSuccessAt).toISOString():'Never'}</p><p>Last attempt: {source.lastAttemptAt?new Date(source.lastAttemptAt).toISOString():'Never'}</p>{source.errorMessage&&<p className="bloom-notice" role="alert">{source.errorMessage}</p>}<button className="bloom-button" disabled={mutation.busy||!source.enabled} onClick={sync}>{mutation.busy?'Syncing…':'Sync now'}</button><button type="button" className="bloom-button secondary" disabled={mutation.busy} onClick={reload}>Refresh sync status</button><Result mutation={mutation}/></article>;
 }
 function SourceForm({propertyId,reload}:{propertyId:string;reload:()=>void}) {
- const [provider,setProvider]=useState('airbnb');const [url,setUrl]=useState('');const mutation=useMutation();
- return <form className="bloom-admin-card bloom-form" onSubmit={async e=>{e.preventDefault();if(await mutation.run({propertyId,provider,url},key=>request(`/admin/properties/${encodeURIComponent(propertyId)}/calendar-sources`,{body:{provider,url},key}))){setUrl('');reload();}}}><h3>Add calendar source</h3><p>The property is already saved. If saving or syncing this calendar fails, the property remains available and you can retry here.</p><p>{provider==='airbnb'?'Paste the Airbnb calendar export link for this property. Use the calendar export (iCal) link, not the listing page or an import link.':'Paste the Vrbo calendar export (iCal) link for this property.'} Links are private.</p><p>Saving a link does not verify an import. After saving, choose Sync now and review the import outcome and last successful sync.</p><label>Platform<select value={provider} onChange={e=>setProvider(e.target.value)}><option value="airbnb">Airbnb</option><option value="vrbo">Vrbo</option></select></label><label>Private calendar export link<input type="password" autoComplete="off" required maxLength={4096} value={url} onChange={e=>setUrl(e.target.value)}/></label><button className="bloom-button" disabled={mutation.busy}>{mutation.busy?'Saving link…':'Save calendar link'}</button><Result mutation={mutation}/></form>;
+ const [provider,setProvider]=useState('airbnb');const [url,setUrl]=useState('');const mutation=useMutation();const [syncMessage,setSyncMessage]=useState('');
+ return <form className="bloom-admin-card bloom-form" onSubmit={async e=>{e.preventDefault();if(await mutation.run({propertyId,provider,url},async key=>{const saved=await request<CalendarSaveResult>(`/admin/properties/${encodeURIComponent(propertyId)}/calendar-sources`,{body:{provider,url},key});setSyncMessage(calendarSaveMessage(saved.sync));})){setUrl('');reload();}}}><h3>Add calendar source</h3><p>The property is already saved. If saving or syncing this calendar fails, the property remains available and you can retry here.</p><p>{provider==='airbnb'?'Paste the Airbnb calendar export link for this property. Use the calendar export (iCal) link, not the listing page or an import link.':'Paste the Vrbo calendar export (iCal) link for this property.'} Links are private.</p><p>Saving a link automatically starts an import. Review its result below. If it fails, the link remains saved and you can choose Sync now to retry.</p><label>Platform<select value={provider} onChange={e=>setProvider(e.target.value)}><option value="airbnb">Airbnb</option><option value="vrbo">Vrbo</option></select></label><label>Private calendar export link<input type="password" autoComplete="off" required maxLength={4096} value={url} onChange={e=>setUrl(e.target.value)}/></label><button className="bloom-button" disabled={mutation.busy}>{mutation.busy?'Saving and syncing…':'Save calendar link'}</button><p role="status">{syncMessage}</p><Result mutation={mutation}/></form>;
 }
 function PropertySettings({id,integration,back,onRenamed}:{id:string;integration:BloomIntegration;back:()=>void;onRenamed:()=>void}) {
  const load=useCallback((signal:AbortSignal)=>integration.admin!.property(id,signal),[integration,id]);const property=useResource(load);

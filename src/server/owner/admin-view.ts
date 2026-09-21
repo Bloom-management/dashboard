@@ -36,21 +36,21 @@ async function allProperties(ids:string[]|null) {
  do{const page=await propertyPage(cursor);rows.push(...page.slice(0,100));cursor=page.length>100?page[99].id:null;if(rows.length>100)throw new BackendError('VALIDATION_ERROR');}while(cursor);
  return rows;
 }
-async function review(propertyId:string) {
+async function calendarEvents(propertyId:string) {
  const rows:CalendarReviewEntry[]=[];let cursor:string|null=null;
- do{const page:CalendarReviewPage=await userRpc('bloom_admin_property_calendar_review',{p_property:propertyId,p_cursor:cursor});rows.push(...page.items);if(rows.length>50000)throw new BackendError('VALIDATION_ERROR');if(page.nextCursor&&cursor&&page.nextCursor<=cursor)throw new BackendError('CONFIGURATION_ERROR');cursor=page.nextCursor;}while(cursor);
+ do{const page:CalendarReviewPage=await userRpc('bloom_admin_property_calendar_events',{p_property:propertyId,p_cursor:cursor});rows.push(...page.items);if(rows.length>50000)throw new BackendError('VALIDATION_ERROR');if(page.nextCursor&&cursor&&page.nextCursor<=cursor)throw new BackendError('CONFIGURATION_ERROR');cursor=page.nextCursor;}while(cursor);
  return rows;
 }
 export async function adminOwnerCalendar(from:string,to:string):Promise<OwnerCalendarBlock[]> {
  const properties=await allProperties(null);const blocks:OwnerCalendarBlock[]=[];
- for(const p of properties)for(const e of await review(p.id))if(e.startDate<=to&&e.endDate>=from)blocks.push({id:e.id,propertyId:p.id,propertyName:p.name,timezone:p.timezone,startDate:e.startDate,endDate:e.endDate,providers:[e.provider],kind:e.kind,removed:e.status==='removed',changes:e.reviewRequired?[{id:e.id,type:'conflict',message:'Calendar details need review.',acknowledged:false}]:[]});
+ for(const p of properties)for(const e of await calendarEvents(p.id))if(e.startDate<=to&&e.endDate>=from)blocks.push({id:e.id,propertyId:p.id,propertyName:p.name,timezone:p.timezone,startDate:e.startDate,endDate:e.endDate,providers:[e.provider],kind:e.kind,removed:e.status==='removed',changes:e.reviewRequired?[{id:e.id,type:'conflict',message:'Calendar details need review.',acknowledged:false}]:[]});
  return blocks;
 }
 export async function adminOwnerPerformance(from:string,toExclusive:string,ids:string[]|null) {
  const properties=await allProperties(ids);const events:OwnerAnalyticsInput['events']=[];
- for(const p of properties)for(const e of await review(p.id))if(e.startDate<toExclusive&&(e.endDate>from||e.startDate>=from))events.push({id:e.id,propertyId:p.id,startDate:e.startDate,endDate:e.endDate,kind:e.kind,removed:e.status==='removed',confirmed:e.kind==='reservation'&&!e.reviewRequired,origin:'unknown'});
+ for(const p of properties)for(const e of await calendarEvents(p.id))if(e.startDate<toExclusive&&(e.endDate>from||e.startDate>=from))events.push({id:e.id,propertyId:p.id,startDate:e.startDate,endDate:e.endDate,kind:e.kind,removed:e.status==='removed',confirmed:e.kind==='reservation'&&!e.reviewRequired,origin:'unknown'});
  if(events.length>50000)throw new BackendError('VALIDATION_ERROR');
- // The existing admin review API has no positive booking-origin evidence.
+ // The existing admin calendar API has no positive booking-origin evidence.
  // Do not attribute booking origin from calendar provider alone.
  return calculateOwnerPerformance({properties:properties.map(p=>({id:p.id,name:p.name,timezone:p.timezone,coverage:[]})),events},from,toExclusive);
 }
