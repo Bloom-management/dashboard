@@ -1,0 +1,89 @@
+.admin-payouts { color:#4a4538; font-family:"Plus Jakarta Sans",sans-serif; }
+.admin-payouts *, .payout-dialog { box-sizing:border-box; }
+.admin-payouts button,.admin-payouts input,.admin-payouts select,.admin-payouts textarea { font:inherit; }
+.admin-payouts p { line-height:1.65; }
+.admin-payouts .bloom-button { border-radius:8px; padding:10px 16px; min-height:44px; white-space:normal; }
+.admin-payouts .bloom-button.secondary { background:#fff; border:1px solid #4a4538; color:#4a4538; }
+.payout-summary { display:grid; gap:10px; padding:26px; background:#fff; border-radius:24px; margin:24px 0; }
+.payout-summary>strong { font-size:36px; line-height:1.25; letter-spacing:-1px; }
+.payout-summary>small,.payout-detail-totals span,.payout-amounts dt { color:#847e6e; }
+.payout-toolbar { display:flex; gap:20px; align-items:end; flex-wrap:wrap; margin:24px 0; }
+.payout-toolbar>label:first-child { flex:1; min-width:200px; display:grid; gap:8px; }
+.admin-payouts input:not([type=checkbox]),.admin-payouts select,.admin-payouts textarea { min-height:44px; width:100%; padding:10px 12px; border:1px solid #d5d0c6; border-radius:8px; background:#fff; color:#4a4538; }
+.admin-payouts input[type=checkbox] { width:18px; height:18px; flex:0 0 18px; accent-color:#b85563; margin:0; }
+.payout-check { display:flex; align-items:center; gap:10px; line-height:1.5; }
+.payout-toolbar>.payout-check { min-height:44px; }
+.payout-table-wrap { background:#fff; border-radius:22px; overflow:hidden; border:1px solid #e5e0d6; }
+.payout-table { border-collapse:collapse; width:100%; text-align:left; }
+.payout-table th,.payout-table td { padding:20px; overflow-wrap:anywhere; }
+.payout-table thead { background:#eeebe3; }
+.payout-table tbody tr { cursor:pointer; border-top:1px solid #eeeae3; }
+.payout-table tbody tr:hover { background:#faf8f5; }
+.payout-person { border:0; background:transparent; padding:4px 0; color:#4a4538; text-align:left; font-weight:600!important; cursor:pointer; }
+.payout-person:focus-visible { outline:2px solid #c77f8e; outline-offset:4px; }
+.payout-review { display:block; color:#a34c59; margin-top:5px; }
+.payout-empty { padding:20px; }
+.bloom-dialog.payout-dialog.cleaner-day-dialog { width:min(840px,calc(100vw - 32px)); max-width:calc(100vw - 32px); background:#fff; padding:68px 28px 28px; }
+.payout-eyebrow { color:#847e6e; font-size:12px; letter-spacing:1px; text-transform:uppercase; }
+.payout-detail-heading h2 { margin:8px 0 24px; font-size:28px; }
+.payout-detail-totals { display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-bottom:24px; }
+.payout-detail-totals>div { display:grid; gap:8px; }
+.payout-detail-totals strong { font-size:22px; }
+.payout-actions { display:flex; gap:12px; flex-wrap:wrap; margin:16px 0; }
+.payout-section { margin-top:30px; }
+.payout-section h3 { margin-bottom:8px; font-size:22px; }
+.payout-cleaning { background:#f8f6f1; border:1px solid #eeeae3; padding:20px; border-radius:20px; margin-top:16px; }
+.payout-card-heading { display:flex; justify-content:space-between; align-items:start; gap:14px; }
+.payout-card-heading h4 { margin:0; font-size:17px; }
+.payout-card-heading p { margin:8px 0; font-size:13px; }
+.payout-status { padding:5px 9px; font-size:11px; font-weight:600; border-radius:6px; background:#eae5dc; flex-shrink:0; }
+.payout-status.paid { background:#e3eddf; color:#3f653b; }
+.payout-status.review { background:#f2dfe3; color:#97424f; }
+.payout-amounts { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; margin:20px 0; }
+.payout-amounts dt { font-size:12px; }
+.payout-amounts dd { margin:6px 0 0; font-weight:600; }
+.payout-comments { white-space:pre-wrap; overflow-wrap:anywhere; }
+.payout-comments h5 { margin:16px 0 4px; font-size:13px; }
+.payout-comments p { margin-top:0; }
+.payout-cleaning>button { margin-top:16px; }
+.payout-audit { border-top:1px solid #ded9d0; margin-top:14px; padding-top:14px; overflow-wrap:anywhere; }
+.payout-audit p { margin:6px 0; }
+.payout-form { margin:20px 0; padding:20px; background:#fff; border:1px solid #ded9d0; border-radius:16px; }
+.payout-form fieldset { padding:0; border:0; margin:0; min-width:0; }
+.payout-form legend { font-size:18px; font-weight:600; padding:0; margin-bottom:10px; }
+.payout-form label:not(.payout-check) { display:grid; gap:8px; margin:12px 0; font-size:13px; }
+.payout-form-grid { display:grid; grid-template-columns:1fr 1fr; gap:0 20px; align-items:start; }
+.payout-form-grid>div { margin:12px 0; font-size:13px; }
+.payout-form-grid details>summary { margin-top:8px; }
+.payout-form-grid details .bloom-calendar { max-width:100%; }
+.payout-allocation { border-bottom:1px solid #e5e0d6; padding:14px 0; }
+.payout-allocation small { display:block; margin-top:4px; font-size:12px; }
+.payout-allocation strong { font-size:14px; }
+.payout-allocation>label:not(.payout-check) { max-width:200px; margin-left:28px; }
+.payout-allocation-total { font-weight:600; }
+.payout-history-allocations { padding:0; list-style:none; }
+.payout-history-allocations li { display:flex; gap:16px; justify-content:space-between; margin:10px 0; font-size:13px; }
+.payout-history-allocations strong { white-space:nowrap; }
+@media(max-width:600px) {
+ .bloom-dialog.payout-dialog.cleaner-day-dialog { padding:64px 18px 20px; }
+ .payout-table th,.payout-table td { padding:14px 10px; font-size:13px; }
+ .payout-table th:first-child { width:42%; }
+ .payout-toolbar { gap:12px; }
+ .payout-toolbar>label:first-child { flex-basis:100%; }
+ .payout-toolbar>button { margin-left:auto; }
+ .payout-detail-totals { gap:14px; }
+ .payout-detail-totals strong { font-size:18px; }
+ .payout-detail-totals span { font-size:12px; }
+ .payout-cleaning,.payout-form { padding:14px; }
+ .payout-card-heading { flex-wrap:wrap; }
+ .payout-amounts { grid-template-columns:1fr 1fr; }
+ .payout-form-grid { grid-template-columns:minmax(0,1fr); }
+ .payout-history-allocations li { flex-wrap:wrap; gap:4px; }
+}
+.admin-payouts .payout-form-grid details > div { width:100%; min-width:0; max-width:100%; padding:4px 0; }
+.admin-payouts .payout-form-grid details table button { width:100%; min-width:0; }
+@media(max-width:360px) {
+ .admin-payouts .payout-form-grid details > div { font-size:11px; }
+ .payout-form-grid details nav button { width:26px; padding:5px; }
+ .payout-form-grid details select { min-height:36px; }
+}

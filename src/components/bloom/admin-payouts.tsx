@@ -1,0 +1,84 @@
+'use client';
+
+import {useCallback,useRef,useState,type FormEvent} from 'react';
+import {paymentMethods,type PaymentMethod,type PayoutSummary,type PayoutDetail,type PayoutCleaning,type PayoutPayment} from '../../contracts/payouts';
+import {request} from './api';
+import {Modal,Loading,ErrorNotice,useResource} from './primitives';
+import {DatePicker} from './date-picker';
+import {money,formatDate} from './dates';
+import './admin-payouts.css';
+
+export function payoutCents(value:string):number|null {
+  if(!/^-?\d+(?:\.\d{1,2})?$/.test(value.trim()))return null;
+  const negative=value.trim().startsWith('-');const [whole,fraction='']=value.trim().replace('-','').split('.');
+  const result=(Number(whole)*100+Number(fraction.padEnd(2,'0')))*(negative?-1:1);
+  return Number.isSafeInteger(result)?result:null;
+}
+function usePayoutMutation(){
+  const[busy,setBusy]=useState(false),[error,setError]=useState<unknown>();
+  const lock=useRef(false),receipt=useRef<{input:string;key:string}|null>(null);
+  async function run(path:string,body:unknown,done:()=>void){
+    if(lock.current)return;lock.current=true;setBusy(true);setError(undefined);
+    const input=JSON.stringify([path,body]);if(receipt.current?.input!==input)receipt.current={input,key:crypto.randomUUID()};
+    try{await request(path,{body,key:receipt.current.key});receipt.current=null;done();}catch(error){setError(error);}finally{lock.current=false;setBusy(false);}
+  }
+  return{busy,error,run};
+}
+const base=(id:string)=>`/admin/payouts/${encodeURIComponent(id)}`;
+const timestamp=(value:string)=>new Date(value).toLocaleString('en-US',{dateStyle:'medium',timeStyle:'short'});
+function MethodSelect({value,onChange,optional=false,label='Method'}:{value:string;onChange:(value:string)=>void;optional?:boolean;label?:string}){
+  return <select aria-label={label} value={value} required={!optional} onChange={event=>onChange(event.target.value)}><option value="">{optional?'Not set':'Choose method'}</option>{paymentMethods.map(method=><option key={method}>{method}</option>)}</select>;
+}
+export function AdminPayouts(){
+  const load=useCallback((signal:AbortSignal)=>request<PayoutSummary>('/admin/payouts',{signal}),[]),data=useResource(load);
+  const[search,setSearch]=useState(''),[outstanding,setOutstanding]=useState(false),[selected,setSelected]=useState<string|null>(null);
+  const people=data.data?.people.filter(person=>(!outstanding||person.totalDueCents>0)&&person.name.toLowerCase().includes(search.trim().toLowerCase()))??[];
+  return <section className="admin-payouts" aria-label="Cleaner payouts"><p>Track completed earnings and payments made outside Bloom. Recording a payment does not transfer money.</p>
+    {data.loading?<Loading/>:data.error?<ErrorNotice error={data.error} retry={data.reload}/>:data.data&&<>
+      <div className="payout-summary"><span>Total outstanding</span><strong>{money(data.data.totalOutstandingCents)}</strong><small>All unpaid completed work · USD · All time</small></div>
+      {!!data.data.reviewCount&&<p className="bloom-notice">{data.data.reviewCount} completed cleaning {data.data.reviewCount===1?'entry needs':'entries need'} payout review. Unknown earnings are excluded from the total.{data.data.unassignedReviewCount>0&&` ${data.data.unassignedReviewCount} could not be linked to a cleaner.`}</p>}
+      <div className="payout-toolbar"><label>Search cleaners<input type="search" placeholder="Search by name" value={search} onChange={event=>setSearch(event.target.value)}/></label><label className="payout-check"><input type="checkbox" checked={outstanding} onChange={event=>setOutstanding(event.target.checked)}/>Outstanding only</label><button className="bloom-button secondary" onClick={data.reload}>Refresh</button></div>
+      <div className="payout-table-wrap"><table className="payout-table"><thead><tr><th scope="col">Name</th><th scope="col">Amount due</th><th scope="col">Method</th></tr></thead><tbody>{people.map(person=><tr key={person.id} onClick={()=>setSelected(person.id)}><th scope="row"><button className="payout-person" onClick={()=>setSelected(person.id)}>{person.name}</button>{person.reviewCount>0&&<small className="payout-review">{person.reviewCount} need review</small>}</th><td>{money(person.totalDueCents)}</td><td>{person.preferredMethod??'Not set'}</td></tr>)}</tbody></table>{!people.length&&<p className="payout-empty">No cleaners match these filters.</p>}</div>
+    </>}{selected&&<Modal className="cleaner-day-dialog payout-dialog" title="Cleaner payout details" onClose={()=>setSelected(null)}><PayoutDetails id={selected} onChanged={data.reload}/></Modal>}
+  </section>;
+}
+function PayoutDetails({id,onChanged}:{id:string;onChanged:()=>void}){
+  const load=useCallback((signal:AbortSignal)=>request<PayoutDetail>(base(id),{signal}),[id]),resource=useResource(load);
+  const[mode,setMode]=useState<'payment'|'preference'|null>(null),[message,setMessage]=useState('');
+  const reload=(notice:string)=>{setMode(null);setMessage(notice);resource.reload();onChanged();};
+  return <div className="admin-payouts">{resource.loading?<Loading/>:resource.error?<ErrorNotice error={resource.error} retry={resource.reload}/>:resource.data&&<>
+    <header className="payout-detail-heading"><p className="payout-eyebrow">Completed cleaning earnings</p><h2>{resource.data.name}</h2><div className="payout-detail-totals"><div><span>Total due</span><strong>{money(resource.data.totalDueCents)}</strong></div><div><span>Preferred method</span><strong>{resource.data.preferredMethod??'Not set'}</strong></div></div></header>
+    <div className="payout-actions"><button className="bloom-button" disabled={resource.data.totalDueCents<=0} onClick={()=>setMode(mode==='payment'?null:'payment')}>Record payment</button><button className="bloom-button secondary" onClick={()=>setMode(mode==='preference'?null:'preference')}>Edit preferred method</button></div>
+    {message&&<p role="status">{message}</p>}{mode==='payment'&&<PaymentForm detail={resource.data} done={()=>reload('External payment recorded. No money was transferred by Bloom.')} cancel={()=>setMode(null)}/>}{mode==='preference'&&<PreferenceForm detail={resource.data} done={()=>reload('Preferred method saved. Past payments keep their recorded method.')} cancel={()=>setMode(null)}/>}
+    <section className="payout-section"><h3>Completed cleanings</h3><p>All time. Each cleaning keeps its finalized earnings; unfinished work is excluded.</p>{resource.data.cleanings.length?resource.data.cleanings.map(cleaning=><CleaningCard key={cleaning.id} cleanerId={id} cleaning={cleaning} done={()=>reload('Adjustment recorded. Original earnings are preserved.')}/>):<p>No completed cleanings yet.</p>}</section>
+    <section className="payout-section"><h3>Payment history</h3>{resource.data.payments.length?resource.data.payments.map(payment=><PaymentCard key={payment.id} cleanerId={id} payment={payment} done={()=>reload('Payment voided. Its cleaning balances are available again. Record a replacement payment if needed.')}/>):<p>No external payments recorded.</p>}</section>
+  </>}</div>;
+}
+function PreferenceForm({detail,done,cancel}:{detail:PayoutDetail;done:()=>void;cancel:()=>void}){
+  const[value,setValue]=useState<string>(detail.preferredMethod??''),mutation=usePayoutMutation();
+  return <form className="payout-form" onSubmit={event=>{event.preventDefault();void mutation.run(`${base(detail.id)}/preference`,{method:value||null},done);}}><fieldset disabled={mutation.busy}><legend>Preferred payment method</legend><label>Method<MethodSelect optional value={value} onChange={setValue}/></label><p>This is a default for new records. It does not change previous payments.</p><FormActions busy={mutation.busy} label="Save preferred method" cancel={cancel}/></fieldset>{!!mutation.error&&<ErrorNotice error={mutation.error}/>}</form>;
+}
+function FormActions({busy,label,cancel,disabled=false}:{busy:boolean;label:string;cancel:()=>void;disabled?:boolean}){return <div className="payout-actions"><button className="bloom-button" disabled={busy||disabled}>{busy?'Saving…':label}</button><button type="button" className="bloom-button secondary" disabled={busy} onClick={cancel}>Cancel</button></div>;}
+function PaymentForm({detail,done,cancel}:{detail:PayoutDetail;done:()=>void;cancel:()=>void}){
+  const[amount,setAmount]=useState(''),[method,setMethod]=useState<string>(detail.preferredMethod??''),[date,setDate]=useState(()=>{const now=new Date();return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;}),[note,setNote]=useState(''),[allocations,setAllocations]=useState<Record<string,string>>({}),[confirmed,setConfirmed]=useState(false);
+  const mutation=usePayoutMutation(),balances=detail.cleanings.filter(cleaning=>(cleaning.remainingCents??0)>0&&cleaning.status!=='review');
+  const entries=Object.entries(allocations),total=entries.reduce((sum,[,value])=>sum+(payoutCents(value)??0),0),cents=payoutCents(amount);
+  const valid=entries.length>0&&entries.every(([id,value])=>{const valueCents=payoutCents(value);return valueCents!==null&&valueCents>0&&valueCents<=(balances.find(item=>item.id===id)?.remainingCents??0);})&&cents!==null&&cents>0&&total===cents&&!!method&&!!date&&confirmed;
+  function submit(event:FormEvent){event.preventDefault();if(!valid)return;void mutation.run(`${base(detail.id)}/payments`,{amountCents:cents,method:method as PaymentMethod,paymentDate:date,note:note.trim()||undefined,allocations:entries.map(([cleaningId,value])=>({cleaningId,amountCents:payoutCents(value)}))},done);}
+  return <form className="payout-form" onSubmit={submit}><fieldset disabled={mutation.busy}><legend>Record an external payment</legend><p>Select the completed cleaning balances paid, then enter exactly how much of the payment goes to each cleaning.</p><div className="payout-allocation-list">{balances.map(cleaning=><div className="payout-allocation" key={cleaning.id}><label className="payout-check"><input type="checkbox" checked={cleaning.id in allocations} onChange={event=>setAllocations(previous=>{const next={...previous};if(event.target.checked)next[cleaning.id]=((cleaning.remainingCents??0)/100).toFixed(2);else delete next[cleaning.id];return next;})}/><span><strong>{cleaning.propertyName}</strong><small>{formatDate(cleaning.cleaningDate)} · {money(cleaning.remainingCents??0)} remaining</small></span></label>{cleaning.id in allocations&&<label>Allocate (USD)<input aria-label={`Allocate for ${cleaning.propertyName} ${cleaning.cleaningDate}`} inputMode="decimal" required value={allocations[cleaning.id]} onChange={event=>setAllocations({...allocations,[cleaning.id]:event.target.value})}/></label>}</div>)}</div>
+    <div className="payout-form-grid"><label>Payment amount (USD)<input inputMode="decimal" required value={amount} onChange={event=>setAmount(event.target.value)}/></label><label>Actual payment method<MethodSelect label="Actual payment method" value={method} onChange={setMethod}/></label><DatePicker label="Payment date" value={date} onChange={setDate}/><label>Transaction reference or note (optional)<textarea maxLength={1000} value={note} onChange={event=>setNote(event.target.value)}/></label></div><p className="payout-allocation-total">Allocated: {money(total)}{cents!==null&&total!==cents?` · Allocate ${money(Math.abs(cents-total))} ${total<cents?'more':'less'} to match the payment.`:''}</p><label className="payout-check"><input type="checkbox" checked={confirmed} onChange={event=>setConfirmed(event.target.checked)}/>I confirm this payment was made outside Bloom. Saving only records it; no money will be transferred.</label><FormActions busy={mutation.busy} label="Record external payment" disabled={!valid} cancel={cancel}/></fieldset>{!!mutation.error&&<ErrorNotice error={mutation.error}/>}</form>;
+}
+function CleaningCard({cleanerId,cleaning,done}:{cleanerId:string;cleaning:PayoutCleaning;done:()=>void}){
+  const[adjust,setAdjust]=useState(false),[amount,setAmount]=useState(''),[reason,setReason]=useState(''),mutation=usePayoutMutation();const cents=payoutCents(amount);
+  return <article className="payout-cleaning" aria-label={`${cleaning.propertyName} ${cleaning.cleaningDate}`}><div className="payout-card-heading"><div><h4>{cleaning.propertyName}</h4><p>{formatDate(cleaning.cleaningDate)} · {cleaning.participation==='solo'?'Solo':'Shared'} participation</p></div><span className={`payout-status ${cleaning.status}`}>{({unpaid:'Unpaid',partial:'Partially paid',paid:'Paid',review:'Needs review'})[cleaning.status]}</span></div>
+    {cleaning.status==='review'?<p className="bloom-notice">{cleaning.reviewReason??'No reliable finalized payout snapshot. An admin must review the source record before this work can be paid.'}</p>:<dl className="payout-amounts"><div><dt>Finalized earnings</dt><dd>{money(cleaning.originalEarningsCents??0)}</dd></div><div><dt>Adjustments</dt><dd>{money(cleaning.adjustmentCents)}</dd></div><div><dt>Paid</dt><dd>{money(cleaning.paidCents)}</dd></div><div><dt>Remaining</dt><dd>{money(cleaning.remainingCents??0)}</dd></div></dl>}
+    {cleaning.comments&&<div className="payout-comments"><h5>Completion comments</h5><p>{cleaning.comments}</p></div>}{cleaning.adjustments.length>0&&<details><summary>Adjustment history ({cleaning.adjustments.length})</summary>{cleaning.adjustments.map(adjustment=><div className="payout-audit" key={adjustment.id}><strong>{money(adjustment.amountCents)}</strong><p>{adjustment.reason}</p><small>{adjustment.enteredBy} · {timestamp(adjustment.createdAt)}</small></div>)}</details>}
+    {cleaning.status!=='review'&&!adjust&&<button className="bloom-button secondary" onClick={()=>setAdjust(true)}>Record adjustment</button>}{adjust&&<form className="payout-form" onSubmit={event=>{event.preventDefault();if(cents===null||cents===0||!reason.trim())return;void mutation.run(`${base(cleanerId)}/adjustments`,{cleaningId:cleaning.id,amountCents:cents,reason:reason.trim()},()=>{setAdjust(false);done();});}}><fieldset disabled={mutation.busy}><legend>Adjust this cleaning</legend><p>Enter a positive amount to add earnings or a negative amount to reduce them. The original earnings stay unchanged.</p><label>Adjustment (USD)<input required inputMode="decimal" value={amount} onChange={event=>setAmount(event.target.value)}/></label><label>Reason (required)<textarea required maxLength={1000} value={reason} onChange={event=>setReason(event.target.value)}/></label><FormActions busy={mutation.busy} disabled={cents===null||cents===0||!reason.trim()} label="Record adjustment" cancel={()=>setAdjust(false)}/></fieldset>{!!mutation.error&&<ErrorNotice error={mutation.error}/>}</form>}
+  </article>;
+}
+function PaymentCard({cleanerId,payment,done}:{cleanerId:string;payment:PayoutPayment;done:()=>void}){
+  const[voiding,setVoiding]=useState(false),[reason,setReason]=useState(''),mutation=usePayoutMutation();
+  return <article className="payout-cleaning" aria-label={`Payment ${payment.paymentDate} ${payment.id}`}><div className="payout-card-heading"><h4>{money(payment.amountCents)} · {payment.method}</h4><span className={`payout-status ${payment.voidedAt?'review':'paid'}`}>{payment.voidedAt?'Voided':'Recorded'}</span></div><p>{formatDate(payment.paymentDate)}</p>{payment.note&&<p className="payout-comments">{payment.note}</p>}<ul className="payout-history-allocations">{payment.allocations.map(item=><li key={item.cleaningId}><span>{item.propertyName} · {formatDate(item.cleaningDate)}</span><strong>{money(item.amountCents)}</strong></li>)}</ul><small>Recorded by {payment.enteredBy} · {timestamp(payment.createdAt)}</small>
+    {payment.voidedAt?<div className="payout-audit"><p>Void reason: {payment.voidReason}</p><small>Voided by {payment.voidedBy} · {timestamp(payment.voidedAt)}</small></div>:!voiding?<button className="bloom-button secondary" onClick={()=>setVoiding(true)}>Correct / void record</button>:<form className="payout-form" onSubmit={event=>{event.preventDefault();if(reason.trim())void mutation.run(`${base(cleanerId)}/payments/${encodeURIComponent(payment.id)}/void`,{reason:reason.trim()},done);}}><fieldset disabled={mutation.busy}><legend>Void this payment record</legend><p>This keeps the original record and restores its allocated balances. It does not reverse a real transfer. After voiding, record the corrected payment if needed.</p><label>Reason (required)<textarea required maxLength={1000} value={reason} onChange={event=>setReason(event.target.value)}/></label><FormActions busy={mutation.busy} disabled={!reason.trim()} label="Void payment record" cancel={()=>setVoiding(false)}/></fieldset>{!!mutation.error&&<ErrorNotice error={mutation.error}/>}</form>}
+  </article>;
+}
