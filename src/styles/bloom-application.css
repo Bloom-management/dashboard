@@ -522,3 +522,5 @@ dialog.cleaner-city-dialog { width:min(480px,calc(100vw - 24px)); border-radius:
 
 .bloom-button.resend-invite-button { background:#fff; color:#4a4538; border:1px solid #4a4538; border-radius:8px; padding:10px 16px; min-height:44px; white-space:nowrap; }
 .bloom-button.resend-invite-button:hover:not(:disabled) { background:#fff; border-color:#2d2a1f; color:#2d2a1f; }
+
+.bloom-button.accept-invite-button { border-radius:8px; padding:10px 16px; min-height:44px; }
