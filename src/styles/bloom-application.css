@@ -539,7 +539,9 @@ dialog.cleaner-city-dialog { width:min(480px,calc(100vw - 24px)); border-radius:
 .property-rail-units button[aria-pressed="true"] { border-color:#b85563; background:#faf2f4; }
 @media(max-width:760px) {
  .bloom-cleaner .rail { overflow-x:hidden; }
- .bloom-cleaner .rail-list { width:100%; display:grid; grid-template-columns:repeat(6,minmax(0,52px)); gap:8px; }
- .bloom-cleaner .rail-list .rail-item { width:100%; min-width:0; }
+ .bloom-cleaner.cleaner-hub .rail-list { width:auto; display:flex; flex-direction:row; gap:8px; }
+ .bloom-cleaner.cleaner-hub .rail-list .rail-item { flex:0 0 52px; width:52px; height:52px; min-width:0; }
 }
 @media(max-width:420px) { .property-rail-units { grid-template-columns:minmax(0,1fr); } }
+
+@media(max-width:600px) { .bloom-cleaner.cleaner-hub .rail-list { gap:6px; } .bloom-cleaner.cleaner-hub .rail-list .rail-item { flex-basis:44px; width:44px; height:44px; } }

@@ -12,7 +12,8 @@ const browser=await chromium.launch({headless:true,executablePath:process.env.BL
 try{
  for(const width of [320,390,1440]){
   const page=await browser.newPage({viewport:{width,height:850}});await page.goto('http://127.0.0.1:'+server.address().port);
-  assert.equal(await page.locator('.rail-item').count(),6);assert.equal(await page.locator('.rail-more').textContent(),'+5');
+  await page.locator('.rail-more').waitFor();assert.equal(await page.locator('.rail-item').count(),6);assert.equal(await page.locator('.rail-more').textContent(),'+5');
+  if(width<=760){for(const button of await page.locator('.rail-item').all()){const box=await button.boundingBox();assert.equal(box.width,box.height);assert(box.width<=55,'Rail buttons must remain compact');}}
   const last=await page.locator('.rail-item').nth(4).boundingBox(),more=await page.locator('.rail-more').boundingBox();assert(width<=760?more.x>last.x:more.y>last.y);
   await page.locator('.rail-more').click();const dialog=page.getByRole('dialog');await dialog.waitFor();assert.equal(await dialog.locator('li').count(),10);await dialog.getByRole('button',{name:'Unit 8',exact:true}).click();await dialog.waitFor({state:'hidden'});assert.equal(await page.locator('output').textContent(),'8');assert(await page.locator('.rail-more').evaluate(el=>el.classList.contains('active')));
   console.log('PASS '+width+': four listings plus overflow; all units selectable.');await page.close();
