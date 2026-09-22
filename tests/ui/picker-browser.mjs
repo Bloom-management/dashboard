@@ -16,6 +16,8 @@ try{
   await page.getByRole('button',{name:'Filter jobs by property: Test property'}).click();await page.getByRole('menuitemradio',{name:'All properties',exact:true}).click();await filter.waitFor();
   await page.locator('.month-btn').click();await page.locator('.month-menu').waitFor();await page.getByRole('heading',{name:'Jobs'}).click();await page.locator('.month-menu').waitFor({state:'hidden'});
   await page.locator('.month-btn').click();await page.locator('.month-menu').waitFor();await page.keyboard.press('Escape');await page.locator('.month-menu').waitFor({state:'hidden'});assert(await page.locator('.month-btn').evaluate(el=>el===document.activeElement));
+  await page.locator('.month-btn').click();await page.locator('.month-menu').waitFor();await page.locator('.month-select').dispatchEvent('pointerdown');await page.locator('.month-menu').waitFor({state:'hidden'});
+  await page.locator('.month-btn').click();await page.locator('.month-menu').waitFor();await page.getByRole('heading',{name:'Jobs'}).dispatchEvent('click');await page.locator('.month-menu').waitFor({state:'hidden'});
   console.log('PASS '+width+': property dropdown selection/reset and shared calendar outside/Escape dismissal.');await page.close();
  }
 }finally{await browser.close();await new Promise(resolve=>server.close(resolve));}
