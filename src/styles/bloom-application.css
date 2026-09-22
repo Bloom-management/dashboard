@@ -546,3 +546,10 @@ dialog.cleaner-city-dialog { width:min(480px,calc(100vw - 24px)); border-radius:
 @media(max-width:420px) { .property-rail-units { grid-template-columns:minmax(0,1fr); } }
 
 @media(max-width:600px) { .bloom-cleaner.cleaner-hub .rail-list { gap:6px; } .bloom-cleaner.cleaner-hub .rail-list .rail-item { flex-basis:44px; width:44px; height:44px; } }
+
+/* Native modal cards belong to the viewport, not the scrolled calendar page. */
+:is(.bloom-cleaner,.bloom-owner) dialog.bloom-dialog {
+ position:fixed; inset:0; margin:auto;
+ max-height:calc(100dvh - max(12px,env(safe-area-inset-top)) - max(12px,env(safe-area-inset-bottom)));
+ overflow-y:auto; overscroll-behavior:contain; box-sizing:border-box;
+}

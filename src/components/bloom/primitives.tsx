@@ -1,6 +1,7 @@
 'use client';
 
 import { DialogClose } from './dialog-close';
+import { lockDialogScroll } from './dialog-scroll';
 import { useRouter } from 'next/navigation';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react';
@@ -101,8 +102,10 @@ export function Modal({ title, onClose, children, className = 'detail-card' }: {
   const id = useId();
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
-    dialog.current?.showModal();
-    return () => { dialog.current?.close(); previous?.focus(); };
+    const unlock = lockDialogScroll();
+    const element = dialog.current;
+    element?.showModal();
+    return () => { element?.close(); unlock(); previous?.focus({preventScroll:true}); };
   }, []);
   return <dialog ref={dialog} className={`bloom-dialog ${className}`} aria-labelledby={id} onCancel={event => { event.preventDefault(); event.stopPropagation(); close.current(); }} onClick={event => { if (event.target === event.currentTarget) { const bounds = event.currentTarget.getBoundingClientRect(); if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) close.current(); } }}><h2 id={id} className="bloom-sr-only">{title}</h2><DialogClose autoFocus onClose={onClose}/>{children}</dialog>;
 }
