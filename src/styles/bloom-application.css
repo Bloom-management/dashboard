@@ -519,3 +519,6 @@ dialog.cleaner-city-dialog { width:min(480px,calc(100vw - 24px)); border-radius:
 }
 
 .bloom-pending-label { display:inline-flex; vertical-align:middle; margin-left:8px; padding:3px 8px; border-radius:999px; background:#f8e9ed; color:#a34f5e; font:500 11px/1.4 "Plus Jakarta Sans",sans-serif; white-space:nowrap; }
+
+.bloom-button.resend-invite-button { background:#fff; color:#4a4538; border:1px solid #4a4538; border-radius:8px; padding:10px 16px; min-height:44px; white-space:nowrap; }
+.bloom-button.resend-invite-button:hover:not(:disabled) { background:#fff; border-color:#2d2a1f; color:#2d2a1f; }
