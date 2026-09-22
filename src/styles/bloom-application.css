@@ -517,3 +517,5 @@ dialog.cleaner-city-dialog { width:min(480px,calc(100vw - 24px)); border-radius:
  .bloom-cleaner.cleaner-hub .rail-list { flex-shrink:0; padding:4px 0; }
  .bloom-cleaner.cleaner-hub .main { min-height:0; overflow-y:auto; overscroll-behavior-y:contain; }
 }
+
+.bloom-pending-label { display:inline-flex; vertical-align:middle; margin-left:8px; padding:3px 8px; border-radius:999px; background:#f8e9ed; color:#a34f5e; font:500 11px/1.4 "Plus Jakarta Sans",sans-serif; white-space:nowrap; }

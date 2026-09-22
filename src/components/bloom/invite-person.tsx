@@ -4,7 +4,7 @@ import type { Role } from '../../contracts';
 import { request,ApiError } from './api';
 import { ErrorNotice } from './primitives';
 
-export function InvitePerson(){
+export function InvitePerson({onSent}:{onSent?:()=>void}){
  const [email,setEmail]=useState(''),[role,setRole]=useState<Role>('owner');
  const [busy,setBusy]=useState(false),[sent,setSent]=useState(''),[error,setError]=useState<unknown>();
  const lock=useRef(false);const receipt=useRef<{input:string;key:string} | null>(null);
@@ -14,7 +14,7 @@ export function InvitePerson(){
   if(receipt.current?.input!==input)receipt.current={input,key:crypto.randomUUID()};
   try{
    const result=await request<{status:string}>('/admin/invitations',{body,key:receipt.current.key});
-   setSent(result.status==='accepted'?'This invitation has already been accepted.':`Invitation sent to ${body.email} as ${role}.`);setEmail('');receipt.current=null;
+   setSent(result.status==='accepted'?'This invitation has already been accepted.':`Invitation sent to ${body.email} as ${role}.`);setEmail('');receipt.current=null;onSent?.();
   }catch(failure){setError(failure);}finally{lock.current=false;setBusy(false);}
  }}>
  <h2>Invite people</h2><div className="admin-invite-fields">

@@ -20,9 +20,25 @@ export async function propertyPeople(id:string):Promise<PropertyPeople>{
  return {...data,members:members.map(({id,displayName,subject,location})=>({id,displayName,location:location??null,imageUrl:images.get(subject)??null}))};
 }
 export async function invitePropertyPerson(id:string,request:Request){
- const user=await currentUser();const {body,key}=await mutation(request,['email']);const email=text(body.email,254).trim().toLowerCase();
+ const user=await currentUser();const {body,key}=await mutation(request,['email','resend']);const email=text(body.email,254).trim().toLowerCase();
  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new BackendError('VALIDATION_ERROR');
- const {db}=await authenticatedDatabase();const created=await db.rpc('bloom_property_invite',{p_property:uuid(id),p_email:email,p_key:key});if(created.error)databaseError(created.error);
+ const {db}=await authenticatedDatabase();
+ if(body.resend===true){
+  const people=await db.rpc('bloom_property_people',{p_property:uuid(id)});if(people.error)databaseError(people.error);
+  const invite=(people.data as PropertyPeople).invitations.find(invite=>invite.email.toLowerCase()===email&&['pending','sent'].includes(invite.status)&&new Date(invite.expiresAt).getTime()>Date.now());
+  if(!invite)throw new BackendError('NOT_FOUND');
+  const client=await clerkClient();
+  try{
+   const prior=[];let offset=0;
+   for(;;){const page=await client.invitations.getInvitationList({query:email,limit:100,offset});prior.push(...page.data.filter(item=>item.emailAddress.toLowerCase()===email&&item.publicMetadata?.bloomPropertyInvite===invite.id));offset+=page.data.length;if(!page.data.length||offset>=page.totalCount)break;}
+   const replay=prior.find(item=>{const receipt=item.publicMetadata?.bloomPropertyResend as Record<string,unknown>|undefined;return receipt?.key===key&&receipt?.actor===user.id;});
+   if(replay)return {id:invite.id,status:invite.status,expiresAt:invite.expiresAt};
+   if(prior.some(item=>Date.now()-item.createdAt<60000))throw new BackendError('CONFLICT');
+   await client.invitations.createInvitation({emailAddress:email,notify:true,ignoreExisting:true,expiresInDays:Math.max(1,Math.ceil((new Date(invite.expiresAt).getTime()-Date.now())/86400000)),redirectUrl:new URL('/invitations',process.env.NEXT_PUBLIC_APP_URL!).href,publicMetadata:{bloomPropertyInvite:invite.id,bloomPropertyResend:{key,actor:user.id}}});
+   return {id:invite.id,status:invite.status,expiresAt:invite.expiresAt};
+  }catch(error){if(error instanceof BackendError)throw error;throw new BackendError('SOURCE_UNAVAILABLE');}
+ }
+ const created=await db.rpc('bloom_property_invite',{p_property:uuid(id),p_email:email,p_key:key});if(created.error)databaseError(created.error);
  const service=privilegedDatabase();const attempt=await service.rpc('bloom_property_invite_delivery',{p_actor:user.id,p_id:created.data.id});if(attempt.error)databaseError(attempt.error);
  let result=attempt.data;
  if(result.status==='pending'){

@@ -8,6 +8,7 @@ import { CleanerDayDialog } from './cleaner-day-dialog';
 import { OwnerListings } from './owner-listings';
 import type { OwnerListing, OwnerListingsPage } from '../../contracts/owner-hub';
 import { PropertyPeoplePanel } from './property-people';
+import { PendingInvitations } from './pending-invitations';
 import { InvitePerson } from './invite-person';
 import { DatePicker } from './date-picker';
 import { CleaningConfiguration, CompletionReport } from './cleaning-config';
@@ -260,6 +261,7 @@ function Jobs({ user, integration }: { user: SessionUser; integration: BloomInte
     {integration.admin?.createJob && <form className="bloom-admin-card bloom-form" onSubmit={async event => { event.preventDefault(); const input = { propertyId, checkoutDate }; if (await mutation.run(input, key => integration.admin!.createJob!(input, key))) jobs.reload(); }}><h3>Create cleaning</h3><Paginated loader={integration.admin.properties} render={properties => <fieldset><legend>Property</legend>{properties.filter(property => property.active).map(property => <label className="bloom-check" key={property.id}><input type="radio" name="job-property" checked={propertyId === property.id} onChange={() => setPropertyId(property.id)} />{property.name} · {property.timezone}</label>)}</fieldset>} /><DatePicker label="Checkout day" value={checkoutDate} onChange={setCheckoutDate} /><p>11 AM–3 PM in the property’s local timezone.</p><button className="bloom-button" disabled={mutation.busy || !propertyId}>Create job</button><Result mutation={mutation} /></form>}</>;
 }
 function AdminContent({ user, integration, initialPropertyId }: { user: SessionUser; integration: BloomIntegration; initialPropertyId?:string }) {
+  const [invitationRevision,setInvitationRevision]=useState(0);
   const router = useRouter();
   const search = useSearchParams();
   const requestedView = search.get('view')==='people'?'users':search.get('view');
@@ -267,7 +269,7 @@ function AdminContent({ user, integration, initialPropertyId }: { user: SessionU
   return <><header className="topbar"><Brand role="admin" /><div className="topbar-right"><HubSelector user={user} view="admin"/><AdminPricingInbox/>{integration.accountControl?.(user) ?? <Account user={user} />}</div></header><main className={`main${view==='properties'?' admin-properties-main':''}`} id="bloom-main"><div className={`main-inner ${(view === 'jobs' || view === 'properties') ? styles.jobsPage : ''}`}><nav className="bloom-admin-tabs" aria-label="Admin tools">{['jobs', 'properties', 'users', 'cities', 'city requests'].map(item => <button key={item} className={`city-tab${item === view ? ' active' : ''}`} aria-pressed={item === view} onClick={() => router.push(`/admin?${new URLSearchParams({view:item})}`)}>{item==='users'?'People':item}</button>)}</nav><h1 className="loc-name">{view==='users'?'People':view.slice(0, 1).toUpperCase() + view.slice(1)}</h1>
     {view === 'jobs' && <Jobs user={user} integration={integration} />}
     {view === 'properties' && (integration.admin && integration.listCities ? <Properties integration={integration} initialPropertyId={initialPropertyId}/> : unavailable)}
-    {view === 'users' && (integration.admin ? <><InvitePerson/><Paginated loader={integration.admin.users} render={(users, reload) => <div className="admin-people-table-scroll"><table className="admin-people-table"><thead><tr><th scope="col">Name</th><th scope="col">Email</th><th scope="col">Role</th><th scope="col">Location</th></tr></thead><tbody>{users.map(item => <UserRow key={item.id} user={item} currentUser={user} reload={reload} />)}</tbody></table>{!users.length&&<p>No people found.</p>}</div>} /></> : unavailable)}
+    {view === 'users' && (integration.admin ? <><InvitePerson onSent={()=>setInvitationRevision(v=>v+1)}/><PendingInvitations revision={invitationRevision}/><Paginated loader={integration.admin.users} render={(users, reload) => <div className="admin-people-table-scroll"><table className="admin-people-table"><thead><tr><th scope="col">Name</th><th scope="col">Email</th><th scope="col">Role</th><th scope="col">Location</th></tr></thead><tbody>{users.map(item => <UserRow key={item.id} user={item} currentUser={user} reload={reload} />)}</tbody></table>{!users.length&&<p>No people found.</p>}</div>} /></> : unavailable)}
     {view === 'cities' && (integration.admin?.saveCity && integration.admin.createCity && integration.listCities ? <Cities integration={integration} /> : unavailable)}
     {view === 'city requests' && (integration.admin ? <Paginated loader={integration.admin.cityRequests} render={(items, reload) => <>{items.length ? items.map(item => <RequestRow key={item.id} item={item} reload={reload} integration={integration} />) : <Empty title="No city change requests" />}</>} /> : unavailable)}
 
