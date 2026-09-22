@@ -2,6 +2,7 @@
 import { Combobox as Base } from '@base-ui/react/combobox';
 import type { ComponentProps } from 'react';
 import styles from './combobox.module.css';
+import choice from './choice-card.module.css';
 export const Combobox=Base.Root;
 export const ComboboxValue=Base.Value;
 export function ComboboxChips(props:ComponentProps<typeof Base.Chips>) {return <Base.Chips {...props} className={styles.chips}/>;}
@@ -18,4 +19,4 @@ export function ComboboxContent({children}:ComponentProps<typeof Base.Popup>) {
  return <Base.Portal><Base.Positioner sideOffset={6} className={styles.positioner}><Base.Popup className={styles.popup}>{children}</Base.Popup></Base.Positioner></Base.Portal>;
 }
 export function ComboboxEmpty({children}:ComponentProps<typeof Base.Empty>) {return <Base.Empty className={styles.empty}>{children}</Base.Empty>;}
-export function ComboboxItem({children,...props}:ComponentProps<typeof Base.Item>) {return <Base.Item {...props} className={styles.item}><Base.ItemIndicator className={styles.indicator}>✓</Base.ItemIndicator>{children}</Base.Item>;}
+export function ComboboxItem({children,...props}:ComponentProps<typeof Base.Item>) {return <Base.Item {...props} className={`${choice.card} ${choice.listCard}`}><span className={choice.label}>{children}</span><span className={`${choice.indicator} ${choice.checkbox}`} aria-hidden="true"><Base.ItemIndicator>✓</Base.ItemIndicator></span></Base.Item>;}
