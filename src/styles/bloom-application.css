@@ -553,3 +553,17 @@ dialog.cleaner-city-dialog { width:min(480px,calc(100vw - 24px)); border-radius:
  max-height:calc(100dvh - max(12px,env(safe-area-inset-top)) - max(12px,env(safe-area-inset-bottom)));
  overflow-y:auto; overscroll-behavior:contain; box-sizing:border-box;
 }
+
+@media(max-width:700px) {
+ .bloom-cleaner .topbar.bloom-admin-header { grid-template-columns:auto minmax(0,1fr) auto 32px; }
+ .bloom-cleaner .bloom-admin-header .bloom-hub-selector { width:100%; max-width:170px; }
+ .bloom-cleaner .bloom-admin-header .bloom-hub-trigger { width:100%; box-sizing:border-box; }
+ .bloom-cleaner .bloom-admin-header .bloom-hub-trigger svg { flex-shrink:0; }
+ .bloom-cleaner .bloom-admin-header .admin-inbox-trigger { grid-column:3; grid-row:1; padding:0 8px; }
+}
+@media(max-width:360px) {
+ .bloom-cleaner .topbar.bloom-admin-header { column-gap:6px; padding-inline:10px; }
+ .bloom-cleaner .bloom-admin-header .bloom-hub-trigger { font-size:12px; padding-inline:8px; gap:4px; }
+ .bloom-cleaner .bloom-admin-header .admin-inbox-trigger { position:relative; width:36px; min-width:36px; padding:0; }
+ .bloom-cleaner .bloom-admin-header .admin-inbox-trigger span { position:absolute; top:-4px; right:-4px; font-size:9px; }
+}
