@@ -9,4 +9,9 @@ export function invitationRole(invite:Invite):Role|null{
 export function pendingPeople(invites:Invite[]){
  const seen=new Set<string>();return [...invites].sort((a,b)=>b.createdAt-a.createdAt).filter(invite=>{const email=invite.emailAddress.toLowerCase();if(invite.status!=='pending'||seen.has(email))return false;seen.add(email);return true;}).map(invite=>({id:invite.id,email:invite.emailAddress,role:invitationRole(invite),createdAt:invite.createdAt}));
 }
-export function resendRole(invite:Invite){const role=invitationRole(invite);if(invite.status!=='pending'||!role)throw new BackendError('INVALID_STATE');return role;}
+export function resendRole(invite:Invite){const role=invitationRole(invite);if(invite.status!=='pending')throw new BackendError('INVALID_STATE');return role;}
+
+export function resendMetadata(invite:Invite,actor:string,key:string){
+ resendRole(invite);
+ return {...invite.publicMetadata,bloomResend:{key,actor,email:invite.emailAddress.toLowerCase(),invitationId:invite.id}};
+}

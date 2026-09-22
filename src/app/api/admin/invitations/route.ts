@@ -1,4 +1,4 @@
-import { pendingPeople,resendRole } from '../../../../server/auth/pending-invitations';
+import { pendingPeople,resendRole,resendMetadata } from '../../../../server/auth/pending-invitations';
 import { adminIdentityClient } from '../../../../server/auth/admin-identity';
 import { requireAdmin } from '../../../../server/auth/session';
 import { privilegedDatabase } from '../../../../server/db/privileged';
@@ -17,11 +17,12 @@ export async function POST(request:Request){
   try{
    const exact=[];let offset=0;
    for(;;){const page=await client.invitations.getInvitationList({query:email,limit:100,offset});exact.push(...page.data.filter(invite=>invite.emailAddress.toLowerCase()===email));offset+=page.data.length;if(!page.data.length||offset>=page.totalCount)break;}
+   const original=body.invitationId?exact.find(invite=>invite.id===text(body.invitationId,200)):undefined;
    if(body.invitationId){
-    const original=exact.find(invite=>invite.id===text(body.invitationId,200));
     if(!original)throw new BackendError('NOT_FOUND');role=resendRole(original);
    }
    const replay=exact.find(invite=>{
+    if(original){const receipt=invite.publicMetadata?.bloomResend as Record<string,unknown>|undefined;return receipt?.key===key&&receipt?.actor===admin.id&&receipt?.email===email&&receipt?.invitationId===original.id;}
     const receipt=invite.publicMetadata?.bloomInvite as Record<string,unknown>|undefined;
     return receipt?.key===key&&receipt?.actor===admin.id&&receipt?.role===role&&receipt?.email===email;
    });
@@ -33,8 +34,8 @@ export async function POST(request:Request){
    }else if(exact.some(invite=>invite.status==='pending'||invite.status==='accepted'))throw new BackendError('CONFLICT');
    const invite=await client.invitations.createInvitation({
     emailAddress:email,notify:true,ignoreExisting:!!body.invitationId,
-    redirectUrl:new URL('/sign-up',process.env.NEXT_PUBLIC_APP_URL!).href,
-    publicMetadata:{bloomInvite:{key,actor:admin.id,role,email}},
+    redirectUrl:new URL(original?.publicMetadata?.bloomPropertyInvite?'/invitations':'/sign-up',process.env.NEXT_PUBLIC_APP_URL!).href,
+    publicMetadata:original?resendMetadata(original,admin.id,key):{bloomInvite:{key,actor:admin.id,role,email}},
    });
    return {id:invite.id,status:invite.status,email,role};
   }catch(error){
