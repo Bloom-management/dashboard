@@ -20,7 +20,7 @@ function usePayoutMutation(){
   async function run(path:string,body:unknown,done:()=>void){
     if(lock.current)return;lock.current=true;setBusy(true);setError(undefined);
     const input=JSON.stringify([path,body]);if(receipt.current?.input!==input)receipt.current={input,key:crypto.randomUUID()};
-    try{await request(path,{body,key:receipt.current.key});receipt.current=null;done();}catch(error){setError(error);}finally{lock.current=false;setBusy(false);}
+    try{await request(path,{body,key:receipt.current.key});receipt.current=null;window.dispatchEvent(new Event('bloom:payouts-changed'));done();}catch(error){setError(error);}finally{lock.current=false;setBusy(false);}
   }
   return{busy,error,run};
 }
@@ -29,9 +29,9 @@ const timestamp=(value:string)=>new Date(value).toLocaleString('en-US',{dateStyl
 function MethodSelect({value,onChange,optional=false,label='Method'}:{value:string;onChange:(value:string)=>void;optional?:boolean;label?:string}){
   return <select aria-label={label} value={value} required={!optional} onChange={event=>onChange(event.target.value)}><option value="">{optional?'Not set':'Choose method'}</option>{paymentMethods.map(method=><option key={method}>{method}</option>)}</select>;
 }
-export function AdminPayouts(){
+export function AdminPayouts({initialCleanerId=null,onCloseLinkedCleaner}:{initialCleanerId?:string|null;onCloseLinkedCleaner?:()=>void}={}){
   const load=useCallback((signal:AbortSignal)=>request<PayoutSummary>('/admin/payouts',{signal}),[]),data=useResource(load);
-  const[search,setSearch]=useState(''),[outstanding,setOutstanding]=useState(false),[selected,setSelected]=useState<string|null>(null);
+  const[search,setSearch]=useState(''),[outstanding,setOutstanding]=useState(false),[selected,setSelected]=useState<string|null>(initialCleanerId);
   const people=data.data?.people.filter(person=>(!outstanding||person.totalDueCents>0)&&person.name.toLowerCase().includes(search.trim().toLowerCase()))??[];
   return <section className="admin-payouts" aria-label="Cleaner payouts"><p>Track completed earnings and payments made outside Bloom. Recording a payment does not transfer money.</p>
     {data.loading?<Loading/>:data.error?<ErrorNotice error={data.error} retry={data.reload}/>:data.data&&<>
@@ -39,7 +39,7 @@ export function AdminPayouts(){
       {!!data.data.reviewCount&&<p className="bloom-notice">{data.data.reviewCount} completed cleaning {data.data.reviewCount===1?'entry needs':'entries need'} payout review. Unknown earnings are excluded from the total.{data.data.unassignedReviewCount>0&&` ${data.data.unassignedReviewCount} could not be linked to a cleaner.`}</p>}
       <div className="payout-toolbar"><label>Search cleaners<input type="search" placeholder="Search by name" value={search} onChange={event=>setSearch(event.target.value)}/></label><label className="payout-check"><input type="checkbox" checked={outstanding} onChange={event=>setOutstanding(event.target.checked)}/>Outstanding only</label><button className="bloom-button secondary" onClick={data.reload}>Refresh</button></div>
       <div className="payout-table-wrap"><table className="payout-table"><thead><tr><th scope="col">Name</th><th scope="col">Amount due</th><th scope="col">Method</th></tr></thead><tbody>{people.map(person=><tr key={person.id} onClick={()=>setSelected(person.id)}><th scope="row"><button className="payout-person" onClick={()=>setSelected(person.id)}>{person.name}</button>{person.reviewCount>0&&<small className="payout-review">{person.reviewCount} need review</small>}</th><td>{money(person.totalDueCents)}</td><td>{person.preferredMethod??'Not set'}</td></tr>)}</tbody></table>{!people.length&&<p className="payout-empty">No cleaners match these filters.</p>}</div>
-    </>}{selected&&<Modal className="cleaner-day-dialog payout-dialog" title="Cleaner payout details" onClose={()=>setSelected(null)}><PayoutDetails id={selected} onChanged={data.reload}/></Modal>}
+    </>}{selected&&<Modal className="cleaner-day-dialog payout-dialog" title="Cleaner payout details" onClose={()=>{setSelected(null);if(initialCleanerId)onCloseLinkedCleaner?.();}}><PayoutDetails id={selected} onChanged={data.reload}/></Modal>}
   </section>;
 }
 function PayoutDetails({id,onChanged}:{id:string;onChanged:()=>void}){
