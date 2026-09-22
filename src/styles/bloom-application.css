@@ -525,3 +525,7 @@ dialog.cleaner-city-dialog { width:min(480px,calc(100vw - 24px)); border-radius:
 
 .bloom-button.accept-invite-button { background:#fff; color:#4a4538; border:1px solid #4a4538; border-radius:8px; padding:10px 16px; min-height:44px; }
 .bloom-button.accept-invite-button:hover:not(:disabled) { background:#fff; border-color:#2d2a1f; color:#2d2a1f; }
+
+.bloom-cleaner .topbar > .city-tabs { width:fit-content; flex:0 0 auto; justify-self:start; background:transparent; padding:0; margin:0; border-radius:0; }
+.bloom-cleaner .bloom-button.cleaner-city-trigger { width:auto; min-height:44px; border:1px solid #4a4538; border-radius:8px; background:#fff; color:#4a4538; padding:10px 14px; }
+.bloom-cleaner .bloom-button.cleaner-city-trigger:hover { background:#fff; border-color:#2d2a1f; color:#2d2a1f; }
