@@ -814,3 +814,11 @@
  .bloom-owner .owner-mobile-views { display:block; min-width:0; }
  .bloom-owner .owner-mobile-views .bloom-hub-trigger { min-width:160px; font-family:"Plus Jakarta Sans",sans-serif; }
 }
+
+/* Mobile listings use page scrolling, without a second height-limited detail pane. */
+@media(max-width:700px) {
+ .bloom-owner.app:has(.owner-listings-main) { height:auto; min-height:100dvh; overflow:visible; }
+ .bloom-owner:has(.owner-listings-main) > .body { flex:0 0 auto; overflow:visible; }
+ .bloom-owner .owner-listings-main { flex:0 0 auto; overflow:visible; }
+ .bloom-owner .owner-listings-main .owner-listing-detail { height:auto; max-height:none; overflow:visible; overscroll-behavior:auto; padding-bottom:max(24px,env(safe-area-inset-bottom)); }
+}
