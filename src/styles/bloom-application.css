@@ -606,3 +606,27 @@ dialog.cleaner-city-dialog { width:min(480px,calc(100vw - 24px)); border-radius:
 }
 
 .admin-pricing-inbox { max-height:min(640px,calc(100dvh - 110px)); overflow-y:auto; overscroll-behavior:contain; }
+
+:is(.bloom-cleaner,.bloom-owner) .bloom-dialog.cleaner-day-dialog:not(.admin-job-dialog) { width:min(1100px,calc(100vw - 32px)); }
+.cleaner-day-columns { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:24px; }
+.cleaner-day-list { min-width:0; max-height:60dvh; overflow-y:auto; }
+.cleaner-day-map { min-width:0; border-left:1px solid #e3ded4; padding-left:24px; }
+.cleaner-day-toggle { display:none; }
+.cleaner-day-jobs li.selected>button { border-color:#b85563; background:#fff6f8; }
+.cleaner-day-jobs button.cleaner-day-link { padding:12px 20px; min-height:44px; margin-top:4px; }
+.bloom-map-canvas { width:100%; height:380px; border-radius:16px; background:#f6f3ec; }
+.bloom-job-map { min-width:0; }
+.bloom-job-map>p { font-size:13px; line-height:1.5; }
+.bloom-map-marker { border:2px solid white; border-radius:50%; width:36px; height:36px; background:#d97a85; color:#2d2a1f; font:700 16px "Plus Jakarta Sans",sans-serif; cursor:pointer; box-shadow:0 2px 8px #302f2640; }
+.bloom-map-marker.selected { background:#b85563; color:#fff; outline:3px solid #f0c4cb; }
+.bloom-map-units { display:grid; gap:6px; }
+.bloom-map-units button { background:#fff; color:#2d2a1f; border:1px solid #d97a85; padding:10px; min-height:44px; cursor:pointer; }
+@media(max-width:760px) {
+ .cleaner-day-columns { display:block; }
+ .cleaner-day-toggle { display:flex; gap:8px; margin:16px 0; }
+ .cleaner-day-toggle button { border:0; border-radius:99px; padding:12px 24px; font:inherit; background:#efebe1; color:#2d2a1f; }
+ .cleaner-day-toggle button[aria-pressed=true] { background:#2d2a1f; color:white; }
+ .cleaner-day-map { border:0; padding:0; }
+ .day-view-list .cleaner-day-map,.day-view-map .cleaner-day-list { display:none; }
+ .bloom-map-canvas { height:340px; }
+}

@@ -1,0 +1,49 @@
+Bloom selected-day Mapbox integration — prepared locally, not deployed
+
+Mapbox GL JS 3.31.0, npm exact version, dynamic client import.
+One instance per opened map; marker selection and mobile toggles reuse it.
+Desktop map mounts with confirmed pins. Mobile waits for the Map tab.
+No map instance is created when every job lacks a confirmed pin.
+Closing/reopening the dialog creates a new map load. Admin previews also count.
+Standard GL JS map-load billing, no Seats SDK, routing, geocoding, search or ETA.
+
+Configuration:
+NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN in .env.local; add to Vercel before building a release.
+Use a custom public pk. token with styles:read and fonts:read; no secret scopes.
+Suggested production URL restriction: https://admin.bloomcleaning.org
+Separate development token restriction: http://localhost:3000
+Do NOT append /* or use *.vercel.app. Mapbox does not support wildcard characters
+or IP addresses in URL restrictions. Paths beneath an allowed origin are included.
+Use localhost rather than 127.0.0.1 for restricted development tokens.
+The token is intentionally browser-visible. No token value is committed.
+No local token was available at implementation time; account scopes/restrictions
+and actual tile rendering could not be verified. Restart dev after adding token.
+
+Migration 035 applied locally only. Before deployment, apply migration 035 to
+hosted Supabase and configure the build-time public token, then deploy code.
+Admin > Properties > select property > Property map pin: enter verified latitude
+and longitude, preview, confirm, save. No automatic guessed coordinates or geocoding.
+Coordinates are private and projected through the existing bloom_jobs access policy.
+No owner/cleaner coordinate writes or broad property coordinate endpoint.
+Missing pins remain listed as Location unavailable.
+Existing View cleaning/claim APIs and authorization are unchanged.
+
+Verification:
+- PostgreSQL tests with synthetic JWT identities: admin-only writes, bounds and
+  explicit confirmation, correct date/city, existing assignment exception, owner
+  rejection and no direct private-table access.
+- Mocked Mapbox/API browser tests at 390 and 1440px: grouped units, marker/list
+  selection, filtering out extra returned coordinates, missing coordinates,
+  explicit-only geolocation denial, map failure fallback, View cleaning,
+  and one initialization across selection and List/Map toggles.
+- These are not real Mapbox tile or physical-device acceptance tests.
+
+Remaining manual acceptance with configured token:
+Confirm actual Bloom-colored light-v11 tiles, Mapbox logo and expanded attribution
+at desktop/mobile widths; test an admin-confirmed real property pin, browser
+location allow/deny, private/incognito restrictions, zoom/pan and keyboard markers.
+
+Official references:
+https://docs.mapbox.com/mapbox-gl-js/guides/get-started/
+https://docs.mapbox.com/accounts/guides/tokens/
+https://docs.mapbox.com/mapbox-gl-js/guides/pricing/
