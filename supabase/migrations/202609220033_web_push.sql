@@ -50,8 +50,8 @@ declare d private.push_devices; m uuid;begin
  if length(p_device)<>64 then raise sqlstate 'PT400' using message='VALIDATION_ERROR';end if;
  perform pg_advisory_xact_lock(hashtextextended(p_device,0));
  select * into d from private.push_devices where id=p_device for update;
- if p_action='detach' then
-  update private.push_devices set user_id=null,session_id=null,verified=false,generation=gen_random_uuid(),challenge_hash=null where id=p_device;return '{}';
+ if p_action in ('detach','reconcile') then
+  update private.push_devices set user_id=null,session_id=null,verified=false,generation=gen_random_uuid(),challenge_hash=null where id=p_device and (p_action='detach' or session_id is distinct from p_session);return '{}';
  end if;
  if not exists(select 1 from public.users where id=p_user and role='cleaner') then raise sqlstate 'PT403' using message='FORBIDDEN';end if;
  if d.id is null then insert into private.push_devices(id,user_id,session_id) values(p_device,p_user,p_session);

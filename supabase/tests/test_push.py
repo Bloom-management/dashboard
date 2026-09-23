@@ -118,7 +118,7 @@ class PushTests(unittest.TestCase):
         self.assertEqual(len(only),1)
         self.assertEqual(only[0]['id'],result['testDeliveryId'])
         self.assertEqual(scalar("select count(*) from private.push_deliveries d join private.push_messages m on m.id=d.message_id where m.kind='test';"),'1')
-        self.device_action('detach');self.assertEqual(scalar(f"select verified from private.push_devices where id='{self.device}';"),'f')
+        call('device',f"'{self.device}',null,'unmapped_new_account_session','reconcile'");self.assertEqual(scalar(f"select verified from private.push_devices where id='{self.device}';"),'f')
         self.assertEqual(scalar(f"select verified from private.push_devices where id='{second}';"),'t')
 
 if __name__=='__main__':unittest.main(verbosity=2)
