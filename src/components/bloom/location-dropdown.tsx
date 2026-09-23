@@ -23,7 +23,7 @@ export function LocationDropdown({ locations, value, onValueChange, label, place
   const options = useRef<HTMLDivElement>(null);
   const selected = locations.find(location => location.id === value);
   const filtered = locations.filter(location => location.name.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()));
-  return <DropdownMenu onOpenChange={open => { if (open) { setSearch(''); setContainer(trigger.current?.closest('dialog')??null); } }} onOpenChangeComplete={open => { if (open) input.current?.focus(); }}>
+  return <DropdownMenu onOpenChange={open => { if (open) { setSearch(''); setContainer(trigger.current?.closest('dialog')??null); } }} onOpenChangeComplete={open => { if (open && !options.current?.contains(document.activeElement)) input.current?.focus(); }}>
     <DropdownMenuTrigger ref={trigger} className={styles.trigger} disabled={disabled} aria-invalid={ariaInvalid} aria-describedby={describedBy} aria-label={`${label}: ${selected?.name ?? placeholder}`}>
       <span>{selected?.name ?? placeholder}</span><svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m4 6 4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
     </DropdownMenuTrigger>
