@@ -617,10 +617,10 @@ dialog.cleaner-city-dialog { width:min(480px,calc(100vw - 24px)); border-radius:
 .bloom-map-canvas { width:100%; height:380px; border-radius:16px; background:#f6f3ec; }
 .bloom-job-map { min-width:0; }
 .bloom-job-map>p { font-size:13px; line-height:1.5; }
-.bloom-map-marker { border:2px solid white; border-radius:50%; width:36px; height:36px; background:#d97a85; color:#2d2a1f; font:700 16px "Plus Jakarta Sans",sans-serif; cursor:pointer; box-shadow:0 2px 8px #302f2640; }
-.bloom-map-marker.selected { background:#b85563; color:#fff; outline:3px solid #f0c4cb; }
+.bloom-job-map button.bloom-map-marker { border:2px solid white; border-radius:50%; width:36px; height:36px; background:#d97a85; color:#2d2a1f; font:700 16px "Plus Jakarta Sans",sans-serif; cursor:pointer; box-shadow:0 2px 8px #302f2640; }
+.bloom-job-map button.bloom-map-marker.selected { background:#b85563; color:#fff; outline:3px solid #f0c4cb; }
 .bloom-map-units { display:grid; gap:6px; }
-.bloom-map-units button { background:#fff; color:#2d2a1f; border:1px solid #d97a85; padding:10px; min-height:44px; cursor:pointer; }
+.bloom-job-map .bloom-map-units button { background:#fff; color:#2d2a1f; border:1px solid #d97a85; padding:10px; min-height:44px; cursor:pointer; }
 @media(max-width:760px) {
  .cleaner-day-columns { display:block; }
  .cleaner-day-toggle { display:flex; gap:8px; margin:16px 0; }

@@ -16,8 +16,9 @@ Do NOT append /* or use *.vercel.app. Mapbox does not support wildcard character
 or IP addresses in URL restrictions. Paths beneath an allowed origin are included.
 Use localhost rather than 127.0.0.1 for restricted development tokens.
 The token is intentionally browser-visible. No token value is committed.
-No local token was available at implementation time; account scopes/restrictions
-and actual tile rendering could not be verified. Restart dev after adding token.
+Acceptance follow-up: public token is present in .env and loaded by Next.js.
+Actual tiles load at localhost:3000 without 403 responses. See RELEASE_REVIEW.txt
+for real-browser results and remaining production release checks.
 
 Migration 035 applied locally only. Before deployment, apply migration 035 to
 hosted Supabase and configure the build-time public token, then deploy code.
@@ -38,10 +39,11 @@ Verification:
   and one initialization across selection and List/Map toggles.
 - These are not real Mapbox tile or physical-device acceptance tests.
 
-Remaining manual acceptance with configured token:
-Confirm actual Bloom-colored light-v11 tiles, Mapbox logo and expanded attribution
-at desktop/mobile widths; test an admin-confirmed real property pin, browser
-location allow/deny, private/incognito restrictions, zoom/pan and keyboard markers.
+Real local acceptance completed in desktop Chrome and responsive mobile layout:
+actual tiles, colors, readable logo/attribution, grouped selection, admin-confirmed
+synthetic pins, location grant/denial, style-load failure fallback and cleaner claim.
+See RELEASE_REVIEW.txt. Physical-phone, private/incognito and production acceptance
+remain manual. The live 3628 pin has not been saved.
 
 Official references:
 https://docs.mapbox.com/mapbox-gl-js/guides/get-started/

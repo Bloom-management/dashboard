@@ -14,7 +14,7 @@ export default function JobMap({points,selected,onSelect,locate=true}:{points:Ma
   void import('mapbox-gl').then(({default:gl})=>{
    if(cancelled||!container.current)return;
    if(!gl.supported())throw new Error('unsupported');
-   const first=initial.current[0];const instance=new gl.Map({container:container.current,accessToken:token,style:'mapbox://styles/mapbox/light-v11',center:first?[first.longitude,first.latitude]:[0,0],zoom:first?13:1,attributionControl:false});map.current=instance;
+   const first=initial.current[0];const instance=new gl.Map({container:container.current,accessToken:token,style:'mapbox://styles/mapbox/light-v11',center:first?[first.longitude,first.latitude]:[0,0],zoom:first?13:1,logoPosition:'top-left',attributionControl:false});map.current=instance;
    instance.addControl(new gl.AttributionControl({compact:false}),'bottom-right');instance.addControl(new gl.NavigationControl({showCompass:false}),'top-right');
    instance.on('error',()=>{if(!cancelled)setError('Some map details could not load. Use the job list if the map is unavailable.');});
    timer=setTimeout(()=>{if(!cancelled)setError('The map is taking too long to load. The job list is still available.');},15000);

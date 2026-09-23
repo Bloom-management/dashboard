@@ -1,0 +1,99 @@
+Mapbox release review — 2026-09-23 — commit 285e262
+STATUS: Local acceptance complete; production release held for review and Vercel
+Production build-time token confirmation. No hosted changes made.
+
+Original checkout: /Users/pierr/Desktop/Github_Projects/Bloom/dashboard
+NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN is present in .env, absent in .env.local, and
+present in the effective Next.js development environment. Verified with @next/env
+without printing the value. The earlier missing-token conclusion was incorrect.
+No token relocation or local origin restriction change is needed: live Mapbox
+requests from http://localhost:3000 succeeded without 403 responses.
+
+Origin verification:
+Only port-3000 listener was PID 5911 on IPv4 127.0.0.1, cwd original Bloom checkout.
+HTTP http://localhost:3000 reached 127.0.0.1 and Bloom's Clerk sign-in redirect.
+No IPv6 listener was found. No service was stopped.
+Use http://localhost:3000 in the browser, while keeping the app bound to 127.0.0.1.
+The existing development mutation-origin policy permits this exact-port alias.
+For automated Chromium acceptance, --host-resolver-rules=MAP localhost 127.0.0.1
+can ensure the browser cannot reach a different IPv6 app. Recheck listeners first.
+Local token restriction: http://localhost:3000 (not an IP address, no wildcard).
+Production restriction: https://admin.bloomcleaning.org (no wildcard).
+Required public scopes: styles:read, fonts:read.
+
+Property evidence:
+User supplied a Google Maps place link specifically for 3628 Trumbull, Detroit,
+MI 48208. Its place coordinate fields !3d42.3425158!4d-83.0729674 identify:
+ latitude 42.3425158, longitude -83.0729674.
+Do NOT use the @ camera center 42.3425197,-83.0755477.
+Read-only production lookup confirmed matching name and address for property
+aca13f01-9336-4fa8-856f-146db0279610. This is not 3620 Trumbull.
+Google Maps could not be rendered by the web fetch tool. Place-link evidence and
+production address match are available; independent visual pin check is pending.
+No production pin was saved. Local 3620 is explicitly a synthetic test address;
+it was not overwritten using the coordinates for 3628.
+
+Hosted migration review:
+Project Admin / wgysricxviqefdvdixtj ledger contains 001 through 034.
+035 (202609230035_property_pins.sql) is absent; no missing earlier prerequisites.
+Supabase db push --skip-vault --dry-run reports only migration 035 pending.
+Current origin/main: 82bea333dac96cb22373fd6bc03865daadc48858.
+Migration 035 already applied locally in the original implementation turn.
+
+Production token:
+User reports it is configured in Vercel. CLI is logged out, no VERCEL_TOKEN is
+available, and no Vercel connector exists in this session. Therefore Production
+scope and build-time availability are NOT independently confirmed. Do not claim
+otherwise. Verify the variable name in Vercel Project > Environment Variables,
+Production environment. A fresh build after setting it is required because Next.js
+inlines NEXT_PUBLIC variables. Do not print the value or commit it.
+
+Release steps (NOT executed):
+1. Review the local real-Mapbox acceptance results below. Physical Android/iPhone
+   acceptance remains manual; desktop responsive Chrome is not a physical phone.
+2. Verify Vercel Production token configuration and new-build availability.
+3. Recheck origin/main and hosted migration dry run for concurrent changes.
+4. Apply ONLY migration 035 after release approval:
+   npx --yes supabase@2.117.0 db push --linked --project-ref wgysricxviqefdvdixtj --skip-vault
+5. Push approved integrated main to trigger Vercel, or create a new deployment
+   of that exact commit with the Production environment. Confirm successful build.
+6. Authenticated admin saves the confirmed 3628 pin using Property map pin.
+   Preserve its pending owner/invitation binding. No pin for 3620 is inferred.
+7. Smoke-test authorized selected-day map and existing claim flow in production
+   using a designated test account. No real cleaning claims as acceptance fixtures.
+
+Rollback:
+Promote the preceding successful Vercel deployment (82bea33 or the actual release
+baseline captured immediately before rollout), or revert the map feature commit
+and rebuild. Keep additive migration 035 and saved pins in place: old code ignores
+them. Do not drop the pin table or modify the migration ledger to roll back UI.
+Mapbox token removal requires a rebuild; it is not the preferred UI rollback.
+No scheduler, OneSignal, invitation, ownership or calendar-import changes required.
+
+Results separation:
+Prior automated/mock results: production build, typecheck, lint, regression suite,
+2 PostgreSQL pin/access tests, 2 coordinate unit tests, mocked Mapbox browser tests
+at 390 and 1440px passed. These do not prove live tiles or physical phone behavior.
+Real authenticated local browser acceptance (Chrome, localhost:3000):
+- Actual Mapbox tiles loaded (16 successful responses, zero 403s in completed run).
+- Bloom cream tiles, white roads and muted labels visually inspected.
+- Desktop 1440px and mobile-layout 390px screenshots inspected; logo moved to
+  top-left to avoid overlapping attribution on mobile. Both remain readable.
+- Pink marker specificity bug discovered and fixed against generic hub buttons;
+  a computed-style regression assertion now verifies the intended pink.
+- Grouped markers, list-to-marker and marker-to-list selection, List/Map switching,
+  missing-coordinate label and View cleaning passed with real SDK/API data.
+- Authenticated admin confirmed synthetic test-property pins at the user-supplied
+  3628 coordinates. Neither real 3620 nor production 3628 was changed.
+- Browser geolocation allowed with simulated coordinates and denied permissions
+  tested with actual SDK; this is not physical GPS acceptance.
+- Existing authenticated claim endpoint passed on synthetic local jobs.
+- Real SDK with deliberately aborted Mapbox style requests: fallback message,
+  View cleaning and the UI Claim this cleaning action passed (HTTP 200 and
+  assignment returned; detail transitioned into the assigned-cleaner journey).
+- Earlier mocked tests separately cover authorization/filtering.
+- Synthetic map fixtures removed from local DB after acceptance; temporary Clerk
+  sessions revoked. No physical-device, production claim or production-pin test.
+- Typecheck, lint and mocked responsive browser tests rerun after style fixes.
+Production Vercel token scope/build-time availability remains unverified.
+Physical phone testing: unavailable in this agent environment. Not passed.
