@@ -593,3 +593,16 @@ dialog.cleaner-city-dialog { width:min(480px,calc(100vw - 24px)); border-radius:
 @media(max-width:360px) {
  :is(.bloom-cleaner,.bloom-owner) .bloom-dialog.bloom-dialog-surface { padding:24px 20px; }
 }
+
+.bloom-push-card[hidden] { display:none; }
+.bloom-inbox-settings,.bloom-inbox-dismiss,.bloom-inbox-pages button { font:inherit; border:0; border-radius:999px; padding:10px 16px; min-height:44px; cursor:pointer; background:#efebe1; color:#2d2a1f; }
+.bloom-inbox-dismiss { margin-top:12px; }
+.bloom-inbox-pages { display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:13px; margin-top:16px; flex-wrap:wrap; }
+.bloom-inbox-pages button:disabled,.bloom-inbox-dismiss:disabled { opacity:.5; cursor:default; }
+.admin-pricing-inbox button:focus-visible { outline:2px solid #b85563; outline-offset:3px; }
+@media(max-width:700px) {
+ :is(.bloom-owner,.bloom-cleaner) .bloom-compact-header .admin-inbox-trigger { grid-column:3; grid-row:1; position:relative; width:32px; min-width:32px; padding:0; }
+ :is(.bloom-owner,.bloom-cleaner) .bloom-compact-header .admin-inbox-trigger span { position:absolute; top:-3px; right:-5px; }
+}
+
+.admin-pricing-inbox { max-height:min(640px,calc(100dvh - 110px)); overflow-y:auto; overscroll-behavior:contain; }

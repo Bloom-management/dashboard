@@ -1,22 +1,10 @@
 'use client';
-import {useCallback,useEffect,useRef,useState} from 'react';
-import Link from 'next/link';
-import {Popover} from '@base-ui/react/popover';
+import {useCallback,useRef,useState} from 'react';
 import {request} from './api';
 import {ErrorNotice,Loading,useResource} from './primitives';
 import {parseSoloRate} from './property-form';
-import type {PayoutSummary} from '../../contracts/payouts';
 const dollars=(cents:number)=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(cents/100);
-export function AdminPricingInbox(){
- const load=useCallback(async(signal:AbortSignal)=>{
-  const [pricing,payouts]=await Promise.all([request<{id:string;name:string}[]>('/admin/pricing',{signal}),request<PayoutSummary>('/admin/payouts',{signal})]);
-  return {pricing,payouts:payouts.people.filter(person=>person.totalDueCents>0)};
- },[]);
- const data=useResource(load,true),[open,setOpen]=useState(false);
- useEffect(()=>{const refresh=()=>data.reload();window.addEventListener('bloom:payouts-changed',refresh);window.addEventListener('focus',refresh);const timer=window.setInterval(()=>{if(document.visibilityState==='visible')refresh();},60000);return()=>{window.removeEventListener('bloom:payouts-changed',refresh);window.removeEventListener('focus',refresh);window.clearInterval(timer);};},[data.reload]);
- const count=data.data?data.data.pricing.length+data.data.payouts.length:0;
- return <Popover.Root open={open} onOpenChange={value=>{setOpen(value);if(value)data.reload();}}><Popover.Trigger className="admin-inbox-trigger" aria-label={`Notifications${count?`, ${count} need attention`:''}`}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg>{count>0&&<span>{count}</span>}</Popover.Trigger><Popover.Portal><Popover.Positioner sideOffset={10} align="end" collisionPadding={16} style={{zIndex:100}}><Popover.Popup className="admin-pricing-inbox"><Popover.Title>Notifications</Popover.Title>{data.loading?<Loading/>:data.error?<ErrorNotice error={data.error} retry={data.reload}/>:count>0?<ul>{data.data?.payouts.map(person=><li key={`payout-${person.id}`}><Link href={`/admin?view=payouts&cleaner=${encodeURIComponent(person.id)}`} onClick={()=>setOpen(false)}>{person.name} has {dollars(person.totalDueCents)} in outstanding payments<span>View payout details →</span></Link></li>)}{data.data?.pricing.map(item=><li key={`pricing-${item.id}`}><Link href={`/admin?view=properties&property=${item.id}&section=settings`} onClick={()=>setOpen(false)}>{item.name} needs cleaner pricing set<span>Set pricing →</span></Link></li>)}</ul>:<p>You’re all caught up.</p>}</Popover.Popup></Popover.Positioner></Popover.Portal></Popover.Root>;
-}
+export {NotificationInbox as AdminPricingInbox} from '../push/inbox';
 export function AdminUnitPricing({id,onSaved}:{id:string;onSaved:()=>void}){
  const load=useCallback((signal:AbortSignal)=>request<{cents:number;configured:boolean}>(`/admin/properties/${id}/cleaner-pricing`,{signal}),[id]);const data=useResource(load);
  return data.loading?<Loading/>:data.error?<ErrorNotice error={data.error} retry={data.reload}/>:data.data?<AdminPricingEditor key={`${id}:${data.data.cents}:${data.data.configured}`} id={id} cents={data.data.cents} configured={data.data.configured} onSaved={()=>{data.reload();onSaved();}}/>:null;
