@@ -53,3 +53,5 @@ python3 -B "$BLOOM_REPO/supabase/tests/test_maintenance.py"
 python3 -B "$BLOOM_REPO/supabase/tests/test_property_people.py"
 
 python3 -B "$BLOOM_REPO/supabase/tests/test_onboarding.py"
+
+python3 -B "$BLOOM_REPO/supabase/tests/test_push.py"

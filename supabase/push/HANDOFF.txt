@@ -1,0 +1,136 @@
+Bloom web push — local implementation, production OFF
+
+Release state
+- Migration 202609220033_web_push.sql is applied locally, not hosted.
+- No production scheduler, OneSignal messages, or real-cleaner sends were enabled.
+- The existing admin pricing/payout inbox remains unchanged. Admin > Notifications shows
+  the last 50 outbox delivery states without device IDs, provider keys or tokens.
+- Requires review and real-device acceptance before production activation.
+
+Account/configuration requirements
+1. Create a free OneSignal account and Web Push app using Custom Code setup.
+   Use exactly https://admin.bloomcleaning.org as the production site origin and
+   Bloom Cleaning as the name. Use a separate app/origin for HTTPS staging tests.
+   Upload/use /icons/bloom-192.png. Disable welcome/automatic prompt campaigns;
+   the application controls permission requests. Do not create dashboard broadcasts.
+2. Set server environment variables (never NEXT_PUBLIC for the API key):
+   ONESIGNAL_APP_ID, ONESIGNAL_REST_API_KEY (App API key),
+   BLOOM_PUSH_SCHEDULER_SECRET (random >=32 characters),
+   BLOOM_PUSH_MODE=test, BLOOM_PUSH_TEST_SUBJECTS=<synthetic Clerk subject IDs>.
+   Existing NEXT_PUBLIC_APP_URL must match that deployment's origin.
+   Default/missing mode is off. Test mode hard-limits all sends to the allowlist.
+3. OneSignal currently documents JWT identity verification as MOBILE ONLY; its
+   Web SDK does not support it. Leave that app-level toggle OFF for this web app.
+   Bloom never uses external_id login, aliases, browser tags or client cities to
+   authorize targeting. Instead, a user-initiated generic challenge is sent to
+   the supplied subscription. Tapping it on the SAME browser/PWA proves receipt;
+   its one-use fragment token, HttpOnly device cookie and authenticated Clerk
+   account must agree before binding. The proof is not returned to the requesting
+   browser or stored in server access URLs. Setup expires after 10 minutes.
+4. Android can use Chrome without installation. iOS 16.4+ requires HTTPS and an
+   installed Home Screen web app. No Apple Developer membership/native app/SMS.
+
+Hosted scheduler / rollout (MANUAL, after approval)
+- Production is Vercel + Supabase. Vercel CLI login was unavailable, so the exact
+  Vercel billing tier could NOT be verified. Do not assume Pro. Hobby Cron's
+  daily/approximate timing is unsuitable. This design does not use Vercel Cron.
+- Read-only inspection of the actual hosted Supabase project confirmed pg_cron
+  and pg_net are AVAILABLE but NOT INSTALLED. No hosted changes were made.
+- Apply migration 033 with the existing migration process. It creates only the
+  private queue/functions/triggers; it DOES NOT schedule or activate delivery.
+- Use Supabase Vault to create bloom_push_url (full /api/push/tick HTTPS URL)
+  and bloom_push_scheduler_secret (same secret as the server). Never place an
+  actual secret in committed SQL, dashboard screenshots, logs, or this handoff.
+- After synthetic device acceptance, review/run enable-schedule.sql. It installs
+  Cron/net and schedules one call/minute, baselining existing jobs before enabling
+  publication capture. Initially keep test mode. Switch to live only after review.
+- Supabase Cron reuses the hosted database and needs no new scheduler account.
+  Free-tier database pauses/quotas still apply; an inactive/paused DB cannot run
+  cron. A paid hosting upgrade may be needed for guaranteed always-on operation;
+  this implementation does not promise a free-tier uptime SLA.
+- OneSignal Free currently permits unlimited API sends, max 10,000 web subscribers
+  per send. Bloom targets one proven device per outbox entry, not broad segments.
+- Stop: BLOOM_PUSH_MODE=off and SELECT cron.unschedule('bloom-push-delivery').
+  No historical new-job replay: jobs before activation are baselined; publications
+  older than one hour are discarded. Keep private.push_publications job IDs for
+  deduplication. Do not truncate them when performing retention cleanup.
+
+Delivery behavior
+- SQL transaction ID groups the jobs created by a single calendar import into
+  one city/user summary. First eligible publication per job is unique forever.
+- New jobs recheck approved city, opt-in, slots, current assignments, review hold,
+  active property/city, cancellation and cleaning end time immediately before send.
+- Reminders use public.cities.notification_timezone. Detroit is America/Detroit.
+  Other cities must be assigned a valid IANA timezone before reminders are enabled.
+  Property-local checkout dates are retained. No browser timezone or fixed offset.
+- Evening slot: 18:00, tomorrow. Morning: 08:00, today. Only assignments claimed
+  by that slot are eligible. Read current assignments at delivery. Withdrawing,
+  cancelling or completing removes eligibility. No immediate claim push.
+- Late claims after evening appear next morning; claims after 08:00 do not cause
+  a retroactive morning summary. Reminders expire after 10 minutes; no hours-late
+  catch-up. New alerts expire after one hour. Provider TTL is capped at 60 seconds.
+- Durable device outbox: pending -> attempted -> accepted/failed/skipped; leased
+  FOR UPDATE SKIP LOCKED reservations, unique logical keys, stable OneSignal
+  idempotency UUIDs, four attempts maximum and bounded exponential retries.
+  Each tick reserves five devices concurrently; monitor backlog/expired entries
+  before scaling beyond the initial small cleaner group.
+- Provider acceptance is NOT proof of device delivery or viewing. No fabricated
+  read receipts. Invalid/expired subscription responses disable the binding.
+- No personal schedule content is sent in the provider payload. The worker asks
+  Bloom for current safe counts using the verified device capability and checks
+  the bound Clerk session on the server. If offline, signed out, switched, expired
+  or no longer eligible, it shows a generic 'Open Bloom' message, never stale
+  private counts. A visible fallback is necessary for Safari's push policy.
+- Sign-out/account-switch invalidates via both global lifecycle reconciliation
+  and live Clerk session validation. Re-verify on subsequent login/session.
+  Multiple devices can be independently verified. A device whose browser storage
+  was cleared may need its old OneSignal subscription removed before re-registering
+  if the provider restores the same subscription ID (fail-closed conflict).
+- Clicking opens a sanitized local Cleaner view/date. Sign-in retains that URL;
+  normal server role/city/assignment checks still apply. The URL grants no access.
+
+Verification performed
+- Automated Node provider/worker/navigation tests (mocked provider/browser events).
+- Disposable real PostgreSQL migration/regression suite, including seven new push
+  scenario tests: baseline/batching/repeated sync, city/preferences/availability,
+  6 PM and 8 AM/current assignments/late claims/withdrawal/completion, both DST
+  boundaries/no catch-up, concurrency/retry limits, device proof/switching/multiple
+  devices/device-only test delivery. Auth claims in these DB tests are synthetic.
+- Real local Next.js + authenticated development Clerk cleaner: mobile card/dialog,
+  preference save/refresh/revert, Upcoming date view, expired-session destination,
+  denied cleaner access to admin diagnostics and blocked test sends in off mode.
+- Mocked mobile browser UI: permission only after button action, Android guidance,
+  blocked state without repeated prompt, iPhone installation instructions and Escape.
+- No OneSignal credentials were available. NO actual provider delivery or physical
+  Android/iPhone device delivery has been claimed or verified.
+
+Real-device acceptance checklist (test allowlist only)
+Android Chrome (Samsung, Pixel, Motorola — test each available device):
+[ ] Open HTTPS staging; benefit card appears without permission prompt.
+[ ] Enable -> allow -> tap verification push on same device -> enabled state.
+[ ] Select each preference independently; reload preserves preferences.
+[ ] Send test targets only this device; second registered device receives nothing.
+[ ] Background/close Chrome, publish synthetic city batch, verify one correct count.
+[ ] Tap alert while signed out -> sign in -> intended approved city/date view.
+[ ] Deny/revoke permission -> blocked guidance, no repeated native prompts.
+iPhone (iOS 16.4+):
+[ ] Safari explains Share -> Add to Home Screen; no browser permission request.
+[ ] Launch Home Screen Bloom, authenticate, allow, tap verification, send test.
+[ ] Lock phone/close PWA, receive safe counts; tap opens correct Upcoming date.
+[ ] Disable in iOS Settings -> accurate blocked state on return.
+Both:
+[ ] 18:00/08:00 Detroit summaries use CURRENT assignments; withdrawal/completion
+    before send removes jobs; late evening claim appears morning, after-8 claim doesn't.
+[ ] Sign out or switch accounts before queued push arrives: no old private counts.
+[ ] Unsubscribe/reinstall and test multiple devices and session expiry.
+[ ] Resume after outage: no old reminder hours later; diagnostics distinguish states.
+
+Official references checked 2026-09-22
+https://documentation.onesignal.com/docs/en/identity-verification
+https://documentation.onesignal.com/docs/en/web-sdk-reference
+https://documentation.onesignal.com/docs/en/onesignal-service-worker
+https://documentation.onesignal.com/reference/push-notification
+https://onesignal.com/pricing
+https://supabase.com/docs/guides/cron
+https://supabase.com/docs/guides/database/extensions/pg_net
+https://vercel.com/docs/cron-jobs/usage-and-pricing

@@ -6,6 +6,7 @@ import {calendarSaveMessage,type CalendarSaveResult} from '../../contracts/calen
 import '../../styles/bloom-owner.css';
 import { CalendarSetupSection, initialCalendars } from './calendar-setup-section';
 import { AdminPayouts } from './admin-payouts';
+import {PushDiagnostics} from '../push/diagnostics';
 import { AdminPricingInbox, AdminUnitPricing, AdminPricingEditor } from './admin-pricing';
 import { CleanerDayDialog } from './cleaner-day-dialog';
 import { OwnerListings } from './owner-listings';
@@ -268,8 +269,8 @@ function AdminContent({ user, integration, initialPropertyId }: { user: SessionU
   const router = useRouter();
   const search = useSearchParams();
   const requestedView = search.get('view')==='people'?'users':search.get('view');
-  const view = initialPropertyId ? 'properties' : ['properties', 'users', 'payouts', 'cities', 'city requests'].includes(requestedView ?? '') ? requestedView! : 'jobs';
-  return <><header className="topbar bloom-compact-header bloom-admin-header"><Brand role="admin" /><div className="topbar-right"><HubSelector user={user} view="admin"/><AdminPricingInbox/><div className="bloom-header-account">{integration.accountControl?.(user) ?? <Account user={user} />}</div></div></header><main className={`main${view==='properties'?' admin-properties-main':''}`} id="bloom-main"><div className={`main-inner ${(view === 'jobs' || view === 'properties') ? styles.jobsPage : ''}`}><nav className="bloom-admin-tabs" aria-label="Admin tools">{['jobs', 'properties', 'users', 'payouts', 'cities', 'city requests'].map(item => <button key={item} className={`city-tab${item === view ? ' active' : ''}`} aria-pressed={item === view} onClick={() => router.push(`/admin?${new URLSearchParams({view:item})}`)}>{navigationLabel(item)}</button>)}</nav><h1 className="loc-name">{navigationLabel(view)}</h1>
+  const view = initialPropertyId ? 'properties' : ['properties', 'users', 'payouts', 'notifications', 'cities', 'city requests'].includes(requestedView ?? '') ? requestedView! : 'jobs';
+  return <><header className="topbar bloom-compact-header bloom-admin-header"><Brand role="admin" /><div className="topbar-right"><HubSelector user={user} view="admin"/><AdminPricingInbox/><div className="bloom-header-account">{integration.accountControl?.(user) ?? <Account user={user} />}</div></div></header><main className={`main${view==='properties'?' admin-properties-main':''}`} id="bloom-main"><div className={`main-inner ${(view === 'jobs' || view === 'properties') ? styles.jobsPage : ''}`}><nav className="bloom-admin-tabs" aria-label="Admin tools">{['jobs', 'properties', 'users', 'payouts', 'notifications', 'cities', 'city requests'].map(item => <button key={item} className={`city-tab${item === view ? ' active' : ''}`} aria-pressed={item === view} onClick={() => router.push(`/admin?${new URLSearchParams({view:item})}`)}>{navigationLabel(item)}</button>)}</nav><h1 className="loc-name">{navigationLabel(view)}</h1>{view==='notifications'&&<PushDiagnostics/>}
     {view === 'payouts' && <AdminPayouts key={search.get('cleaner')??'all'} initialCleanerId={search.get('cleaner')} onCloseLinkedCleaner={()=>router.replace('/admin?view=payouts')}/>}
     {view === 'jobs' && <Jobs user={user} integration={integration} />}
     {view === 'properties' && (integration.admin && integration.listCities ? <Properties integration={integration} initialPropertyId={initialPropertyId}/> : unavailable)}

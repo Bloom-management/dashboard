@@ -1,0 +1,5 @@
+'use client';
+import {useState} from 'react';
+import {request} from '../bloom/api';
+type Report={mode:string;deliveries:{id:string;kind:string;state:string;attempts:number;error:string|null;updated_at:string}[]};
+export function PushDiagnostics(){const [data,setData]=useState<Report>(),[error,setError]=useState(''),[busy,setBusy]=useState(false);return <section className="bloom-admin-card"><h2>Push delivery diagnostics</h2><p>Accepted means the provider accepted the request, not that the cleaner saw it. Last 50 device deliveries. No subscription secrets are shown.</p><button className="bloom-button secondary" disabled={busy} onClick={async()=>{setBusy(true);setError('');try{setData(await request<Report>('/admin/push'));}catch{setError('Diagnostics could not load. Try again.');}finally{setBusy(false);}}}>{busy?'Loading…':'Refresh delivery status'}</button>{error&&<p role="alert">{error}</p>}{data&&<><p>Delivery mode: {data.mode}</p><ul>{data.deliveries.map((x,i)=><li key={`${x.id}-${i}`}>{x.kind}: {x.state} · {x.attempts} attempts{x.error?` · ${x.error}`:''} · {x.updated_at}</li>)}</ul></>}</section>;}

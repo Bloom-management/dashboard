@@ -16,6 +16,8 @@ try{
   await page.route('**/api/**',async route=>{
    const path=new URL(route.request().url()).pathname;let data;
    if(path==='/api/admin/pricing'){inboxCalls++;if(inboxCalls>1)await new Promise(resolve=>setTimeout(resolve,500));data=Array.from({length:20},(_,i)=>({id:String(i),name:'Property '+i}));}
+   else if(path==='/api/admin/payouts')data={people:[],totalOutstandingCents:0,reviewCount:0,unassignedReviewCount:0};
+   else if(path==='/api/push/settings')data={verified:false,pending:false,newJobs:false,reminders:false,configured:false,appId:null};
    else if(path==='/api/me')data={id:'cleaner',role:'cleaner',displayName:'Cleaner',approvedCityId:'city'};
    else if(path==='/api/jobs')data=Array.from({length:12},(_,i)=>({id:'job-'+i,propertyId:'property-'+i,propertyName:'Full property name '+i,cityId:'city',checkoutDate:today,startAt:today+'T15:00:00Z',endAt:today+'T19:00:00Z',timezone:'America/Detroit',status:'open',activeCleanerCount:0,myAssignmentId:null,changes:[],reviewRequired:false,soloRateCents:7500,sharedRateCents:3750}));
    else throw new Error('Unexpected API '+path);
