@@ -8,7 +8,10 @@ Release state
 - Requires review and real-device acceptance before production activation.
 
 Account/configuration requirements
-1. Create a free OneSignal account and Web Push app using Custom Code setup.
+1. Configure Web > Custom Code in the supplied OneSignal app:
+   bb144350-7065-4dfa-b6e2-aa21b7eb2a07 (public App ID, not an API secret).
+   This ID is recorded in .env.example and the ignored local environment.
+   The native iOS SDK guide does not apply to this Next.js/PWA repository.
    Use exactly https://admin.bloomcleaning.org as the production site origin and
    Bloom Cleaning as the name. Use a separate app/origin for HTTPS staging tests.
    Upload/use /icons/bloom-192.png. Disable welcome/automatic prompt campaigns;
