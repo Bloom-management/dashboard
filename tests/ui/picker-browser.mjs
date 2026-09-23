@@ -11,10 +11,10 @@ const server=createServer(async(req,res)=>{try{if(req.url.startsWith('/fonts/'))
 const browser=await chromium.launch({headless:true,executablePath:process.env.BLOOM_CHROME ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'});
 try{
  for(const width of [390,1440]){
-  const page=await browser.newPage({viewport:{width,height:850}});await page.goto('http://127.0.0.1:'+server.address().port);
+  const page=await browser.newPage({viewport:{width,height:850}});await page.clock.setFixedTime(new Date('2026-09-22T16:00:00Z'));await page.goto('http://127.0.0.1:'+server.address().port);
   const filter=page.getByRole('button',{name:'Filter jobs by property: All properties'});await filter.click();await page.getByRole('menuitemradio',{name:'Test property'}).click();await page.getByRole('button',{name:'Filter jobs by property: Test property'}).waitFor();
   await page.getByRole('button',{name:'Filter jobs by property: Test property'}).click();await page.getByRole('menuitemradio',{name:'All properties',exact:true}).click();await filter.waitFor();
-  await page.locator('.month-btn').click();await page.locator('.month-menu').waitFor();await page.getByRole('heading',{name:'Jobs'}).click();await page.locator('.month-menu').waitFor({state:'hidden'});
+  await page.locator('.month-btn').click();await page.locator('.month-menu').waitFor();assert.equal(await page.locator('.month-menu [aria-selected="true"] button').textContent(),'22');assert.equal(await page.locator('.month-menu [aria-selected="true"] button').evaluate(el=>getComputedStyle(el).color),'rgb(255, 255, 255)');await page.getByRole('heading',{name:'Jobs'}).click();await page.locator('.month-menu').waitFor({state:'hidden'});
   await page.locator('.month-btn').click();await page.locator('.month-menu').waitFor();await page.keyboard.press('Escape');await page.locator('.month-menu').waitFor({state:'hidden'});assert(await page.locator('.month-btn').evaluate(el=>el===document.activeElement));
   await page.locator('.month-btn').click();await page.locator('.month-menu').waitFor();await page.locator('.month-select').dispatchEvent('pointerdown');await page.locator('.month-menu').waitFor({state:'hidden'});
   await page.locator('.month-btn').click();await page.locator('.month-menu').waitFor();await page.getByRole('heading',{name:'Jobs'}).dispatchEvent('click');await page.locator('.month-menu').waitFor({state:'hidden'});
