@@ -20,6 +20,7 @@ try {
   await page.route('**/api/**',async route=>{
    const req=route.request(),url=new URL(req.url());calls.push(url.pathname+url.search);let data;
    if(url.pathname==='/api/me')data={id:'isolated-owner',role,displayName:'Test account',approvedCityId:null};
+   else if(url.pathname==='/api/notifications')data={items:[],total:0};
    else if(url.pathname==='/api/owner/properties')data=properties;
    else if(url.pathname==='/api/owner/freshness')data=properties.map(p=>({propertyId:p.id,lastSuccessAt:null,message:null}));
    else if(url.pathname==='/api/owner/calendar')data=[block,{...block,id:'blocked-b',providers:['vrbo'],kind:'blocked',startDate:`${month}-04`,endDate:`${month}-08`}];

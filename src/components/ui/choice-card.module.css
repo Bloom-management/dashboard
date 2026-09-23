@@ -9,3 +9,6 @@
 .checkbox { border-radius:4px; font-size:12px; line-height:1; }
 .listCard { margin:8px 2px; }
 @media(prefers-reduced-motion:reduce) { .card { transition:none; } }
+
+.card:is(:hover,[data-highlighted],:focus-visible) .radioIndicator { border-color:#b85563; background:radial-gradient(circle,#b85563 0 4px,transparent 4px); }
+.card:is(:hover,[data-highlighted],:focus-visible) .radioIndicator .dot { background:#b85563; }

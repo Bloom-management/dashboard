@@ -18,6 +18,6 @@ export function DropdownMenuContent({ className, container, keepBelow = false, .
 export function DropdownMenuRadioItem({ children, className, ...props }: ComponentProps<typeof Menu.RadioItem>) {
   return <Menu.RadioItem closeOnClick {...props} className={`${choice.card} ${className??''}`}>
     <span className={choice.label}>{children}</span>
-    <span className={choice.indicator} aria-hidden="true"><Menu.RadioItemIndicator><span className={choice.dot}/></Menu.RadioItemIndicator></span>
+    <span className={`${choice.indicator} ${choice.radioIndicator}`} aria-hidden="true"><Menu.RadioItemIndicator><span className={choice.dot}/></Menu.RadioItemIndicator></span>
   </Menu.RadioItem>;
 }

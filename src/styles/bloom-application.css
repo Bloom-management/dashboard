@@ -630,3 +630,5 @@ dialog.cleaner-city-dialog { width:min(480px,calc(100vw - 24px)); border-radius:
  .day-view-list .cleaner-day-map,.day-view-map .cleaner-day-list { display:none; }
  .bloom-map-canvas { height:340px; }
 }
+
+:is(.bloom-cleaner,.bloom-owner) .view-toggle.bloom-selector-pill { background:#fff; }
