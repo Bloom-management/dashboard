@@ -470,7 +470,7 @@ dialog.cleaner-city-dialog { width:min(480px,calc(100vw - 24px)); border-radius:
 @media(max-width:700px) { .bloom-cleaner .topbar.bloom-compact-header .view-toggle svg { width:16px; height:16px; } }
 /* Keep the inbox within the viewport while refreshing its existing contents. */
 .admin-pricing-inbox { max-height:min(560px,var(--available-height,calc(100dvh - 100px))); overflow-y:auto; overscroll-behavior:contain; scrollbar-gutter:stable; }
-:is(.bloom-cleaner,.bloom-owner) .bloom-dialog.cleaner-day-dialog { width:min(560px,calc(100vw - 32px)); padding:28px; box-sizing:border-box; background:#fff; border:1px solid var(--line-2); border-radius:28px; box-shadow:0 16px 64px #302f2620; overflow-y:auto; }
+:is(.bloom-cleaner,.bloom-owner) .bloom-dialog:is(.cleaner-day-dialog,.bloom-dialog-surface) { width:min(560px,calc(100vw - 32px)); padding:28px; box-sizing:border-box; background:#fff; border:1px solid var(--line-2); border-radius:28px; box-shadow:0 16px 64px #302f2620; overflow-y:auto; }
 .cleaner-day-dialog::backdrop { background:transparent; backdrop-filter:none; }
 .cleaner-day-dialog header { padding-right:28px; }
 .cleaner-day-dialog h2 { margin:8px 0; font-size:26px; }
@@ -569,4 +569,18 @@ dialog.cleaner-city-dialog { width:min(480px,calc(100vw - 24px)); border-radius:
 }
 
 .bloom-push-card { background:#fff; border:1px solid #e3ded4; border-radius:24px; padding:24px; margin:0 0 24px; display:flex; flex-wrap:wrap; align-items:center; gap:16px; }
-.bloom-push-card h2 {font-size:20px; margin:0 0 8px;}.bloom-push-card p {margin:8px 0;max-width:58ch;}.bloom-push-dialog {padding:32px;max-width:560px;background:#fff;}.bloom-push-dialog fieldset {border:0;padding:16px 0;}.bloom-push-dialog label {display:flex;gap:12px;align-items:start;margin:16px 0;}.bloom-push-dialog button {margin:8px 8px 8px 0;}
+ .bloom-push-card h2 { font-size:20px; margin:0 0 8px; }
+.bloom-push-card p { margin:8px 0; max-width:58ch; }
+.bloom-push-dialog { line-height:1.5; overflow-wrap:anywhere; }
+.bloom-push-dialog header { padding-right:44px; margin-bottom:20px; }
+.bloom-push-dialog header h2 { margin:0 0 8px; font-size:clamp(22px,5vw,28px); line-height:1.2; }
+.bloom-push-dialog header p { color:var(--muted); }
+.bloom-push-dialog p { margin:12px 0; }
+.bloom-push-dialog fieldset { min-width:0; border:0; padding:20px 0; margin:0; }
+.bloom-push-dialog legend { padding:0; font-weight:600; }
+.bloom-push-dialog label { display:flex; gap:12px; align-items:flex-start; margin:16px 0; }
+.bloom-push-dialog input[type="checkbox"] { flex:0 0 20px; width:20px; height:20px; margin:2px 0 0; accent-color:var(--bloom-deep); }
+.bloom-push-dialog .bloom-button { max-width:100%; white-space:normal; margin:8px 0; }
+@media(max-width:360px) {
+ :is(.bloom-cleaner,.bloom-owner) .bloom-dialog.bloom-dialog-surface { padding:24px 20px; }
+}
