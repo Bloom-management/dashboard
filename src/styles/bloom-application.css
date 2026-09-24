@@ -434,7 +434,7 @@ dialog.cleaner-city-dialog { width:min(480px,calc(100vw - 24px)); border-radius:
 .admin-pricing-inbox h2 { font:600 20px/1.4 "Plus Jakarta Sans",sans-serif; margin:0 0 16px; }
 .admin-pricing-inbox ul { list-style:none; padding:0; margin:0; }
 .admin-pricing-inbox li+li { border-top:1px solid #e5e3dc; }
-.admin-pricing-inbox a { display:block; padding:14px 0; color:inherit; text-decoration:none; overflow-wrap:anywhere; }
+.admin-pricing-inbox a { display:block; padding:14px 14px; color:inherit; text-decoration:none; overflow-wrap:anywhere; }
 .admin-pricing-inbox a span { display:block; color:#b45666; font-size:12px; margin-top:6px; }
 .admin-cleaner-pricing { min-width:0; }
 
@@ -632,3 +632,41 @@ dialog.cleaner-city-dialog { width:min(480px,calc(100vw - 24px)); border-radius:
 }
 
 :is(.bloom-cleaner,.bloom-owner) .view-toggle.bloom-selector-pill { background:#fff; }
+
+.bloom-job-map .bloom-map-locate { margin-top:20px; }
+.bloom-job-map button.bloom-map-marker { display:flex; align-items:center; justify-content:center; background:#fff; }
+.bloom-map-marker img { display:block; }
+.bloom-map-count { position:absolute; top:-8px; right:-8px; min-width:18px; border-radius:50%; background:#2d2a1f; color:#fff; font-size:11px; }
+.bloom-supplies-dialog h2 { padding-right:44px; margin:0 0 24px; }
+
+.bloom-cleaner .cleaner-day-jobs li { border:1px solid var(--line-2); border-radius:20px; overflow:hidden; transition:background-color 180ms ease,border-color 180ms ease,box-shadow 180ms ease; }
+.bloom-cleaner .cleaner-day-jobs li > button { border:0; background:transparent; }
+.bloom-cleaner .cleaner-day-jobs li:is(:hover,:focus-within,.selected) { border-color:#b85563; background:#fff6f8; box-shadow:0 2px 10px #b8556314; }
+.cleaner-day-card-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; width:100%; }
+.cleaner-day-card-heading strong { min-width:0; }
+.cleaner-day-jobs .cleaner-day-completed { flex-shrink:0; padding:4px 8px; border-radius:6px; background:#e8eee5; color:#42533d; font-size:11px; font-weight:600; line-height:1.4; }
+@media(prefers-reduced-motion:reduce) { .bloom-cleaner .cleaner-day-jobs li { transition:none; } }
+
+:is(.bloom-cleaner,.bloom-owner) .property-rail-units button { transition:background-color 180ms ease,border-color 180ms ease,box-shadow 180ms ease; }
+:is(.bloom-cleaner,.bloom-owner) .property-rail-units button:is(:hover,:focus-visible) { background:#fff6f8; border-color:#b85563; box-shadow:inset 0 0 0 1px #b85563; }
+.admin-pricing-inbox li { position:relative; }
+.admin-pricing-inbox .bloom-notification-dismissible a { padding-right:48px; }
+.admin-pricing-inbox button.bloom-inbox-dismiss { position:absolute; top:8px; right:6px; width:36px; height:36px; min-height:36px; display:grid; place-items:center; padding:0; margin:0; background:transparent; border-radius:50%; }
+.admin-pricing-inbox button.bloom-inbox-dismiss:hover { background:#fff0f3; color:#b85563; }
+.bloom-job-sections { display:grid; gap:10px; }
+.bloom-job-subscreen { padding-top:24px; }
+.bloom-job-subscreen h2 { padding-right:40px; }
+.bloom-job-subscreen .bloom-job-back { display:inline-flex; min-height:44px; align-items:center; padding:8px 12px; margin-right:44px; color:#b85563; font:inherit; cursor:pointer; }
+@media(prefers-reduced-motion:reduce) { :is(.bloom-cleaner,.bloom-owner) .property-rail-units button { transition:none; } }
+
+.bloom-job-sections { grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.bloom-job-sections > .pill-row { grid-column:1 / -1; }
+.bloom-cleaner button.bloom-section-folder { display:flex; flex-direction:column; align-items:center; gap:12px; min-width:0; padding:16px; border:1px solid #e5e0d6; border-radius:22px; background:#fff; color:var(--ink); box-shadow:0 2px 6px #302f260a; cursor:pointer; font:inherit; }
+.bloom-section-preview { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; width:100%; }
+.bloom-section-mini { display:grid; place-items:center; aspect-ratio:1; min-width:0; border-radius:12px; background:#f6f3ec; }
+.bloom-section-mini svg { width:26px; height:26px; }
+.bloom-section-preview-empty { grid-column:1 / -1; min-height:100px; display:grid; place-items:center; font-size:13px; color:var(--muted); }
+.bloom-cleaner button.bloom-section-folder:is(:hover,:focus-visible) { border-color:#b85563; background:#fff6f8; }
+.admin-pricing-inbox li { transition:background-color 160ms ease,box-shadow 160ms ease; }
+.admin-pricing-inbox li:is(:hover,:has(:focus-visible)) { border-radius:14px; background:#fff6f8; box-shadow:inset 0 0 0 1px #e8b8c1; }
+@media(prefers-reduced-motion:reduce) { .admin-pricing-inbox li { transition:none; } }

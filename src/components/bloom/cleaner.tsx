@@ -1,4 +1,6 @@
 'use client';
+import {SupplyPreview,MaintenancePreview} from './maintenance';
+import {PersonAvatar} from './person-avatar';
 import {SelectorPill} from './selector-pill';
 import {NotificationInbox} from '../push/inbox';
 
@@ -12,7 +14,7 @@ import { MaintenanceGrid, JobSupplies } from './maintenance';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import type { CleanerJob, SessionUser } from '../../contracts';
-import { api, ApiError } from './api';
+import { api, ApiError, request } from './api';
 import { formatDate, formatTime, monthRange, money, todayIn } from './dates';
 import type { BloomIntegration } from './integration';
 import { Account, Brand, HubSelector, CalendarGrid, Changes, Empty, ErrorNotice, Icon, Loading, Modal, MonthHead, PropertyRail, RoleGate, useResource } from './primitives';
@@ -56,21 +58,26 @@ function CityPicker({ user, refresh, integration }: { user: SessionUser; refresh
 }
 
 function Instructions({ job, integration, isAdmin }: { job: CleanerJob; integration: BloomIntegration; isAdmin:boolean }) {
-  const [open, setOpen] = useState(false);
-  const loader = useCallback((signal: AbortSignal) => open && integration.getInstructions ? integration.getInstructions(job.id, signal, job.propertyId) : Promise.resolve(null), [integration, job.id, job.propertyId, open]);
-  const notes = useResource(loader);
-  if (!job.myAssignmentId && !isAdmin) return <div className="pill-row"><span className="row-head">Instructions</span><span className="window-note">Available after claiming</span></div>;
-  return <><button className="pill-row" onClick={() => setOpen(!open)} aria-expanded={open}><span className="row-head">Instructions</span><span className="pill-cta">{open ? 'Hide notes' : 'View notes'} <Icon name="right" /></span></button>{open && <div className="instr-card">{notes.loading ? <Loading /> : notes.error ? <ErrorNotice error={notes.error} retry={notes.reload} /> : notes.data ? <><p className="instr-body bloom-prewrap">{notes.data.instructions || 'No instructions provided.'}</p>{notes.data.address && <p>{notes.data.address}</p>}</> : <p>Instructions are unavailable. Contact your admin before visiting.</p>}</div>}</>;
+  const loader = useCallback((signal:AbortSignal)=>(job.myAssignmentId||isAdmin)&&integration.getInstructions?integration.getInstructions(job.id,signal,job.propertyId):Promise.resolve(null),[integration,job.id,job.propertyId,job.myAssignmentId,isAdmin]);
+  const notes=useResource(loader);
+  if(!job.myAssignmentId&&!isAdmin)return <p>Instructions are available after claiming this cleaning.</p>;
+  return <div className="instr-card">{notes.loading?<Loading/>:notes.error?<ErrorNotice error={notes.error} retry={notes.reload}/>:notes.data?<><p className="instr-body bloom-prewrap">{notes.data.instructions||'No instructions provided.'}</p>{notes.data.address&&<p>{notes.data.address}</p>}</>:<p>Instructions are unavailable. Contact your admin before visiting.</p>}</div>;
 }
 
 export function JobDetail({ job, user, integration, onClose, onUpdate, refresh }: { job: CleanerJob; user: SessionUser; integration: BloomIntegration; onClose: () => void; onUpdate: (job: CleanerJob) => void; refresh: () => void }) {
+  const loadTeam=useCallback((signal:AbortSignal)=>request<{id:string;displayName:string}[]>(`/jobs/${job.id}/team`,{signal}),[job.id]);
+  const team=useResource(loadTeam);
+
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<unknown>();
   const [coverage, setCoverage] = useState(false);
   const [now, setNow] = useState(Date.now());
   const operation = useRef<{ action: string; key: string } | null>(null);
   const locked = useRef(false);
-  const [propertyStep,setPropertyStep]=useState(0);
+  const [detailScreen,setDetailScreen]=useState<'Notes'|'Supplies'|'Maintenance'|null>(null);
+  const screenHeading=useRef<HTMLHeadingElement>(null);
+  const screenTrigger=useRef<string|null>(null);
+  useEffect(()=>{if(detailScreen)screenHeading.current?.focus();else if(screenTrigger.current)document.querySelector<HTMLButtonElement>(`[data-cleaning-section="${screenTrigger.current}"]`)?.focus({preventScroll:true});},[detailScreen]);
   const mounted = useRef(true);
   useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;};},[]);
   async function transitionJob(updated:CleanerJob) {
@@ -110,12 +117,12 @@ export function JobDetail({ job, user, integration, onClose, onUpdate, refresh }
     } finally { locked.current = false; setBusy(null); }
   }
   if (job.myAssignmentId) return <CleanerJourney key={job.id} job={job} user={user} integration={integration} onClose={onClose} onUpdate={journeyUpdate} />;
-  return <Modal className="detail-card job-detail-compact bloom-job-surface" title={`${job.propertyName} cleaning details`} onClose={onClose}><div className="detail-hero"><div className="detail-date">{formatDate(job.checkoutDate)}</div><div className="assign-row">{[0, 1].map(index => <div className="assign-slot" key={index}>{index < job.activeCleanerCount ? <span className="open-circle bloom-slot">{index === 0 && job.myAssignmentId ? 'You' : 'Assigned'}</span> : <button className="join-btn" disabled={!canClaim || !!busy} onClick={() => act('claim')} aria-label={`Claim open cleaning slot ${index + 1}`}><Icon name="plus" size={26} /></button>}<span className="assign-name">{index < job.activeCleanerCount ? 'Assigned' : 'Open slot'}</span></div>)}</div><h2 className="detail-headline">{job.propertyName}</h2><div className="fill-chip">{job.activeCleanerCount}/2 cleaners · {job.status}</div></div>
+  if(detailScreen)return <Modal showClose={false} className="detail-card job-detail-compact bloom-job-surface" title={`${job.propertyName} · ${detailScreen}`} onClose={onClose}><div className="detail-body bloom-job-subscreen"><button type="button" className="bloom-job-back" onClick={()=>setDetailScreen(null)}>← Back to cleaning</button><h2 ref={screenHeading} tabIndex={-1}>{detailScreen}</h2><p>{job.propertyName}</p>{detailScreen==='Notes'?<Instructions job={job} integration={integration} isAdmin={user.role==='admin'}/>:detailScreen==='Supplies'?<JobSupplies jobId={job.id} compact={false}/>:<MaintenanceGrid showHeading={false}/>}</div></Modal>;
+  return <Modal className="detail-card job-detail-compact bloom-job-surface" title={`${job.propertyName} cleaning details`} onClose={onClose}><div className="detail-hero"><div className="detail-date">{formatDate(job.checkoutDate)}</div><div className="assign-row">{[0, 1].map(index => <div className="assign-slot" key={index}>{index < job.activeCleanerCount ? <span className="open-circle bloom-slot"><PersonAvatar/></span> : <button className="join-btn" disabled={!canClaim || !!busy} onClick={() => act('claim')} aria-label={`Claim open cleaning slot ${index + 1}`}><Icon name="plus" size={26} /></button>}<span className="assign-name">{index < job.activeCleanerCount ? (team.data?.[index]?.displayName ?? (job.activeCleanerCount===1&&job.myAssignmentId?user.displayName:'Cleaner')) : 'Open slot'}</span></div>)}</div><h2 className="detail-headline">{job.propertyName}</h2><div className="fill-chip">{job.activeCleanerCount}/2 cleaners · {job.status}</div></div>
     <div className="detail-body"><Changes changes={job.changes} />{job.reviewRequired && <p className="bloom-notice">Booking changes need admin attention. Claiming and completion are paused.</p>}
       <div className="info-row"><div className="row-head">Cleaning window</div><div className="window-track"><div className="win-end"><span className="win-time">{formatTime(job.startAt, job.timezone)}</span><span className="win-cap">Start</span></div><div className="win-line" /><div className="win-end"><span className="win-time">{formatTime(job.endAt, job.timezone)}</span><span className="win-cap">Finish</span></div></div><p className="window-note">{formatDate(job.checkoutDate)} · {job.timezone}</p></div>
       {job.status === 'open' && !job.myAssignmentId && now >= Date.parse(job.endAt) && <p className="bloom-notice">The cleaning window has ended. New claims closed at {formatTime(job.endAt, job.timezone)} in {job.timezone}. Choose a future cleaning to claim a slot.</p>}
-      {user.role === 'admin' && <p className="bloom-notice">Cleaning as yourself · Admin access stays active.</p>}<Instructions job={job} integration={integration} isAdmin={user.role === 'admin'} />
-      <section><div className="view-toggle" role="group" aria-label="Property condition">{['Supplies','Maintenance'].map((label,index)=><button type="button" className={`vt-btn${propertyStep===index?' active':''}`} aria-pressed={propertyStep===index} key={label} onClick={()=>setPropertyStep(index)}>{label}</button>)}</div><div hidden={propertyStep!==0}><h3>Supplies</h3><JobSupplies jobId={job.id}/></div><div hidden={propertyStep!==1}><MaintenanceGrid/></div></section>
+      {user.role === 'admin' && <p className="bloom-notice">Cleaning as yourself · Admin access stays active.</p>}<nav className="bloom-job-sections" aria-label="Cleaning information">{(['Notes','Supplies','Maintenance'] as const).map(label=><button type="button" className={label==='Notes'?'pill-row':'bloom-section-folder'} key={label} data-cleaning-section={label} onClick={()=>{screenTrigger.current=label;setDetailScreen(label);}}>{label==='Notes'?<><span className="row-head">Notes</span><span className="pill-cta">View notes <Icon name="right"/></span></>:<>{label==='Supplies'?<SupplyPreview jobId={job.id}/>:<MaintenancePreview/>}<span className="row-head">{label}</span></>}</button>)}</nav>
       <div className="payout"><div className="row-head">{job.status === 'completed' ? 'Completed cleaning' : 'Provisional cleaning rate'}</div>{job.myCompletedPayCents !== null ? <div className="pt-amount">{money(job.myCompletedPayCents)}</div> : <><div className="payout-tiles"><div className="payout-tile"><div className="pt-amount">{money(job.soloRateCents)}</div><div className="pt-label">Solo</div><div className="pt-sub">one cleaner</div></div><div className="payout-tile"><div className="pt-amount">{money(job.sharedRateCents)}</div><div className="pt-label">Together</div><div className="pt-sub">per cleaner, when two</div></div></div><p className="payout-note">Provisional until completion. The second slot remains available.</p></>}</div>
       {job.myAssignmentId && <Photos key={`${job.id}-${job.myAssignmentId}`} job={job} user={user} integration={integration} onCoverage={setCoverage} />}
       {!!error && <ErrorNotice error={error} />}{busy && <p role="status">{busy === 'claim' ? 'Claiming your slot…' : busy === 'withdraw' ? 'Withdrawing…' : 'Completing job…'}</p>}
