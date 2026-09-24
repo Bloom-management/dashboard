@@ -21,4 +21,22 @@ class PinTests(unittest.TestCase):
   self.assertEqual(ids(),{j,foreign}) # same exception as the existing jobs endpoint
   self.assertNotEqual(sql("select public.bloom_day_pins('2030-05-01');",owner,ok=False).returncode,0)
   self.assertNotEqual(sql("select * from private.property_pins;",cleaner,ok=False).returncode,0)
+ def test_owner_suggestion_requires_ownership_and_admin_confirmation(self):
+  admin,_=make_user('admin');owner,oid=make_user('owner');other,_=make_user('owner');cleaner,_=make_user()
+  job,prop=make_job(day="date '2031-05-01'")
+  sql(f"insert into public.property_owners(property_id,owner_id) values('{prop}','{oid}');")
+  address=scalar(f"select address from public.properties where id='{prop}';")
+  pin=json.dumps({'latitude':42.3,'longitude':-83.07,'address':address,'confirmed':True}).replace("'","''")
+  for actor in [other,cleaner]:
+   self.assertNotEqual(sql(f"select public.bloom_property_pin_suggestion('{prop}','{pin}');",actor,ok=False).returncode,0)
+  sql(f"select public.bloom_property_pin_suggestion('{prop}','{pin}');",owner)
+  sql(f"select public.bloom_property_pin_suggestion('{prop}','{pin}');",owner)
+  self.assertEqual(scalar(f"select count(*) from private.property_pin_suggestions where property_id='{prop}';"),'1')
+  self.assertEqual(scalar(f"select count(*) from private.property_pins where property_id='{prop}';"),'0')
+  self.assertEqual(json.loads(scalar("select public.bloom_day_pins('2031-05-01');",cleaner)),[])
+  self.assertIsNotNone(json.loads(scalar(f"select public.bloom_property_pin_suggestion('{prop}');",admin)))
+  invalid=pin.replace(address,'stale address')
+  self.assertNotEqual(sql(f"select public.bloom_property_pin_suggestion('{prop}','{invalid}');",owner,ok=False).returncode,0)
+  sql(f"select public.bloom_property_pin('{prop}','{pin}');",admin)
+  self.assertEqual(scalar(f"select count(*) from private.property_pin_suggestions where property_id='{prop}';"),'0')
 if __name__=='__main__':unittest.main()

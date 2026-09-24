@@ -1,4 +1,6 @@
 'use client';
+import {AddressPinPicker} from '../maps/address-pin';
+import type {AddressPin} from '../maps/geocode';
 import {PropertyPin} from './property-pin';
 
 import {navigationLabel} from './navigation-labels';
@@ -95,6 +97,7 @@ function Cities({ integration }: { integration: BloomIntegration }) {
 }
 function PropertyForm({ integration, created }: { integration: BloomIntegration; created: (id:string) => void }) {
   const [draft, setDraft] = useState<Omit<PropertyOption, 'id'>>({ name:'',cityId:'',timezone:'America/Detroit',address:'',instructions:'',isBloomOwned:true,active:true,ownerIds:[],soloRateCents:7500 });
+  const [addressPin,setAddressPin]=useState<AddressPin|null>(null);const [pinConfirmed,setPinConfirmed]=useState(false);
   const [rate,setRate]=useState('75.00');
   const [calendars,setCalendars]=useState(initialCalendars);
   const [savedProperty,setSavedProperty]=useState<string|null>(null);
@@ -118,6 +121,7 @@ function PropertyForm({ integration, created }: { integration: BloomIntegration;
     setValidation('');
     const input={...draft,...ownership,cityId:draft.cityId||cities.data?.find(c=>c.active&&c.name.toLowerCase()==='detroit')?.id||'',soloRateCents};
     await mutation.run(input,async key=>{if(!savedId.current){const result=await integration.admin!.createProperty(input,key);savedId.current=result.id;setSavedProperty(result.id);}
+      if(addressPin?.address===draft.address&&pinConfirmed)await request(`/admin/properties/${savedId.current}/pin`,{body:{latitude:addressPin.latitude,longitude:addressPin.longitude,confirmed:true}});
       for(const feed of calendars.filter(feed=>feed.url.trim())){
         const identity=JSON.stringify([feed.provider,feed.url.trim()]);
         let receipt=calendarReceipts.current.get(identity);
@@ -137,7 +141,7 @@ function PropertyForm({ integration, created }: { integration: BloomIntegration;
     <label>City<select required value={draft.cityId||cities.data?.find(c=>c.active&&c.name.toLowerCase()==='detroit')?.id||''} onChange={e=>setDraft({...draft,cityId:e.target.value})}><option value="">Choose city</option>{cities.data?.filter(c=>c.active).map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
     {cities.loading&&<Loading/>}{!!cities.error&&<ErrorNotice error={cities.error} retry={cities.reload}/>}
     <label>Property timezone<input required maxLength={100} value={draft.timezone} onChange={e=>setDraft({...draft,timezone:e.target.value})}/><small>Use an IANA timezone, such as America/Detroit.</small></label>
-    <label>Address<textarea required maxLength={500} value={draft.address} onChange={e=>setDraft({...draft,address:e.target.value})}/></label>
+    <label>Address<textarea required maxLength={500} value={draft.address} onChange={e=>{setDraft({...draft,address:e.target.value});setAddressPin(null);setPinConfirmed(false);}}/></label><AddressPinPicker key={draft.address} address={draft.address} value={addressPin} onChange={pin=>{setAddressPin(pin);setPinConfirmed(false);}}/>{addressPin?.address===draft.address&&<label><input type="checkbox" checked={pinConfirmed} onChange={e=>setPinConfirmed(e.target.checked)}/>I confirm this pin marks the property. Save it with this property.</label>}
     <label>Cleaning instructions<textarea required maxLength={5000} value={draft.instructions} onChange={e=>setDraft({...draft,instructions:e.target.value})}/></label>
     <p>Cleaning window: 11 AM–3 PM on checkout day, in the property's timezone.</p>
     <label>Initial solo rate (USD)<input type="number" required min="0.02" step="0.02" value={rate} onChange={e=>setRate(e.target.value)}/><small>Shared rate: {rateCents === null ? 'Enter a valid solo rate' : money(rateCents/2)} per cleaner. Admins can update cleaner pricing in unit Settings.</small></label>
@@ -171,7 +175,7 @@ function PropertySettings({id,integration,back,onRenamed}:{id:string;integration
  const sources=useCallback((cursor:string|null,signal:AbortSignal)=>integration.admin!.propertySources(id,cursor,signal),[integration,id]);
  if(property.loading)return <><button type="button" className="bloom-button secondary" onClick={back}>Back to Properties</button><Loading/></>;if(property.error)return <><button className="bloom-button" onClick={back}>Back to Properties</button><ErrorNotice error={property.error} retry={property.reload}/></>;
  const p=property.data!;
- return <><article className="bloom-admin-card"><h2>{p.name}</h2><PropertyName key={p.id} property={p} rename={integration.renameProperty} onSaved={()=>{property.reload();onRenamed();}}/><p>{p.isBloomOwned?'Bloom-owned':`Owner-owned · ${p.ownerIds.length} linked owner account(s)`}</p>{p.pendingOwnerEmail&&<p className="bloom-notice">Pending owner: {p.pendingOwnerEmail}. Access begins after sign-in with this verified primary email. No invitation has been sent.</p>}<p>{p.address}</p><p>11 AM–3 PM · {p.timezone} · Checkout day</p><p>Solo {money(p.soloRateCents)} · Shared {money(p.soloRateCents/2)} per cleaner</p><h3>Cleaning instructions</h3><p className="bloom-prewrap">{p.instructions}</p></article><PropertyPin id={id}/><AdminUnitPricing id={id} onSaved={property.reload}/><CleaningConfiguration propertyId={id}/><PropertyPeoplePanel listing={p}/><h2>Calendar sources</h2><p>Airbnb and Vrbo sources for {p.name}. Links are kept private.</p><Paginated key={revision} loader={sources} render={(items,refresh)=><>{items.length?items.map(s=><SourceRow source={s} reload={()=>{refresh();setReviewRevision(value=>value+1);}} onOutcome={setSyncOutcome} key={s.id}/>):<Empty title="No calendar sources">Add an export link for this property below.</Empty>}</>}/><p role="status">{syncOutcome}</p><SourceForm propertyId={id} reload={reload}/><section aria-label="Flagged calendar entries"><h2>Flagged calendar entries</h2><p>Read-only inspection of blocked, unconfirmed, or source-flagged stays. Dates are local to this property. Classification changes are not available here; use Jobs to resolve changes affecting existing cleanings.</p><Paginated key={reviewRevision} loader={reviews} render={items=><CalendarReviewList entries={items}/>}/></section></>;
+ return <><article className="bloom-admin-card"><h2>{p.name}</h2><PropertyName key={p.id} property={p} rename={integration.renameProperty} onSaved={()=>{property.reload();onRenamed();}}/><p>{p.isBloomOwned?'Bloom-owned':`Owner-owned · ${p.ownerIds.length} linked owner account(s)`}</p>{p.pendingOwnerEmail&&<p className="bloom-notice">Pending owner: {p.pendingOwnerEmail}. Access begins after sign-in with this verified primary email. No invitation has been sent.</p>}<p>{p.address}</p><p>11 AM–3 PM · {p.timezone} · Checkout day</p><p>Solo {money(p.soloRateCents)} · Shared {money(p.soloRateCents/2)} per cleaner</p><h3>Cleaning instructions</h3><p className="bloom-prewrap">{p.instructions}</p></article><PropertyPin id={id} address={p.address}/><AdminUnitPricing id={id} onSaved={property.reload}/><CleaningConfiguration propertyId={id}/><PropertyPeoplePanel listing={p}/><h2>Calendar sources</h2><p>Airbnb and Vrbo sources for {p.name}. Links are kept private.</p><Paginated key={revision} loader={sources} render={(items,refresh)=><>{items.length?items.map(s=><SourceRow source={s} reload={()=>{refresh();setReviewRevision(value=>value+1);}} onOutcome={setSyncOutcome} key={s.id}/>):<Empty title="No calendar sources">Add an export link for this property below.</Empty>}</>}/><p role="status">{syncOutcome}</p><SourceForm propertyId={id} reload={reload}/><section aria-label="Flagged calendar entries"><h2>Flagged calendar entries</h2><p>Read-only inspection of blocked, unconfirmed, or source-flagged stays. Dates are local to this property. Classification changes are not available here; use Jobs to resolve changes affecting existing cleanings.</p><Paginated key={reviewRevision} loader={reviews} render={items=><CalendarReviewList entries={items}/>}/></section></>;
 }
 function Properties({integration,initialPropertyId}:{integration:BloomIntegration;initialPropertyId?:string}) {
  const router=useRouter();const search=useSearchParams();const adding=search.get('new')==='1';

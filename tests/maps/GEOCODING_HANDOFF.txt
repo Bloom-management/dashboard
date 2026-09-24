@@ -1,0 +1,45 @@
+Address lookup and confirmed pins — 2026-09-23
+
+Production repair completed: migration 035 applied and the user-authorized,
+Google-place-link coordinates for 3628 Trumbull saved through bloom_property_pin
+under the verified existing Pierre Harbin admin record. Coordinates are
+42.3425158,-83.0729674. No ownership, calendar or job changes.
+
+Geocoding uses the existing NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN in the browser.
+Mapbox v6 forward geocoding: permanent=true, autocomplete=false, address results,
+maximum five candidates, explicit Find on map click only. No automatic searches,
+map-load geocoding, routing or timezone/city changes. URL restrictions must allow
+the actual browser origin. Permanent storage requires a credit card or enterprise
+contract; request charges follow Mapbox's geocoding pricing separately from maps.
+Provider URLs/tokens and error bodies are never logged or stored in Bloom.
+Live local browser request returned HTTP 200 and the expected full 3628 address.
+
+Admin Add Property: optional address lookup, preview and explicit confirmation;
+pin saved after property creation. Existing saved ID protects retries.
+Admin property settings: lookup saved address, numeric override, preview, confirm.
+Owner Add listing: optional address preview before creation; after listing is
+saved, explicitly confirm and submit the pin for admin review. Submission failure
+preserves the saved listing and selected pin; retry does not create a listing.
+Admin Property map pin shows an owner suggestion for preview and confirmation.
+Only confirmed private.property_pins are returned to cleaner maps. Suggestions
+cannot grant access, change approved cities or update confirmed coordinates.
+
+Migration 036 adds private.property_pin_suggestions and a role/ownership-checked
+RPC. Suggestions are tied to the exact saved property address, use bounded finite
+coordinates, and upsert by property. Admin confirmation clears the suggestion.
+Apply 036 before deploying this UI. No manual hosted SQL edits or reset required.
+
+Verification:
+- Five coordinate/geocoding unit tests passed (provider responses mocked).
+- Three PostgreSQL tests passed on a disposable database with all migrations:
+  confirmation/bounds, date/city/assignment access, owner isolation, stale address,
+  retry upsert, unpublished suggestions and admin confirmation clearing them.
+- Browser component checks at 390/1440px passed with mocked Mapbox/API: explicit
+  lookup only, preview, confirmation, saved-listing failure recovery and retry.
+- Typecheck, lint, existing UI suite passed.
+- Physical Android/iPhone not tested. Hosted geocoding billing/token restrictions
+  require a production smoke test; local success is not production acceptance.
+
+Official documentation: https://docs.mapbox.com/api/search/geocoding/
+Rollback: revert geocoding UI commit and redeploy; leave additive 035/036 tables
+and saved pins intact. Existing map-only code ignores owner suggestions.
