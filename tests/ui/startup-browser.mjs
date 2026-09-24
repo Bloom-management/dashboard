@@ -25,6 +25,7 @@ try{
   if(mode==='browser'){await page.waitForTimeout(2900);assert((await splash.locator('.petal').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('transform')))).some(v=>v!=='scale(1)'));}
   if(mode==='reduced')assert((await splash.locator('.petal').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('transform')))).every(v=>v==='scale(1)'));
   if(mode==='browser'){await page.emulateMedia({reducedMotion:'reduce'});await page.waitForTimeout(50);assert((await splash.locator('.petal').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('transform')))).every(v=>v==='scale(1)'));await page.emulateMedia({reducedMotion:'no-preference'});}
+  await page.setViewportSize({width:430,height:620});await page.waitForTimeout(100);const resized=await splash.locator('svg').boundingBox();assert(Math.abs(resized.x+resized.width/2-215)<1);assert(Math.abs(resized.y+resized.height/2-310)<1);
   releaseSession();await page.waitForTimeout(100);assert(await splash.isVisible());releaseJobs();await splash.waitFor({state:'detached',timeout:1500});
   if(mode==='failure'){await page.getByText('Fixture startup failed').waitFor();await page.getByRole('button',{name:'Try again'}).click();assert.equal(await splash.count(),0);}
   else{await page.getByRole('heading',{name:'Ready hub'}).waitFor();await page.getByRole('button',{name:'Refresh',exact:true}).click();await page.waitForTimeout(100);assert.equal(await splash.count(),0);}

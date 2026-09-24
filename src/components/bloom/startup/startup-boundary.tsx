@@ -10,6 +10,14 @@ let launchFinished=false;
 export function StartupBoundary({children}:{children:ReactNode}){
  const [active,setActive]=useState(()=>!launchFinished);
  const [mode,setMode]=useState<'once'|'loop'>('loop');
+ const screen=useRef<HTMLDivElement>(null);
+ useLayoutEffect(()=>{
+  if(!active)return;
+  const viewport=window.visualViewport;
+  const position=()=>{const element=screen.current;if(!element)return;element.style.width=`${viewport?.width??window.innerWidth}px`;element.style.height=`${viewport?.height??window.innerHeight}px`;element.style.left=`${viewport?.offsetLeft??0}px`;element.style.top=`${viewport?.offsetTop??0}px`;};
+  position();viewport?.addEventListener('resize',position);viewport?.addEventListener('scroll',position);window.addEventListener('resize',position);
+  return()=>{viewport?.removeEventListener('resize',position);viewport?.removeEventListener('scroll',position);window.removeEventListener('resize',position);};
+ },[active]);
  const resources=useRef(new Map<symbol,Resource>());
  const [revision,setRevision]=useState(0);
  const track=useCallback<Tracker>((id,state)=>{if(state)resources.current.set(id,state);else resources.current.delete(id);setRevision(n=>n+1);},[]);
@@ -18,7 +26,7 @@ export function StartupBoundary({children}:{children:ReactNode}){
   const states=[...resources.current.values()];
   if(active&&states.length&&(states.some(s=>s.error)||states.every(s=>!s.loading))){launchFinished=true;setActive(false);}
  },[active,revision]);
- return <StartupContext.Provider value={active?track:null}><div className={active?styles.pending:undefined} aria-hidden={active||undefined}>{children}</div>{active&&<div className={styles.screen} role="status" aria-label="Loading Bloom" aria-busy="true"><BloomFlower mode={mode}/></div>}</StartupContext.Provider>;
+ return <StartupContext.Provider value={active?track:null}><div className={active?styles.pending:undefined} aria-hidden={active||undefined}>{children}</div>{active&&<div ref={screen} className={styles.screen} role="status" aria-label="Loading Bloom" aria-busy="true"><BloomFlower mode={mode}/></div>}</StartupContext.Provider>;
 }
 /** Track foreground initial requests only; layout registration precedes readiness evaluation. */
 export function useStartupResource(state:Resource){
