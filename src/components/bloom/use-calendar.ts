@@ -1,4 +1,5 @@
 'use client';
+import {useStartupResource} from './startup/startup-boundary';
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react';
 import { ApiError } from './api';
 import { CalendarCache } from './calendar-cache';
@@ -24,5 +25,6 @@ export function useCalendar<T>(scope: string, path: string, prefetchPaths: reado
     return ()=>{window.clearInterval(timer);cache.dispose();};
   },[cache]);
   const reload=useCallback(()=>cache.check(),[cache]);
+  useStartupResource(state);
   return {...state,reload};
 }

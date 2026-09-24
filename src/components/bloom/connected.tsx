@@ -1,4 +1,5 @@
  'use client';
+import {StartupBoundary} from './startup/startup-boundary';
 import { useMemo } from 'react';
 import { useAuth, UserButton } from '@clerk/nextjs';
 import { request, ApiError } from './api';
@@ -61,5 +62,5 @@ export function ConnectedHub({role,initialPropertyId}:{role:Role;initialProperty
    assignments:(jobId,signal)=>request(`/admin/jobs/${encodeURIComponent(jobId)}/assignments`,{signal}),
   }
  }),[getToken]);
- return role==='cleaner'?<CleanerHub integration={integration}/>:role==='owner'?<OwnerHub integration={integration}/>:<AdminHub integration={integration} initialPropertyId={initialPropertyId}/>;
+ return <StartupBoundary>{role==='cleaner'?<CleanerHub integration={integration}/>:role==='owner'?<OwnerHub integration={integration}/>:<AdminHub integration={integration} initialPropertyId={initialPropertyId}/>}</StartupBoundary>;
 }

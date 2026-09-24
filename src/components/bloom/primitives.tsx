@@ -1,4 +1,5 @@
 'use client';
+import {useStartupResource} from './startup/startup-boundary';
 
 import { DialogClose } from './dialog-close';
 import { lockDialogScroll } from './dialog-scroll';
@@ -25,6 +26,7 @@ export function useResource<T>(loader: (signal: AbortSignal) => Promise<T>, pres
       .catch(error => { if (!controller.signal.aborted) setState({ error, loading: false }); });
     return () => controller.abort();
   }, [loader, revision, preserveWhileChecking]);
+  useStartupResource(state);
   return { ...state, reload };
 }
 
