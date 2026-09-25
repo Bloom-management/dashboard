@@ -1,4 +1,5 @@
 'use client';
+import {DialogLoading} from './dialog-loading';
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import type { GroupImperativeHandle } from 'react-resizable-panels';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '../ui/resizable';
@@ -101,7 +102,7 @@ export function SupplyReferenceGrid({supplies,reports=[],compact=true}:{compact?
  return supplies.length?<>{grid(compact?supplies.slice(0,4):supplies)}{compact&&supplies.length>4&&<button type="button" className="bloom-button secondary" aria-haspopup="dialog" onClick={()=>setExpanded(true)}>+{supplies.length-4} supplies</button>}{expanded&&<Modal title="All supplies" className="bloom-dialog-surface bloom-supplies-dialog" onClose={()=>setExpanded(false)}><h2>Supplies</h2>{grid(supplies)}</Modal>}</>:<p>No supplies are configured for this cleaning.</p>;
 }
 
-export function JobSupplies({jobId,compact=true}:{jobId:string;compact?:boolean}){const load=useCallback((signal:AbortSignal)=>request<{supplies:CleaningConfig['supplies'];reports:{supplyId:string;level:SupplyLevel;reportedAt:string}[]}>(`/jobs/${jobId}/supplies`,{signal}),[jobId]);const data=useResource(load);return data.loading?<Loading/>:data.error?<ErrorNotice error={data.error} retry={data.reload}/>:data.data?<SupplyReferenceGrid compact={compact} supplies={data.data.supplies} reports={data.data.reports}/>:null;}
+export function JobSupplies({jobId,compact=true}:{jobId:string;compact?:boolean}){const load=useCallback((signal:AbortSignal)=>request<{supplies:CleaningConfig['supplies'];reports:{supplyId:string;level:SupplyLevel;reportedAt:string}[]}>(`/jobs/${jobId}/supplies`,{signal}),[jobId]);const data=useResource(load);return data.loading?(compact?<Loading/>:<DialogLoading/>):data.error?<ErrorNotice error={data.error} retry={data.reload}/>:data.data?<SupplyReferenceGrid compact={compact} supplies={data.data.supplies} reports={data.data.reports}/>:null;}
 
 export function MaintenancePreview(){return <span className="bloom-section-preview" aria-hidden="true">{maintenanceItems.slice(0,4).map(item=><span className="bloom-section-mini" key={item.category} title={item.label}><MaintenanceIcon path={item.path}/></span>)}</span>;}
 export function SupplyPreview({jobId}:{jobId:string}){

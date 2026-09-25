@@ -5,7 +5,7 @@ import { DialogClose } from './dialog-close';
 import { lockDialogScroll } from './dialog-scroll';
 import { useRouter } from 'next/navigation';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
-import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useId, useRef, useState, type ReactNode, type CSSProperties } from 'react';
 import type { InlineChange, Role, SessionUser } from '../../contracts';
 import { api, ApiError } from './api';
 import { shiftMonth, todayIn } from './dates';
@@ -98,7 +98,7 @@ export function MonthHead({ month, onMonth, owner = false, onDaySelect }: { mont
 export function CalendarGrid({ month, today, children, onDaySelect }: { month: string; today?: string; owner?: boolean; onDaySelect?: (date:string)=>void; children: (date: string) => ReactNode }) {
   return <BookingCalendar month={month} today={today} onDaySelect={onDaySelect}>{children}</BookingCalendar>;
 }
-export function Modal({ title, onClose, children, showClose = true, className = 'detail-card' }: { showClose?: boolean; title: string; onClose: () => void; children: ReactNode; className?: string }) {
+export function Modal({ title, onClose, children, style, showClose = true, className = 'detail-card' }: { style?: CSSProperties; showClose?: boolean; title: string; onClose: () => void; children: ReactNode; className?: string }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const close = useRef(onClose); close.current = onClose;
   const id = useId();
@@ -109,7 +109,7 @@ export function Modal({ title, onClose, children, showClose = true, className = 
     element?.showModal();
     return () => { element?.close(); unlock(); previous?.focus({preventScroll:true}); };
   }, []);
-  return <dialog ref={dialog} className={`bloom-dialog ${className}`} aria-labelledby={id} onCancel={event => { event.preventDefault(); event.stopPropagation(); close.current(); }} onClick={event => { if (event.target === event.currentTarget) { const bounds = event.currentTarget.getBoundingClientRect(); if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) close.current(); } }}><h2 id={id} className="bloom-sr-only">{title}</h2>{showClose&&<DialogClose autoFocus onClose={onClose}/>} {children}</dialog>;
+  return <dialog ref={dialog} style={style} className={`bloom-dialog ${className}`} aria-labelledby={id} onCancel={event => { event.preventDefault(); event.stopPropagation(); close.current(); }} onClick={event => { if (event.target === event.currentTarget) { const bounds = event.currentTarget.getBoundingClientRect(); if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) close.current(); } }}><h2 id={id} className="bloom-sr-only">{title}</h2>{showClose&&<DialogClose autoFocus onClose={onClose}/>} {children}</dialog>;
 }
 
 /** Navigation changes the view only; the server-provided account role is unchanged. */

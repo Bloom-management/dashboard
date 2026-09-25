@@ -670,3 +670,7 @@ dialog.cleaner-city-dialog { width:min(480px,calc(100vw - 24px)); border-radius:
 .admin-pricing-inbox li { transition:background-color 160ms ease,box-shadow 160ms ease; }
 .admin-pricing-inbox li:is(:hover,:has(:focus-visible)) { border-radius:14px; background:#fff6f8; box-shadow:inset 0 0 0 1px #e8b8c1; }
 @media(prefers-reduced-motion:reduce) { .admin-pricing-inbox li { transition:none; } }
+
+.bloom-job-detail-screen .bloom-job-subscreen { box-sizing:border-box; min-height:100%; display:flex; flex-direction:column; }
+.bloom-job-subscreen .bloom-dialog-loading { flex:1; min-height:160px; display:grid; place-items:center; padding:24px; }
+.bloom-job-subscreen .bloom-job-back { flex-shrink:0; align-self:flex-start; }
