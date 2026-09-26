@@ -9,6 +9,7 @@ import type { OwnerCalendarBlock, Provider, SessionUser } from '../../contracts'
 import { useCalendar } from './use-calendar';
 import { ApiError, request } from './api';
 import type { OwnerListing, OwnerListingsPage } from '../../contracts/owner-hub';
+import {LocationDropdown} from './location-dropdown';
 import { OwnerUnitFilter } from './owner-unit-filter';
 import { ownerPropertyColor } from './owner-colors';
 import { OwnerMonth } from './owner-month';
@@ -45,6 +46,7 @@ function OwnerContent({ user, integration }: { user: SessionUser; integration: B
   const [createdListings,setCreatedListings]=useState<OwnerListing[]>([]);
   const [selectedDay,setSelectedDay]=useState<string|null>(null);
   const [selected, setSelected] = useState<OwnerCalendarBlock | null>(null);
+  const [sourceFilter,setSourceFilter]=useState('all');
   const range = monthRange(month);
   const calendar = useCalendar<OwnerCalendarBlock[]>(`${user.id}:${user.role}`, `/owner/calendar?from=${range.from}&to=${range.to}`);
   useEffect(() => {
@@ -79,8 +81,8 @@ function OwnerContent({ user, integration }: { user: SessionUser; integration: B
     {tab==='people'?<OwnerPeople listings={properties}/>:!properties.length?<Empty title="No properties linked yet"><p>Add your first property from the Listings tab to get started.</p></Empty>:<>
     <div hidden={tab!=='calendar'}>
     {freshness.loading?<Loading/>:freshness.error?<ErrorNotice error={freshness.error} retry={freshness.reload}/>:freshness.data&&<section aria-label="Property calendar sync status"><div className="owner-property-legend">{legendItems.slice(currentLegendPage*6,currentLegendPage*6+6).map(item=><span className="owner-property-key" key={item.propertyId} style={{'--property-color':ownerPropertyColor(item.propertyId)} as CSSProperties}><span className="owner-key-dot" aria-hidden="true"/><span>{properties.find(property=>property.id===item.propertyId)?.name??'Property'}<small>{item.message??(item.lastSuccessAt?`Last synced ${new Intl.DateTimeFormat('en-US',{dateStyle:'medium',timeStyle:'short',timeZone:'UTC'}).format(new Date(item.lastSuccessAt))} UTC`:'Not synced yet')}</small></span></span>)}</div>{legendPages>1&&<div className="owner-legend-pagination"><button className="icon-btn" aria-label="Previous listings" disabled={currentLegendPage===0} onClick={()=>setLegendPage(currentLegendPage-1)}>‹</button><span aria-live="polite">{currentLegendPage+1} of {legendPages}</span><button className="icon-btn" aria-label="Next listings" disabled={currentLegendPage===legendPages-1} onClick={()=>setLegendPage(currentLegendPage+1)}>›</button></div>}</section>}
-    <MonthHead month={month} owner onDaySelect={setSelectedDay} onMonth={value=>{setSelected(null);setSelectedDay(null);setMonth(value);}}/><p className="legend">Stays · Blocked · Unconfirmed · Dates are local to each property</p>
-    {calendar.loading?<Loading/>:calendar.error?<ErrorNotice error={calendar.error} retry={calendar.reload}/>:visibleProperties.length?<OwnerMonth month={month} day={selectedDay} onDayChange={setSelectedDay} blocks={(calendar.data??[]).filter(block=>visibleProperties.some(property=>property.id===block.propertyId))} onSelect={setSelected}/>:<Empty title="No units selected">Check a unit above to show its timeline.</Empty>}
+    <LocationDropdown label="Calendar source" value={sourceFilter} onValueChange={value=>{setSourceFilter(value);setSelected(null);setSelectedDay(null);}} locations={[{id:'all',name:'All sources'},{id:'airbnb',name:'Airbnb'},{id:'vrbo',name:'VRBO'},{id:'external',name:'External'}]}/><MonthHead month={month} owner onDaySelect={setSelectedDay} onMonth={value=>{setSelected(null);setSelectedDay(null);setMonth(value);}}/><p className="legend">Stays · Blocked · Unconfirmed · Dates are local to each property</p>
+    {calendar.loading?<Loading/>:calendar.error?<ErrorNotice error={calendar.error} retry={calendar.reload}/>:visibleProperties.length?<OwnerMonth month={month} day={selectedDay} onDayChange={setSelectedDay} blocks={(calendar.data??[]).filter(block=>visibleProperties.some(property=>property.id===block.propertyId)&&(sourceFilter==='all'||(sourceFilter==='external'?!block.providers.some(provider=>provider==='airbnb'||provider==='vrbo'):block.providers.some(provider=>provider===sourceFilter))))} onSelect={setSelected}/>:<Empty title="No units selected">Check a unit above to show its timeline.</Empty>}
     </div>
     {tab==='performance'&&<OwnerPerformancePanel propertyIds={visibleProperties.map(item=>item.id)} from={range.from} toExclusive={toExclusive} revision={revision} lastUpdatedAt={visibleProperties.length&&visibleProperties.every(p=>p.sources.length>0&&p.sources.every(s=>s.lastSuccessAt))?visibleProperties.flatMap(p=>p.sources.map(s=>s.lastSuccessAt!)).sort()[0]:null}/>}
     {tab==='listings'&&<OwnerListings listings={properties} integration={integration} onChanged={changed} from={range.from} toExclusive={toExclusive} revision={revision}/>}

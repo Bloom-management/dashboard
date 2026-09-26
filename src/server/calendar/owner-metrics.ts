@@ -72,5 +72,5 @@ export function calculateOwnerPerformance(input: OwnerAnalyticsInput, from: stri
   for (const property of properties) for (const share of property.platformShare) origins[share.platform] += share.nights;
   const totals = summarize(sum('bookedNights'), sum('blockedNights'), sum('checkIns'), properties.reduce((n, p) => n + p.coverage.eligibleUnitNights, 0), count * properties.length, origins);
   return { from, toExclusive, totals, properties,
-    assumption: 'Known blocks count as occupied for analytics, not as cleaning jobs. Reservations take precedence over blocks. Platform shares use unique known occupied nights; uncertain origins are Off-platform / unknown. Check-ins count distinct confirmed booking identities; cross-feed duplicates cannot be proven from dates alone. Price updates coming soon.' };
+    assumption: 'Known blocks count as occupied for analytics, not as cleaning jobs. Reservations take precedence over blocks. Platform shares use unique known occupied nights; blocks and uncertain origins are Blocked / unattributed. Check-ins count distinct confirmed booking identities; cross-feed duplicates cannot be proven from dates alone. Price updates coming soon.' };
 }

@@ -87,3 +87,6 @@
  .payout-form-grid details nav button { width:26px; padding:5px; }
  .payout-form-grid details select { min-height:36px; }
 }
+
+.payout-cleaning { background:#fff; box-shadow:0 3px 12px #302f2610; }
+.payout-recorded-by { display:block; margin:20px 0 14px; line-height:1.5; }

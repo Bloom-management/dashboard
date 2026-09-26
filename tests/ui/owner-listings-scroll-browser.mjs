@@ -34,8 +34,9 @@ try {
    await route.fulfill({json:{data}});
   });
   await page.goto(`http://127.0.0.1:${server.address().port}`);
+  await page.getByRole('button',{name:'Calendar source: All sources'}).click();await page.getByRole('menuitemradio',{name:'VRBO',exact:true}).click();await page.getByRole('button',{name:'Calendar source: VRBO'}).waitFor();assert.equal(await page.locator('.owner-month-event[aria-label*="Airbnb"]').count(),0);await page.getByRole('button',{name:'Calendar source: VRBO'}).click();await page.getByRole('menuitemradio',{name:'All sources',exact:true}).click();
   if(width<=700){await page.getByRole('button',{name:'Owner view: Calendar'}).click();await page.getByRole('menuitemradio',{name:'Listings',exact:true}).click();}else await page.getByRole('button',{name:'Listings',exact:true}).click();
-  const detail=page.locator('.owner-listing-detail');const save=page.getByRole('button',{name:'Save nightly rate',exact:true});await save.waitFor();
+  const detail=page.locator('.owner-listing-detail');const save=page.getByRole('button',{name:'Save nightly rate',exact:true});await save.waitFor();const minus=await page.getByRole('button',{name:'Decrease nightly rate'}).boundingBox(),plus=await page.getByRole('button',{name:'Increase nightly rate'}).boundingBox(),symbol=await page.locator('.nightly-rate-amount > span').first().boundingBox(),amount=await page.locator('.nightly-rate-input-wrap').boundingBox();assert(Math.abs((symbol.x+amount.x+amount.width)/2-(minus.x+minus.width/2+plus.x+plus.width/2)/2)<2,'Currency and value centered together');
   if(width<=700){
    assert.equal(await detail.evaluate(el=>getComputedStyle(el).maxHeight),'none');assert.equal(await detail.evaluate(el=>getComputedStyle(el).overflowY),'visible');
    assert.equal(await page.locator('.owner-listings-main').evaluate(el=>getComputedStyle(el).overflowY),'visible');

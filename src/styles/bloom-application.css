@@ -677,3 +677,28 @@ dialog.cleaner-city-dialog { width:min(480px,calc(100vw - 24px)); border-radius:
 
 .bloom-cleaner .bloom-admin-tabs.bloom-selector-pill { width:fit-content; max-width:100%; box-sizing:border-box; flex-wrap:nowrap; overflow-x:auto; padding:4px; }
 .bloom-cleaner .bloom-admin-tabs.bloom-selector-pill .vt-btn { flex:0 0 auto; min-height:44px; }
+
+:is(.bloom-cleaner,.bloom-owner) .view-toggle.bloom-selector-pill { position:relative; isolation:isolate; }
+:is(.bloom-cleaner,.bloom-owner) .view-toggle.bloom-selector-pill::before { content:none; }
+.bloom-selector-indicator { position:absolute; pointer-events:none; z-index:-1; left:0; top:0; border-radius:999px; background:var(--ink); width:var(--selector-width,0); height:var(--selector-height,0); transform:translate(var(--selector-x,0),var(--selector-y,0)); transition:transform 240ms cubic-bezier(.2,.7,.2,1),width 240ms cubic-bezier(.2,.7,.2,1),height 240ms cubic-bezier(.2,.7,.2,1); }
+:is(.bloom-cleaner,.bloom-owner) .bloom-selector-pill[data-slider="ready"] .vt-btn.active { background:transparent; box-shadow:none; }
+:is(.bloom-cleaner,.bloom-owner) .bloom-selector-pill .vt-btn { transition:color 200ms ease; }
+.nightly-rate-amount { gap:4px; }
+.nightly-rate-amount input { text-align:left; }
+.owner-supply-grid .maintenance-card > svg { width:56px; height:56px; align-self:center; justify-self:center; margin-inline:auto; }
+.cleaner-day-jobs .cleaner-day-count { flex-shrink:0; padding:4px 8px; border-radius:6px; font-size:11px; font-weight:600; line-height:1.4; }
+.cleaner-day-count[data-count="0"] { background:#f6e1e5; color:#913c4d; }
+.cleaner-day-count[data-count="1"] { background:#f5ebd5; color:#776027; }
+.cleaner-day-count[data-count="2"] { background:#e8eee5; color:#42533d; }
+@media(prefers-reduced-motion:reduce) { .bloom-selector-indicator,:is(.bloom-cleaner,.bloom-owner) .bloom-selector-pill .vt-btn { transition:none; } }
+
+.bloom-maintenance-icon-stage { display:grid; place-items:center; flex:1; min-height:72px; }
+.bloom-maintenance-icon-stage svg { width:56px; height:56px; }
+
+.nightly-rate-input-wrap { display:inline-grid; position:relative; min-width:0; }
+.nightly-rate-input-measure { grid-area:1/1; visibility:hidden; white-space:pre; font:inherit; padding:8px 0; }
+.nightly-rate-amount .nightly-rate-input-wrap input { position:absolute; inset:0; width:100%; min-width:0; box-sizing:border-box; }
+.cleaner-day-badges { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:6px; flex-shrink:0; max-width:48%; }
+.cleaner-day-jobs .cleaner-day-status { padding:4px 8px; border-radius:6px; font-size:11px; font-weight:600; line-height:1.4; background:#eeeae2; color:#5d574b; }
+.cleaner-day-status[data-status="completed"] { background:#e8eee5; color:#42533d; }
+.cleaner-day-status[data-status="cancelled"] { background:#f6e1e5; color:#913c4d; }
