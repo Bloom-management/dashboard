@@ -5,6 +5,6 @@ export type CleaningTeamMember = {id:string;name:string;defaultAssigned:boolean;
 export type CleaningTeam = {
  propertyId:string;management:CleaningManagement;bloomApproved:boolean;
  requestStatus:'none'|'pending'|'accepted'|'unavailable';capacity:number;totalCents:number;
- payerOwnerId:string|null;members:CleaningTeamMember[];invitations:TeamInvitation[];
+ payerOwnerId:string|null;hostChargeCents?:number|null;members:CleaningTeamMember[];invitations:TeamInvitation[];
 };
 export type CleanerNetwork = {enabled:boolean;cityId:string|null};

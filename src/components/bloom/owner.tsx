@@ -1,5 +1,6 @@
 'use client';
 import {OwnerPayouts} from './owner-payouts';
+import {useSearchParams} from 'next/navigation';
 import {NotificationInbox} from '../push/inbox';
 
 import {SelectorPill} from './selector-pill';
@@ -39,7 +40,9 @@ function label(block: OwnerCalendarBlock) {
 }
 function OwnerContent({ user, integration }: { user: SessionUser; integration: BloomIntegration }) {
   const [month, setMonth] = useState(() => todayIn('America/Detroit').slice(0, 7));
-  const [tab,setTab]=useState<'calendar'|'performance'|'listings'|'people'|'payouts'>('calendar');
+  const query=useSearchParams();
+  const [tab,setTab]=useState<'calendar'|'performance'|'listings'|'people'|'payouts'>(()=>{const view=query.get('view');return view==='listings'||view==='people'||view==='payouts'||view==='performance'?view:'calendar';});
+  useEffect(()=>{const view=query.get('view');if(view==='listings'||view==='people'||view==='payouts'||view==='performance')setTab(view);},[query]);
   const [legendPage,setLegendPage]=useState(0);
   const [hidden,setHidden]=useState<string[]>([]);
   const [revision,setRevision]=useState(0);

@@ -18,13 +18,13 @@ export async function verifiedTeamIdentity(){
 export const cleaningTeam=(propertyId:string)=>userRpc<CleaningTeam>('bloom_property_team',{p_property:uuid(propertyId)});
 export async function updateCleaningTeam(propertyId:string,request:Request){
  const {body,key}=await mutation(request,['action','data']);
- const action=choice(body.action,['settings','request_bloom','approve_bloom','remove','revoke','defaults'] as const);
+ const action=choice(body.action,['settings','request_bloom','approve_bloom','remove','revoke','defaults','host_charge'] as const);
  if(!body.data||typeof body.data!=='object'||Array.isArray(body.data))throw new BackendError('VALIDATION_ERROR');
  return userRpc('bloom_property_team_action',{p_property:uuid(propertyId),p_action:action,p_data:body.data,p_key:key});
 }
 export async function privateJobAction(jobId:string,request:Request){
  const {body,key}=await mutation(request,['action','data']);
- const action=choice(body.action,['assign','request_bloom','approve_bloom'] as const);
+ const action=choice(body.action,['assign','request_bloom','approve_bloom','remove_assignment','set_compensation'] as const);
  if(!body.data||typeof body.data!=='object'||Array.isArray(body.data))throw new BackendError('VALIDATION_ERROR');
  return userRpc('bloom_private_job_action',{p_job:uuid(jobId),p_action:action,p_data:body.data,p_key:key});
 }

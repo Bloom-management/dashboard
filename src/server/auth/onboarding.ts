@@ -53,12 +53,11 @@ export async function completeOnboarding(request:Request):Promise<CompleteOnboar
  const ctx=await context();
  if(ctx.state.status==='blocked')throw new BackendError('FORBIDDEN');
  if((ctx.state.status==='setup'||ctx.state.status==='complete')&&ctx.state.role!==input.role)throw new BackendError('FORBIDDEN');
+ if(ctx.state.status==='complete')return ctx.state;
  if(ctx.state.status==='setup'&&ctx.state.privateInvitations?.length&&input.role==='cleaner'){
   const enabled=input.bloomNetworkEnabled===true;if(enabled&&!input.cityId)throw new BackendError('VALIDATION_ERROR');
-  for(const invite of ctx.state.privateInvitations){
-   const accepted=await privilegedDatabase().rpc('bloom_team_invite_accept',{p_id:invite.id,p_subject:ctx.subject,p_emails:ctx.emails??[],p_name:ctx.name,p_network:enabled,p_city:input.cityId,p_complete:true});
-   if(accepted.error)databaseError(accepted.error);
-  }
+  const accepted=await privilegedDatabase().rpc('bloom_team_onboard',{p_ids:ctx.state.privateInvitations.map(invite=>invite.id),p_subject:ctx.subject,p_emails:ctx.emails??[],p_name:ctx.name,p_network:enabled,p_city:input.cityId});
+  if(accepted.error)databaseError(accepted.error);
   return {status:'complete',role:'cleaner',destination:'/cleaner'};
  }
  if(input.role==='cleaner'&&!input.cityId)throw new BackendError('VALIDATION_ERROR');

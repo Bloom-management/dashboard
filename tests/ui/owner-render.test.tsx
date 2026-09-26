@@ -13,7 +13,7 @@ test('exactly one timeline row per selected unit even with no imported stays',()
 });
 test('incomplete coverage never renders false availability or percentage',()=>{
  const html=renderToStaticMarkup(<OwnerTotals totals={{...totals,occupancy:.99,unbookedNights:0}}/>);
- assert.match(html,/Occupancy including blocked nights<\/span><strong>N\/A/);assert.match(html,/Unbooked nights<\/span><strong>N\/A/);assert.match(html,/known observations/);assert.match(html,/Off-platform \/ unknown/);assert.match(html,/60%/);assert.doesNotMatch(html,/99%/);
+ assert.match(html,/Occupancy including blocked nights<\/span><strong>N\/A/);assert.match(html,/Unbooked nights<\/span><strong>N\/A/);assert.match(html,/known observations/);assert.match(html,/Blocked \/ unattributed/);assert.match(html,/60%/);assert.doesNotMatch(html,/99%/);
 });
 test('listing supplies distinguish configuration from missing reports and exclude internal data',()=>{
  const listing:OwnerListing={id:'unit',name:'Local test',timezone:'America/Detroit',active:true,nightlyGuestRateCents:null,hostPayoutCents:null,currency:'USD',sources:[],supplies:[]};
