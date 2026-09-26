@@ -633,7 +633,7 @@
 .bloom-owner .owner-supplies li { display:grid; grid-template-columns:1fr auto; gap:8px; border-bottom:1px solid #e7e3d9; padding:14px 0; }
 .bloom-owner .owner-supplies small { grid-column:1/-1; color:#817b6c; }
 .bloom-owner .owner-metrics { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin:20px 0; }
-.bloom-owner .owner-metric { background:#f3efe5; border-radius:16px; padding:18px; display:grid; gap:8px; }
+.bloom-owner .owner-metric { background:#fff; border:1px solid var(--ink); border-radius:16px; padding:18px; display:grid; gap:8px; }
 .bloom-owner .owner-metric strong { font-size:26px; }
 .bloom-owner .owner-range { max-width:620px; }
 .bloom-owner .owner-share { padding-left:20px; line-height:1.8; }

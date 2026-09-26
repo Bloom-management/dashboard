@@ -702,3 +702,15 @@ dialog.cleaner-city-dialog { width:min(480px,calc(100vw - 24px)); border-radius:
 .cleaner-day-jobs .cleaner-day-status { padding:4px 8px; border-radius:6px; font-size:11px; font-weight:600; line-height:1.4; background:#eeeae2; color:#5d574b; }
 .cleaner-day-status[data-status="completed"] { background:#e8eee5; color:#42533d; }
 .cleaner-day-status[data-status="cancelled"] { background:#f6e1e5; color:#913c4d; }
+
+@media(max-width:700px){
+ .bloom-cleaner .topbar.bloom-compact-header .view-toggle{grid-column:1 / -1;grid-row:3;width:100%}
+ .bloom-cleaner .topbar.bloom-compact-header .view-toggle .vt-btn{padding:10px 8px;font-size:13px}
+ .bloom-cleaner .topbar.bloom-compact-header .view-toggle .vt-btn span{display:inline}
+ .bloom-cleaner .topbar.bloom-compact-header > :is(.bloom-city,.city-tabs){grid-column:1 / -1;max-width:100%}
+}
+@media(max-width:700px){
+ .bloom-cleaner .topbar.bloom-compact-header{grid-template-columns:auto minmax(0,1fr) 32px auto}
+ .bloom-cleaner .topbar.bloom-compact-header .view-toggle .vt-btn{gap:6px;font-size:12px}
+ .bloom-cleaner .topbar.bloom-compact-header .view-toggle svg{flex-shrink:0}
+}

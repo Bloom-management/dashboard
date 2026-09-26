@@ -7,3 +7,5 @@ export type PayoutCleaning = { id:string; jobId:string; propertyName:string; cle
 export type PayoutPayment = { id:string; amountCents:number; method:PaymentMethod; paymentDate:string; note:string|null; enteredBy:string; createdAt:string; allocations:{cleaningId:string; amountCents:number; propertyName:string; cleaningDate:string}[]; voidedAt:string|null; voidedBy:string|null; voidReason:string|null };
 export type PayoutDetail = PayoutPerson & { cleanings:PayoutCleaning[]; payments:PayoutPayment[] };
 export type RecordPaymentInput = { amountCents:number; method:PaymentMethod; paymentDate:string; note?:string; allocations:{cleaningId:string;amountCents:number}[] };
+
+export type CleanerPayouts = PayoutDetail & { nextPayoutAt:string; payoutTimezone:string };

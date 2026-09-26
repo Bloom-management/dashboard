@@ -77,6 +77,19 @@ declare a public.users;other_admin public.users;c uuid;c2 uuid;o uuid;city uuid;
  perform public.bloom_job_action(j,'complete','payout-complete',null,payload);
  perform public.bloom_job_action(j,'complete','payout-complete-retry',null,payload);
  if (select count(*) from private.payout_balances where job_id=j)<>1 or (select completed_pay_cents from private.payout_balances where job_id=j)<>12300 then raise exception 'Completion replay earnings incorrect';end if;
+ -- Cleaner self-service reads exactly the Admin ledger, including early/partial payments and voids.
+ detail:=public.bloom_admin_payouts(c);
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',(select clerk_user_id from public.users where id=c))::text,true);
+ result:=public.bloom_cleaner_payouts();
+ if result-'nextPayoutAt'-'payoutTimezone'<>detail then raise exception 'Cleaner/admin ledger mismatch';end if;
+ if (result->>'id')::uuid<>c then raise exception 'Other cleaner data leaked';end if;
+ if extract(isodow from (result->>'nextPayoutAt')::timestamptz at time zone 'America/Detroit')<>1 or extract(hour from (result->>'nextPayoutAt')::timestamptz at time zone 'America/Detroit')<>8 or (result->>'nextPayoutAt')::timestamptz<=now() then raise exception 'Invalid Monday schedule';end if;
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',(select clerk_user_id from public.users where id=c2))::text,true);
+ result:=public.bloom_cleaner_payouts();
+ if (result->>'totalDueCents')::integer<>5800 or jsonb_array_length(result->'cleanings')<>1 then raise exception 'Cleaner isolation failed';end if;
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',(select clerk_user_id from public.users where id=o))::text,true);
+ begin perform public.bloom_cleaner_payouts();raise exception 'Owner self read allowed';exception when raise_exception then if sqlerrm<>'FORBIDDEN' then raise;end if;end;
+ if has_function_privilege('authenticated','private.payout_detail(uuid)','EXECUTE') or has_function_privilege('anon','public.bloom_cleaner_payouts()','EXECUTE') then raise exception 'Self payout grant leak';end if;
  -- Owners and other cleaners are denied by the actual RPC role check.
  for i in 1..2 loop
  perform set_config('request.jwt.claims',jsonb_build_object('sub',(select clerk_user_id from public.users where id=case when i=1 then c else o end))::text,true);
