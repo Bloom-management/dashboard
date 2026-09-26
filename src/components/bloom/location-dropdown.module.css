@@ -6,3 +6,10 @@
 .search { padding: 4px 4px 8px; border-bottom: 1px solid #eeece6; margin-bottom: 4px; }
 .options { max-height: min(280px, 45vh); overflow-y: auto; overscroll-behavior: contain; }
 .empty { margin: 0; padding: 16px 10px; color: #777367; }
+
+.dialog { box-sizing:border-box; width:min(480px,calc(100vw - 32px)); max-height:calc(100dvh - 48px); padding:28px; border:1px solid #e5e3dc; border-radius:28px; background:#fff; color:#2d2a1f; box-shadow:0 24px 60px #2d2a1f30; font-family:"Plus Jakarta Sans",system-ui,sans-serif; overflow-y:auto; }
+.dialog::backdrop {background:#2d2a1f55;backdrop-filter:blur(5px)}
+.heading {font-size:24px;line-height:1.35;margin:0 44px 24px 0}
+.dialog .search {padding:0 0 16px;margin:0 0 16px}
+.dialog .options {max-height:min(360px,50dvh);padding:2px}
+.dialog .options button {width:100%;text-align:left}

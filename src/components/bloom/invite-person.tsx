@@ -1,4 +1,5 @@
 'use client';
+import {Select} from '../ui/select';
 import { useRef,useState } from 'react';
 import type { Role } from '../../contracts';
 import { request,ApiError } from './api';
@@ -19,7 +20,7 @@ export function InvitePerson({onSent}:{onSent?:()=>void}){
  }}>
  <h2>Invite people</h2><div className="admin-invite-fields">
  <label>Email address<input type="email" required maxLength={254} placeholder="name@example.com" autoComplete="email" disabled={busy} value={email} onChange={event=>setEmail(event.target.value)}/></label>
- <label>Role<select aria-label="Invitation role" disabled={busy} value={role} onChange={event=>setRole(event.target.value as Role)}><option value="owner">Owner</option><option value="cleaner">Cleaner</option><option value="admin">Admin</option></select></label>
+ <label>Role<Select aria-label="Invitation role" disabled={busy} value={role} onChange={event=>setRole(event.target.value as Role)}><option value="owner">Owner</option><option value="cleaner">Cleaner</option><option value="admin">Admin</option></Select></label>
  <button type="submit" className="bloom-button" disabled={busy||!email.trim()}>{busy?'Sending…':'Send invite'}</button>
  </div>{sent&&<p role="status">{sent}</p>}{error instanceof ApiError&&error.code==='CONFLICT'?<p role="alert">This email already has an account or invitation. Manage an existing account below, or check the pending invitation.</p>:!!error&&<ErrorNotice error={error}/>}
  </form>;

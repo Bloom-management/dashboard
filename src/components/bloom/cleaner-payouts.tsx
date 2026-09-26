@@ -1,4 +1,5 @@
 'use client';
+import {Select} from '../ui/select';
 import { useCallback, useEffect, useState } from 'react';
 import { DateTime } from 'luxon';
 import type { CleanerPayouts as PayoutData } from '../../contracts/payouts';
@@ -38,7 +39,7 @@ export function CleanerPayouts() {
   return <section className="cleaner-payouts" aria-label="My payouts">
     <header className="cp-heading"><div><h1>Payouts</h1><p>Your earnings and recorded payments by payer</p></div><button className="bloom-button secondary" onClick={reload} disabled={resource.loading}>{resource.loading?'Refreshing…':'Refresh'}</button></header>
     {!!resource.error&&<ErrorNotice error={resource.error} retry={reload}/>}
-    <label className="cp-card cp-payer-picker"><span>Payer</span><select aria-label="Payer" value={selected?.payerId??'bloom'} onChange={event=>setPayer(event.target.value)}>{groups.map(group=><option key={group.payerId??'bloom'} value={group.payerId??'bloom'}>{group.payerName}</option>)}</select></label>
+    <label className="cp-card cp-payer-picker"><span>Payer</span><Select aria-label="Payer" value={selected?.payerId??'bloom'} onChange={event=>setPayer(event.target.value)}>{groups.map(group=><option key={group.payerId??'bloom'} value={group.payerId??'bloom'}>{group.payerName}</option>)}</Select></label>
     <p>{selected?.payerType==='owner'?'This owner pays you directly. These amounts are not owed by Bloom.':'Bloom is responsible for the earnings shown below.'}</p>
     <div className="cp-summary">
       <article className="cp-card"><h2>Total earned</h2><strong>{money(earned)}</strong><p>Completed cleanings, including adjustments</p></article>

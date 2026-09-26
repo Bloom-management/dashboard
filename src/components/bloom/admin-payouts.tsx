@@ -1,4 +1,5 @@
 'use client';
+import {Select} from '../ui/select';
 
 import {createContext,useContext,useCallback,useRef,useState,type FormEvent} from 'react';
 import {paymentMethods,type PaymentMethod,type PayoutSummary,type PayoutDetail,type PayoutCleaning,type PayoutPayment} from '../../contracts/payouts';
@@ -28,7 +29,7 @@ const PayoutScope=createContext<'admin'|'owner'>('admin');
 function usePayoutBase(){const scope=useContext(PayoutScope);return useCallback((id:string)=>`/${scope}/payouts/${encodeURIComponent(id)}`,[scope]);}
 const timestamp=(value:string)=>new Date(value).toLocaleString('en-US',{dateStyle:'medium',timeStyle:'short'});
 function MethodSelect({value,onChange,optional=false,label='Method'}:{value:string;onChange:(value:string)=>void;optional?:boolean;label?:string}){
-  return <select aria-label={label} value={value} required={!optional} onChange={event=>onChange(event.target.value)}><option value="">{optional?'Not set':'Choose method'}</option>{paymentMethods.map(method=><option key={method}>{method}</option>)}</select>;
+  return <Select aria-label={label} value={value} required={!optional} onChange={event=>onChange(event.target.value)}><option value="">{optional?'Not set':'Choose method'}</option>{paymentMethods.map(method=><option key={method}>{method}</option>)}</Select>;
 }
 export function AdminPayouts(props:{initialCleanerId?:string|null;onCloseLinkedCleaner?:()=>void;scope?:'admin'|'owner'}={}){return <PayoutScope.Provider value={props.scope??'admin'}><PayoutsContent {...props}/></PayoutScope.Provider>;}
 function PayoutsContent({initialCleanerId=null,onCloseLinkedCleaner}:{initialCleanerId?:string|null;onCloseLinkedCleaner?:()=>void}){

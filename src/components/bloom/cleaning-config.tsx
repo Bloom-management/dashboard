@@ -1,4 +1,5 @@
 'use client';
+import {Select} from '../ui/select';
 import type { ReactNode } from 'react';
 import { Icon } from './primitives';
 import { useCallback, useRef, useState } from 'react';
@@ -52,11 +53,11 @@ function ConfigForm({section,path,owner,bedroomCount,bathroomCount,initial,saved
       </div>
       {room&&<div className="bloom-admin-card cleaning-room-slide" role="group" aria-roledescription="slide" aria-label={`Room ${roomIndex+1} of ${config.rooms.length}`} key={room.id}>
         <label>Room label<input required maxLength={100} value={room.label} onChange={event=>setConfig({...config,rooms:config.rooms.map(r=>r.id===room.id?{...r,label:event.target.value}:r)})}/></label>
-        <label>Room type<select aria-label="Room type" value={room.type} onChange={event=>{
+        <label>Room type<Select aria-label="Room type" value={room.type} onChange={event=>{
           const type=event.target.value as PhotoCategory;
           const generated=new RegExp(`^${roomNames[room.type]} [0-9]+$`).test(room.label);
           setConfig({...config,rooms:config.rooms.map(r=>r.id===room.id?{...r,type,label:generated||!r.label.trim()?defaultLabel(type,config.rooms.filter(other=>other.id!==r.id)):r.label}:r)});
-        }}>{Object.entries(roomNames).map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label>
+        }}>{Object.entries(roomNames).map(([id,label])=><option key={id} value={id}>{label}</option>)}</Select></label>
         <button type="button" className="bloom-button secondary" onClick={()=>{setActiveRoom(Math.max(0,roomIndex-1));setConfig({...config,rooms:config.rooms.filter(r=>r.id!==room.id)});}}>Remove room</button>
       </div>}
       <button type="button" className="bloom-button secondary" disabled={config.rooms.length>=100} onClick={()=>addRoom('bedrooms')}>Add actual room</button>
