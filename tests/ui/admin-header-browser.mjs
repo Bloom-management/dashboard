@@ -12,8 +12,9 @@ const browser=await chromium.launch({headless:true,executablePath:process.env.BL
 try{
  for(const width of [320,375,390,393,430,1440]){
   const page=await browser.newPage({viewport:{width,height:850}});
-  await page.route('**/api/**',async route=>{const path=new URL(route.request().url()).pathname;return route.fulfill({json:{data:path==='/api/me'?{id:'admin',role:'admin',displayName:'Admin'}:path==='/api/admin/payouts'?{people:[],totalOutstandingCents:0,reviewCount:0,unassignedReviewCount:0}:path==='/api/admin/pricing'?Array.from({length:12},(_,i)=>({id:String(i),name:'Unit '+i})):[]}});});
+  await page.route('**/api/**',async route=>{const path=new URL(route.request().url()).pathname;return route.fulfill({json:{data:path==='/api/me'?{id:'admin',role:'admin',displayName:'Admin'}:path==='/api/notifications'?{items:[],total:12}:path==='/api/admin/payouts'?{people:[],totalOutstandingCents:0,reviewCount:0,unassignedReviewCount:0}:path==='/api/admin/pricing'?Array.from({length:12},(_,i)=>({id:String(i),name:'Unit '+i})):[]}});});
   await page.goto('http://127.0.0.1:'+server.address().port);const header=page.locator('.bloom-admin-header');await header.waitFor();await page.getByRole('button',{name:'Notifications, 12 need attention'}).waitFor();
+  const tabs=page.getByRole('navigation',{name:'Admin tools'});assert.equal(await tabs.evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(255, 255, 255)');assert.equal(await tabs.locator('.vt-btn').count(),7);await tabs.getByRole('button',{name:'City Requests',exact:true}).scrollIntoViewIfNeeded();
   const selectors=['.brand','.bloom-hub-selector','.admin-inbox-trigger','.bloom-header-account'];const boxes=await Promise.all(selectors.map(selector=>header.locator(selector).boundingBox()));
   for(let i=1;i<boxes.length;i++){assert(Math.abs((boxes[i].y+boxes[i].height/2)-(boxes[0].y+boxes[0].height/2))<3,'Header controls must share a row at '+width);assert(boxes[i].x>=boxes[i-1].x+boxes[i-1].width-1,'Header controls must not overlap at '+width);}
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false);

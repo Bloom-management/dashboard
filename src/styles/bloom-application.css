@@ -674,3 +674,6 @@ dialog.cleaner-city-dialog { width:min(480px,calc(100vw - 24px)); border-radius:
 .bloom-job-detail-screen .bloom-job-subscreen { box-sizing:border-box; min-height:100%; display:flex; flex-direction:column; }
 .bloom-job-subscreen .bloom-dialog-loading { flex:1; min-height:160px; display:grid; place-items:center; padding:24px; }
 .bloom-job-subscreen .bloom-job-back { flex-shrink:0; align-self:flex-start; }
+
+.bloom-cleaner .bloom-admin-tabs.bloom-selector-pill { width:fit-content; max-width:100%; box-sizing:border-box; flex-wrap:nowrap; overflow-x:auto; padding:4px; }
+.bloom-cleaner .bloom-admin-tabs.bloom-selector-pill .vt-btn { flex:0 0 auto; min-height:44px; }
