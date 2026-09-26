@@ -97,4 +97,13 @@ class Teams(unittest.TestCase):
   sql(f"update properties set city_id='{city}' where id='{p}';update jobs set checkout_date=current_date+1,start_at=((current_date+1)+time '11:00') at time zone 'America/Detroit',end_at=((current_date+1)+time '15:00') at time zone 'America/Detroit' where id='{j}';insert into private.push_preferences(user_id,new_jobs,reminders) values('{cs[0][1]}',false,true);")
   mid=scalar(f"insert into private.push_messages(logical_key,user_id,kind,city_id,job_date,cutoff,expires_at) values('inactive-{j}','{cs[0][1]}','evening','{city}',current_date+1,now()+interval '1 minute',now()+interval '5 minutes') returning id;")
   self.assertIn('1 cleaning tomorrow',scalar(f"select private.push_content('{mid}',now());"))
+ def test_settings_and_defaults_rpc_four_members_choose_two(self):
+  o,oid,p,j,cs=self.fixture()
+  changed=self.call(o,p,'settings',{'capacity':2,'totalCents':9000})
+  self.assertEqual(changed['totalCents'],9000)
+  changed=self.call(o,p,'defaults',{'cleaners':[{'cleanerId':cs[2][1],'individualAmountCents':None},{'cleanerId':cs[3][1],'individualAmountCents':None}]})
+  self.assertEqual({m['id'] for m in changed['members'] if m['defaultAssigned']},{cs[2][1],cs[3][1]})
+  changed=self.call(o,p,'defaults',{'cleaners':[{'cleanerId':cs[2][1],'individualAmountCents':4000},{'cleanerId':cs[3][1],'individualAmountCents':5000}]})
+  self.assertEqual(sorted(m['individualAmountCents'] for m in changed['members'] if m['defaultAssigned']),[4000,5000])
+  self.assertEqual({x for x in scalar(f"select string_agg(cleaner_id::text,',') from assignments where job_id='{j}' and ended_at is null;").split(',')},{cs[0][1],cs[1][1]})
 if __name__=='__main__':unittest.main()
