@@ -17,7 +17,7 @@ class PrivatePayouts(unittest.TestCase):
         for payer,amount in [(None,7500),(self.owner_id,4500),(self.other_id,9000)]:
             job,prop=make_job(day='current_date-2')
             if payer:
-                sql(f"update public.jobs set cleaning_management='private',payer_owner_id='{payer}' where id='{job}';")
+                sql(f"insert into public.property_owners values('{prop}','{payer}');insert into private.property_cleaner_members(property_id,cleaner_id) values('{prop}','{self.cleaner_id}');update public.jobs set cleaning_management='private',payer_owner_id='{payer}',private_total_cents_snapshot={amount} where id='{job}';")
             assignment=scalar(f"insert into public.assignments(job_id,cleaner_id,slot,completed_pay_cents) values('{job}','{self.cleaner_id}',1,{amount}) returning id;")
             sql(f"update public.jobs set status='completed',completed_at=now(),completed_by='{self.admin_id}' where id='{job}';")
             self.assignments.append(assignment)
