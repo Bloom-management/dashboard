@@ -21,7 +21,7 @@ export async function dispatch(operation: string, request: Request, params: Reco
       return listProperties(integer(Number(q.get('limit') ?? 50), 1, 100), integer(Number(q.get('offset') ?? 0), 0, 1_000_000));
     }
     const allowed: Record<string, string[]> = {
-      propertyRename: ['name'], onboard: ['cityId'], cityRequest: ['cityId'], cityResolve: ['decision'], claim: [], withdraw: [], complete: ['configVersion', 'answers', 'notes', 'maintenance'],
+      propertyRename: ['name'], onboard: ['cityId'], cityRequest: ['cityId'], cityResolve: ['decision'], claim: [], withdraw: ['comment'], complete: ['configVersion', 'answers', 'notes', 'maintenance'],
       upload: ['category', 'mime', 'bytes', 'roomId'], finalize: [], readUrl: [],
       propertyCreate: ['cityId', 'name', 'timezone', 'address', 'isBloomOwned', 'soloRateCents', 'ownerIds', 'instructions', 'pendingOwnerEmail'],
       role: ['role'], cancel: ['reason', 'expectedVersion'], reassign: ['reason', 'expectedVersion', 'removeAssignmentId', 'cleanerId'],
@@ -44,7 +44,7 @@ export async function dispatch(operation: string, request: Request, params: Reco
         instructions: text(b.instructions, 5000), isBloomOwned: b.isBloomOwned, soloRateCents: integer(b.soloRateCents, 2, 2_147_483_646), ownerIds: b.ownerIds.map(uuid), pendingOwnerEmail: b.pendingOwnerEmail == null ? null : text(b.pendingOwnerEmail, 254) }, key);
     }
     const jobId = uuid(params.id);
-    if (operation === 'claim' || operation === 'withdraw' || operation === 'complete') return jobAction(jobId, operation, key);
+    if (operation === 'claim' || operation === 'withdraw' || operation === 'complete') return jobAction(jobId, operation, key, b.comment === undefined ? undefined : text(b.comment,2000));
     if (operation === 'upload' && b.roomId) return userRpc('bloom_room_photo_prepare', {p_job:uuid(params.id),p_room:uuid(b.roomId),p_mime:choice(b.mime,['image/jpeg','image/png','image/webp'] as const),p_bytes:integer(b.bytes,1,10485760),p_key:key});
     if (operation === 'upload') return prepareUpload(jobId, choice(b.category, ['bedrooms', 'bathrooms', 'kitchen', 'living_room']), choice(b.mime, ['image/jpeg', 'image/png', 'image/webp']), integer(b.bytes, 1, 10_485_760), key);
     if (operation === 'finalize') return finalizePhoto(jobId, uuid(params.photoId), key);

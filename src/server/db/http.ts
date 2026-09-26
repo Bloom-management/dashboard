@@ -62,7 +62,7 @@ export async function mutation(request: Request, keys: readonly string[]): Promi
 const messages: Record<ErrorCode, string> = {
   UNAUTHENTICATED: 'Sign in to continue.', FORBIDDEN: 'This operation is not permitted.', NOT_FOUND: 'Resource not found.',
   VALIDATION_ERROR: 'Check the supplied fields.', CITY_MISMATCH: 'This job is outside your approved city.',
-  JOB_FULL: 'Both cleaning slots are filled.', ALREADY_ASSIGNED: 'You are already assigned.',
+  JOB_FULL: 'All cleaning slots are filled.', ALREADY_ASSIGNED: 'You are already assigned.',
   WITHDRAWAL_DEADLINE: 'The withdrawal deadline has passed.', INVALID_STATE: 'This operation is unavailable in the current state.',
   REVIEW_REQUIRED: 'This job requires admin review.', PHOTO_COVERAGE_REQUIRED: 'Add a photo for each required room category.',
   CONFLICT: 'The request conflicts with an earlier operation. Refresh and try again.', SOURCE_UNAVAILABLE: 'Calendar source unavailable.',

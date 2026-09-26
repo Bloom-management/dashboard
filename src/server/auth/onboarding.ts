@@ -19,6 +19,7 @@ async function context(){
  const name=(identity.fullName||identity.username||'Account').replace(/[\p{Cc}\p{Cf}]/gu,'').trim().slice(0,100)||'Account';
  if(!emails.length)return {subject,profile,name,primary,state:{status:'blocked',reason:'mismatched',message:'Verify your account email before continuing.'} as OnboardingState};
  const evidenceResult=await privilegedDatabase().rpc('bloom_onboarding_evidence',{p_subject:subject,p_primary_email:primary,p_emails:emails});if(evidenceResult.error)databaseError(evidenceResult.error);
+ const teamResult=await privilegedDatabase().rpc('bloom_team_invites_incoming',{p_emails:emails});if(teamResult.error)databaseError(teamResult.error);
  const invitations=new Map<string,Invite>();
  try{
   const client=await clerkClient();
@@ -32,23 +33,35 @@ async function context(){
    }
   }}
  }catch{throw new BackendError('SOURCE_UNAVAILABLE');}
- const state=onboardingPolicy(profile,name,emails,identity.publicMetadata,[...invitations.values()],evidenceResult.data as Evidence);
+ const state=onboardingPolicy(profile,name,emails,identity.publicMetadata,[...invitations.values()],{...evidenceResult.data,teamInvitations:teamResult.data.items} as Evidence);
  if(state.status==='complete'&&state.role==='admin'&&!profile){
   const provisioned=await privilegedDatabase().rpc('bloom_provision_invited_admin',{p_subject:subject,p_name:name});
   if(provisioned.error)databaseError(provisioned.error);
  }
- return {subject,profile,name,primary,state};
+ return {subject,profile,name,primary,state,emails};
 }
 export async function resolveOnboarding():Promise<OnboardingState>{return (await context()).state;}
 export async function completeOnboarding(request:Request):Promise<CompleteOnboardingResult>{
- const {body,key}=await mutation(request,['role','cityId','homeBase']);
+ const {body,key}=await mutation(request,['role','cityId','homeBase','bloomNetworkEnabled']);
  let input:CompleteOnboardingInput;
- if(body.role==='cleaner'&&body.homeBase===undefined)input={role:'cleaner',cityId:uuid(body.cityId)};
+ if(body.role==='cleaner'&&body.homeBase===undefined){
+  if(body.bloomNetworkEnabled!==undefined&&typeof body.bloomNetworkEnabled!=='boolean')throw new BackendError('VALIDATION_ERROR');
+  input={role:'cleaner',cityId:body.cityId==null?null:uuid(body.cityId),...(body.bloomNetworkEnabled===undefined?{}:{bloomNetworkEnabled:body.bloomNetworkEnabled})};
+ }
  else if(body.role==='owner'&&body.cityId===undefined)input={role:'owner',homeBase:text(body.homeBase,100).trim()};
  else throw new BackendError('VALIDATION_ERROR');
  const ctx=await context();
  if(ctx.state.status==='blocked')throw new BackendError('FORBIDDEN');
  if((ctx.state.status==='setup'||ctx.state.status==='complete')&&ctx.state.role!==input.role)throw new BackendError('FORBIDDEN');
+ if(ctx.state.status==='setup'&&ctx.state.privateInvitations?.length&&input.role==='cleaner'){
+  const enabled=input.bloomNetworkEnabled===true;if(enabled&&!input.cityId)throw new BackendError('VALIDATION_ERROR');
+  for(const invite of ctx.state.privateInvitations){
+   const accepted=await privilegedDatabase().rpc('bloom_team_invite_accept',{p_id:invite.id,p_subject:ctx.subject,p_emails:ctx.emails??[],p_name:ctx.name,p_network:enabled,p_city:input.cityId,p_complete:true});
+   if(accepted.error)databaseError(accepted.error);
+  }
+  return {status:'complete',role:'cleaner',destination:'/cleaner'};
+ }
+ if(input.role==='cleaner'&&!input.cityId)throw new BackendError('VALIDATION_ERROR');
  const {data,error}=await privilegedDatabase().rpc('bloom_complete_onboarding',{p_subject:ctx.subject,p_role:input.role,p_city:input.role==='cleaner'?input.cityId:null,p_home_base:input.role==='owner'?input.homeBase:null,p_name:ctx.name,p_primary_email:ctx.primary,p_key:key});
  if(error)databaseError(error);
  return data as CompleteOnboardingResult;

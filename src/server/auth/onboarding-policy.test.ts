@@ -35,3 +35,23 @@ test('local invalid invitation cannot fall through and revoked marker cannot bor
  const active={...invite('cleaner'),id:'different'};
  assert.equal((state([revoked,active],{bloomInvite:revoked.publicMetadata!.bloomInvite}) as {reason:string}).reason,'revoked');
 });
+
+test('private invitations lock cleaner role without public network enrollment',()=>{
+ const team={id:'team-invite',propertyId:'property',propertyName:'Private home',status:'pending' as const,expiresAt:'2099-01-01'};
+ const result=onboardingPolicy(null,'Person',[email],{},[],{...evidence,teamInvitations:[team]});
+ assert.equal(result.status,'setup');if(result.status!=='setup')return;
+ assert.equal(result.role,'cleaner');assert.equal(result.bloomNetworkEnabled,false);assert.equal(result.privateInvitations?.[0].propertyId,'property');
+ assert.equal(onboardingPolicy(null,'Person',[email],{},[invite('owner')],{...evidence,teamInvitations:[team]}).status,'blocked');
+});
+test('team metadata cannot grant a role without matching trusted verified-email evidence',()=>{
+ const delivery:Invite={id:'clerk',emailAddress:email,status:'pending',publicMetadata:{bloomTeamInvite:'missing'}};
+ assert.equal(onboardingPolicy(null,'Person',[email],{},[delivery],evidence).status,'blocked');
+ for(const status of ['revoked','expired'] as const){
+  const result=onboardingPolicy(null,'Person',[email],{},[],{...evidence,teamInvitations:[{id:'i',propertyId:'p',propertyName:'Home',status,expiresAt:'2000-01-01'}]});
+  assert.equal(result.status,'blocked');if(result.status==='blocked')assert.equal(result.reason,status);
+ }
+});
+test('existing completed cleaner accepts private invitations independently from initial onboarding',()=>{
+ const profile:Profile={id:'id',role:'cleaner',displayName:'Cleaner',cityId:null,homeBase:null,complete:true,assignedPropertyCount:0,bloomNetworkEnabled:false};
+ assert.deepEqual(onboardingPolicy(profile,'Person',[email],{},[],{...evidence,teamInvitations:[{id:'i',propertyId:'p',propertyName:'Home',status:'pending',expiresAt:'2099-01-01'}]}),{status:'complete',role:'cleaner',destination:'/cleaner'});
+});

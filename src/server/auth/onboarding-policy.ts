@@ -1,10 +1,13 @@
+import type { IncomingTeamInvitation } from '../../contracts/cleaning-teams';
 import type { OnboardingState, OnboardingRole } from '../../contracts/onboarding';
 export type Invite = { id:string; emailAddress:string; status:string; publicMetadata:Record<string,unknown>|null };
-export type Evidence = { pendingOwnerCount:number; propertyInvitations:{id:string;status:'valid'|'expired'|'invalid'}[] };
-export type Profile = { id:string; role:'admin'|'owner'|'cleaner'; displayName:string; cityId:string|null; homeBase:string|null; complete:boolean; assignedPropertyCount:number };
+export type Evidence = { pendingOwnerCount:number; propertyInvitations:{id:string;status:'valid'|'expired'|'invalid'}[]; teamInvitations?:IncomingTeamInvitation[] };
+export type Profile = { id:string; role:'admin'|'owner'|'cleaner'; displayName:string; cityId:string|null; homeBase:string|null; complete:boolean; assignedPropertyCount:number; bloomNetworkEnabled?:boolean };
 const blocked = (reason:Extract<OnboardingState,{status:'blocked'}>['reason']):OnboardingState => ({status:'blocked',reason,message: reason==='expired'?'Your invitation has expired. Ask the inviter for a new invitation.':reason==='revoked'?'Your invitation was revoked. Contact your Bloom admin.':reason==='conflicting'?'Your account has conflicting role invitations. Contact your Bloom admin.':'This invitation does not match your verified account. Contact your Bloom admin.'});
 export function onboardingPolicy(profile:Profile|null,displayName:string,emails:string[],metadata:Record<string,unknown>,invites:Invite[],evidence:Evidence):OnboardingState {
  if(profile?.complete)return {status:'complete',role:profile.role,destination:`/${profile.role}`};
+ const teamInvitations=evidence.teamInvitations??[];
+ const validTeams=teamInvitations.filter(i=>i.status==='pending'||i.status==='accepted');
  const roles=new Set<OnboardingRole|'admin'>();let invited=false;
  const marker=metadata.bloomInvite;
  if(marker!==undefined){
@@ -16,22 +19,33 @@ export function onboardingPolicy(profile:Profile|null,displayName:string,emails:
   if(!marked.some(i=>i.status==='pending'||i.status==='accepted'))return blocked(marked.some(i=>i.status==='revoked')?'revoked':marked.some(i=>i.status==='expired')?'expired':'invalid');
  }
  const matching=invites.filter(i=>emails.includes(i.emailAddress.toLowerCase()));
- const active=matching.filter(i=>i.status==='pending'||i.status==='accepted');
+ const active=matching.filter(i=>i.status==='pending'||i.status==='accepted'||validTeams.some(t=>t.id===i.publicMetadata?.bloomTeamInvite));
  if(!active.length&&matching.length){if(matching.some(i=>i.status==='revoked'))return blocked('revoked');if(matching.some(i=>i.status==='expired'))return blocked('expired');return blocked('invalid');}
  for(const invite of active){
   const m=invite.publicMetadata?.bloomInvite;
   const property=invite.publicMetadata?.bloomPropertyInvite;
+  const team=invite.publicMetadata?.bloomTeamInvite;
   if(m&&typeof m==='object'){
    const x=m as Record<string,unknown>;
    if(typeof x.email!=='string'||x.email.toLowerCase()!==invite.emailAddress.toLowerCase()||typeof x.key!=='string'||!x.key||typeof x.actor!=='string'||!x.actor)return blocked('invalid');
    if(x.role!=='owner'&&x.role!=='cleaner'&&x.role!=='admin')return blocked('invalid');
    roles.add(x.role);invited=true;
+  }else if(typeof team==='string'){
+   const row=teamInvitations.find(i=>i.id===team);
+   if(!row||!['pending','accepted'].includes(row.status))return blocked(row?.status==='expired'?'expired':row?.status==='revoked'?'revoked':'invalid');
+   roles.add('cleaner');invited=true;
   }else if(typeof property==='string'){
    const row=evidence.propertyInvitations.find(i=>i.id===property);
    if(!row||row.status!=='valid')return blocked(row?.status==='expired'?'expired':'invalid');
    roles.add('owner');invited=true;
   }else return blocked('invalid');
  }
+ if(typeof metadata.bloomTeamInvite==='string'){
+  const row=teamInvitations.find(i=>i.id===metadata.bloomTeamInvite);
+  if(!row||!['pending','accepted'].includes(row.status))return blocked(row?.status==='expired'?'expired':row?.status==='revoked'?'revoked':'invalid');
+ }
+ if(teamInvitations.length&&!validTeams.length)return blocked(teamInvitations.some(i=>i.status==='revoked')?'revoked':'expired');
+ if(validTeams.length){roles.add('cleaner');invited=true;}
  if(typeof metadata.bloomPropertyInvite==='string'){
   const row=evidence.propertyInvitations.find(i=>i.id===metadata.bloomPropertyInvite);
   if(!row||row.status!=='valid')return blocked(row?.status==='expired'?'expired':'invalid');
@@ -45,5 +59,5 @@ export function onboardingPolicy(profile:Profile|null,displayName:string,emails:
  if(role==='admin')return {status:'complete',role:'admin',destination:'/admin'};
  if(profile?.role==='owner'&&profile.assignedPropertyCount>0)invited=true;
  if(!role)return {status:'choose_role',displayName};
- return {status:'setup',displayName,role,invited,cityId:profile?.cityId??null,homeBase:profile?.homeBase??null,assignedPropertyCount:profile?.assignedPropertyCount??evidence.pendingOwnerCount};
+ return {status:'setup',displayName,role,invited,cityId:profile?.cityId??null,homeBase:profile?.homeBase??null,assignedPropertyCount:profile?.assignedPropertyCount??evidence.pendingOwnerCount,...(validTeams.length?{privateInvitations:validTeams,bloomNetworkEnabled:profile?.bloomNetworkEnabled??false}:{})};
 }
