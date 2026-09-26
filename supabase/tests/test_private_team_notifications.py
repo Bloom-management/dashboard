@@ -13,7 +13,14 @@ class TeamInbox(unittest.TestCase):
         self.job,self.prop=make_job()
         sql(f"insert into public.property_owners values('{self.prop}','{self.oid}'); update public.jobs set cleaning_management='private',payer_owner_id='{self.oid}',private_total_cents_snapshot=9000,staffing_capacity=1 where id='{self.job}'; insert into private.property_cleaner_members(property_id,cleaner_id) values('{self.prop}','{self.cid}'),('{self.prop}','{self.rid}');")
     def items(self,subject):
-        return json.loads(scalar('select public.bloom_notification_inbox();',subject))['items']
+        items=[]
+        offset=0
+        while True:
+            page=json.loads(scalar(f'select public.bloom_notification_inbox({offset});',subject))
+            items.extend(page['items'])
+            offset+=len(page['items'])
+            if offset>=page['total'] or not page['items']:
+                return items
     def keys(self,subject):return {x['id'] for x in self.items(subject)}
     def assign(self,cleaner):
         return scalar(f"insert into public.assignments(job_id,cleaner_id,slot) values('{self.job}','{cleaner}',1) returning id;")
