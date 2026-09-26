@@ -121,4 +121,18 @@ class Teams(unittest.TestCase):
    self.assertNotEqual(result.returncode,0,state)
    self.assertEqual(scalar(f"select count(*) from public.users where clerk_user_id='{subject}';"),'0')
   self.assertEqual(scalar(f"select count(*) from private.property_cleaner_members where property_id='{p}';"),'4')
+ def test_delayed_setup_respects_job_compensation_snapshot(self):
+  for explicit in [False,True]:
+   o,oid,p,j,cs=self.fixture(explicit)
+   sql(f"update properties set cleaning_config=null where id='{p}';")
+   held=scalar(f"insert into jobs(property_id,checkout_date,start_at,end_at,timezone_snapshot,solo_rate_cents_snapshot) select '{p}',d,(d+time '11:00') at time zone 'America/Detroit',(d+time '15:00') at time zone 'America/Detroit','America/Detroit',7500 from(select current_date+5 d)x returning id;")
+   changed_amount=None if explicit else 4500
+   self.call(o,p,'defaults',{'cleaners':[{'cleanerId':cs[0][1],'individualAmountCents':changed_amount},{'cleanerId':cs[1][1],'individualAmountCents':changed_amount}]})
+   sql(f"update properties set cleaning_config='{{\"version\":1,\"rooms\":[],\"supplies\":[]}}' where id='{p}';")
+   if explicit:
+    self.assertEqual(scalar(f"select count(*) from assignments where job_id='{held}';"),'0')
+    self.assertEqual(scalar(f"select compensation_mode from jobs where id='{held}';"),'individual')
+   else:
+    self.assertEqual(scalar(f"select count(*) from assignments where job_id='{held}' and agreed_pay_cents is null;"),'2')
+    self.assertEqual(scalar(f"select compensation_mode from jobs where id='{held}';"),'equal')
 if __name__=='__main__':unittest.main()
