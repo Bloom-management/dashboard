@@ -25,7 +25,7 @@ class OwnerCreation(unittest.TestCase):
   for extra in [dict(ownerId=self.oid),dict(soloRateCents=1),dict(isBloomOwned=True),dict(bedroomCount=21),dict(bathroomCount=1.5),dict(timezone='Invalid/Zone'),dict(name='')]:
    self.assertIn('VALIDATION_ERROR',self.create(key=str(uuid.uuid4()),body={**self.body,**extra}).stderr)
  def test_imported_jobs_hidden_and_unclaimable_until_actual_configuration(self):
-  pid=json.loads(self.create().stdout)['listing']['id'];_,_,sid,_=source(actor=self.aid,prop=pid)
+  pid=json.loads(self.create().stdout)['listing']['id'];sql(f"select bloom_property_team_action('{pid}','approve_bloom','{{\"approved\":true}}','approve');",self.admin);_,_,sid,_=source(actor=self.aid,prop=pid)
   sync(self.aid,sid,[event()]);jid=scalar(f"select id from jobs where property_id='{pid}';")
   self.assertEqual(scalar(f"select setup_required||':'||review_required from jobs where id='{jid}';"),'true:false')
   self.assertNotEqual(sql(f"select id from jobs where id='{jid}';",self.cleaner,ok=False).returncode,0)
@@ -50,7 +50,7 @@ class OwnerCreation(unittest.TestCase):
   self.assertEqual(action(self.cleaner,jid,'claim').returncode,0)
   listing=json.loads(scalar('select bloom_owner_listings(null);',self.owner))['items'][0];self.assertFalse(listing['setupRequired'])
  def test_configuration_claim_race_never_assigns_without_configuration(self):
-  pid=json.loads(self.create().stdout)['listing']['id'];_,_,sid,_=source(actor=self.aid,prop=pid);sync(self.aid,sid,[event()]);jid=scalar(f"select id from jobs where property_id='{pid}';")
+  pid=json.loads(self.create().stdout)['listing']['id'];sql(f"select bloom_property_team_action('{pid}','approve_bloom','{{\"approved\":true}}','approve');",self.admin);_,_,sid,_=source(actor=self.aid,prop=pid);sync(self.aid,sid,[event()]);jid=scalar(f"select id from jobs where property_id='{pid}';")
   rooms=[dict(id=str(uuid.uuid4()),type=x,label=x,requiredPhoto=True) for x in ['kitchen','living_room']]
   config=json.dumps(dict(version=0,rooms=rooms,supplies=[]))
   with concurrent.futures.ThreadPoolExecutor(2) as pool:

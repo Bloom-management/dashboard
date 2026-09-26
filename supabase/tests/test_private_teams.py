@@ -54,4 +54,47 @@ class Teams(unittest.TestCase):
   self.assertEqual(scalar(f"select count(*) from private.property_cleaner_members where property_id='{p}';"),'5')
   self.assertIn('false',scalar('select public.bloom_me();',subject))
   self.assertNotEqual(sql(f"select public.bloom_team_invite_accept('{iid}','{o}',array['{email}'],'Owner',false,null,true);",'server','service_role',ok=False).returncode,0)
+ def test_three_participant_rounding_and_frozen_history(self):
+  o,oid,p,j,cs=self.fixture(capacity=3)
+  sql(f"update public.jobs set private_total_cents_snapshot=9001 where id='{j}';")
+  self.complete(j,cs[0][0])
+  self.assertEqual(scalar(f"select sum(completed_pay_cents) from public.assignments where job_id='{j}';"),'9001')
+  self.assertEqual(scalar(f"select max(completed_pay_cents)-min(completed_pay_cents) from public.assignments where job_id='{j}';"),'1')
+  self.call(o,p,'settings',{'capacity':3,'totalCents':12000})
+  self.assertEqual(scalar(f"select sum(completed_pay_cents) from public.assignments where job_id='{j}';"),'9001')
+ def test_optout_retains_bloom_commitment_and_cannot_discover(self):
+  from test_database import make_job
+  sub,uid=make_user();j,p=make_job();other,_=make_job()
+  sql(f"select public.bloom_job_action('{j}','claim','claim');",sub)
+  sql("select public.bloom_cleaner_network(false,null,'optout');",sub)
+  visible=scalar('select public.bloom_jobs(current_date,current_date+10);',sub)
+  self.assertIn(j,visible);self.assertNotIn(other,visible)
+  self.assertNotEqual(action(sub,other,'claim').returncode,0)
+ def test_atomic_onboarding_rolls_back_all_invites(self):
+  o,oid,p,j,cs=self.fixture();email='atomic@example.com'
+  iid=json.loads(scalar(f"select public.bloom_team_invite('{p}','{email}','atomic');",o))['id']
+  sql(f"update private.cleaner_invitations set status='sent' where id='{iid}';")
+  subject='new_'+uuid.uuid4().hex
+  result=sql(f"select public.bloom_team_onboard(array['{iid}'::uuid,'{uuid.uuid4()}'::uuid],'{subject}',array['{email}'],'Cleaner',false,null);",'server','service_role',ok=False)
+  self.assertNotEqual(result.returncode,0)
+  self.assertEqual(scalar(f"select count(*) from public.users where clerk_user_id='{subject}';"),'0')
+  self.assertEqual(scalar(f"select status from private.cleaner_invitations where id='{iid}';"),'sent')
+ def test_dto_helper_not_exposed(self):
+  o,oid,p,j,cs=self.fixture();stranger,_=make_user()
+  self.assertNotEqual(sql(f"select private.job_dto('{j}');",stranger,ok=False).returncode,0)
+ def test_calendar_sync_creates_private_defaults_once(self):
+  from test_calendar_database import source,sync,event
+  o,oid,p,j,cs=self.fixture();admin,aid=make_user('admin')
+  _,_,sid,_=source(actor=aid,prop=p)
+  sync(aid,sid,[event()]);sync(aid,sid,[event()])
+  imported=scalar(f"select id from jobs where property_id='{p}' and checkout_date='2030-05-03';")
+  self.assertEqual(scalar(f"select count(*) from assignments where job_id='{imported}';"),'2')
+  self.assertEqual(scalar(f"select cleaning_management||':'||payer_owner_id from jobs where id='{imported}';"),'private:'+oid)
+  self.assertEqual(scalar(f"select count(*) from private.push_publications where job_id='{imported}';"),'0')
+ def test_inactive_city_private_reminder_content(self):
+  o,oid,p,j,cs=self.fixture()
+  city=scalar("insert into cities(name,active,notification_timezone) values('Private inactive fixture',false,'America/Detroit') returning id;")
+  sql(f"update properties set city_id='{city}' where id='{p}';update jobs set checkout_date=current_date+1,start_at=((current_date+1)+time '11:00') at time zone 'America/Detroit',end_at=((current_date+1)+time '15:00') at time zone 'America/Detroit' where id='{j}';insert into private.push_preferences(user_id,new_jobs,reminders) values('{cs[0][1]}',false,true);")
+  mid=scalar(f"insert into private.push_messages(logical_key,user_id,kind,city_id,job_date,cutoff,expires_at) values('inactive-{j}','{cs[0][1]}','evening','{city}',current_date+1,now()+interval '1 minute',now()+interval '5 minutes') returning id;")
+  self.assertIn('1 cleaning tomorrow',scalar(f"select private.push_content('{mid}',now());"))
 if __name__=='__main__':unittest.main()
