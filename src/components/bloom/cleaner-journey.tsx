@@ -20,6 +20,8 @@ export function CleanerJourney({ job, user, integration, onClose, onUpdate }: {j
   const [detailsOpen,setDetailsOpen]=useState(false);
   const [referenceStep,setReferenceStep]=useState(0);
   const [referenceOpen,setReferenceOpen]=useState(false);
+  const [withdrawOpen,setWithdrawOpen]=useState(false);
+  const [withdrawComment,setWithdrawComment]=useState('');
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState<unknown>();
   const [storageError,setStorageError]=useState(false);
@@ -40,10 +42,10 @@ export function CleanerJourney({ job, user, integration, onClose, onUpdate }: {j
   const paused=!!data?.job.reviewRequired;
   const frozen=busy||pending||paused||accessLost||!hydrated||!data||!!resource.error;
   async function action(action:'start'|'withdraw') {
-    if(locked.current)return;locked.current=true;setBusy(true);setError(undefined);
+    if(locked.current)return;if(action==='withdraw'&&current.management==='private'&&!withdrawComment.trim()){setWithdrawOpen(true);return;}locked.current=true;setBusy(true);setError(undefined);
     if(actionKey.current?.action!==action)actionKey.current={action,key:crypto.randomUUID()};
     try {if(action==='start'){await request<JobJourney>(`/jobs/${job.id}/start`,{body:{},key:actionKey.current.key});resource.reload();}
-    else {const updated=await request<CleanerJob>(`/jobs/${job.id}/withdraw`,{body:{},key:actionKey.current.key});onUpdate(updated);}actionKey.current=undefined;
+    else {const updated=await request<CleanerJob>(`/jobs/${job.id}/withdraw`,{body:current.management==='private'?{comment:withdrawComment.trim()}:{},key:actionKey.current.key});onUpdate(updated);}actionKey.current=undefined;
     }catch(failure){setError(failure);}finally{locked.current=false;setBusy(false);}
   }
   async function complete() {
@@ -101,22 +103,22 @@ export function CleanerJourney({ job, user, integration, onClose, onUpdate }: {j
             <button className="bloom-button secondary" disabled={busy} onClick={()=>setDraft(value=>({...value,step:draft.step==='maintenance'?'supplies':draft.step==='supplies'?'photos':'progress'}))}>Back</button>
             {draft.step==='photos'?<button className="bloom-button" disabled={(!coverage&&!pending)||busy||paused} onClick={()=>setDraft(value=>({...value,step:'supplies'}))}>Continue to supplies →</button>:draft.step==='supplies'?<button className="bloom-button" disabled={busy||paused||(!pending&&!answersReady)} onClick={()=>setDraft(value=>({...value,step:'maintenance'}))}>Continue to maintenance →</button>:<button className="bloom-button" disabled={busy||paused||accessLost||(!pending&&(!coverage||!maintenanceReady))} onClick={complete}>{busy?'Confirming…':pending?'Retry completion':'Complete cleaning'}</button>}
           </>}
-          {current.status==='open'&&(current.withdrawalDeadlineExempt||!data?.startedAt||draft.step==='progress')&&<div className={styles.withdrawAction}>{current.withdrawalDeadlineExempt&&<p>Local practice job · You can withdraw without the six-hour deadline.</p>}{mayWithdraw(current,now)?<button className="bloom-button secondary" disabled={frozen} onClick={()=>action('withdraw')}>Withdraw from cleaning</button>:<p>For reassignment, contact your admin. Self-withdrawal closes six hours before start.</p>}</div>}
-        </footer>
+          {current.status==='open'&&(current.management==='private'||current.withdrawalDeadlineExempt||!data?.startedAt||draft.step==='progress')&&<div className={styles.withdrawAction}>{current.withdrawalDeadlineExempt&&<p>Local practice job · You can withdraw without the six-hour deadline.</p>}{mayWithdraw(current,now)?<button className="bloom-button secondary" disabled={frozen} onClick={()=>current.management==='private'?setWithdrawOpen(true):action('withdraw')}>Withdraw from cleaning</button>:<p>For reassignment, contact your admin. Self-withdrawal closes six hours before start.</p>}</div>}
+        {withdrawOpen&&<div className={styles.notes}><label htmlFor="private-withdraw-comment">Tell the owner why you’re withdrawing<textarea id="private-withdraw-comment" required maxLength={1500} value={withdrawComment} disabled={busy} onChange={event=>{setWithdrawComment(event.target.value);actionKey.current=undefined;}}/></label><p>The owner will be notified and can assign a replacement.</p><button className="bloom-button secondary" disabled={busy} onClick={()=>setWithdrawOpen(false)}>Keep assignment</button><button className="bloom-button" disabled={busy||!withdrawComment.trim()} onClick={()=>action('withdraw')}>Confirm withdrawal</button></div>}</footer>
       </>}
     </section></div>
     {referenceOpen&&<Modal className={`detail-card ${styles.detailsDialog} ${styles.referenceDialog}`} title="Property instructions and supplies" onClose={()=>setReferenceOpen(false)}><h2>Property instructions and supplies</h2><p className={styles.referenceProperty}>{current.propertyName}</p><div className="owner-detail-navigation"><div className="view-toggle" role="group" aria-label="Property reference sections">{['Instructions','Supplies','Maintenance'].map((label,index)=><button type="button" className={`vt-btn${referenceStep===index?' active':''}`} aria-pressed={referenceStep===index} key={label} onClick={()=>setReferenceStep(index)}>{label}</button>)}</div><div className="bloom-actions"><button type="button" className="bloom-button secondary" aria-label="Previous reference section" onClick={()=>setReferenceStep((referenceStep+2)%3)}>‹</button><button type="button" className="bloom-button secondary" aria-label="Next reference section" onClick={()=>setReferenceStep((referenceStep+1)%3)}>›</button></div></div><section hidden={referenceStep!==0}><h3><ReferenceIcon/>Property instructions</h3><JourneyInstructions job={current} integration={integration}/></section><section hidden={referenceStep!==1}><h3><ReferenceIcon supplies/>Supplies at this property</h3>{config?<SupplyReferenceGrid supplies={config.supplies} reports={data?.previousReports}/>:<p>Supply configuration is unavailable.</p>}</section><section hidden={referenceStep!==2}><MaintenanceGrid reports={data?.previousMaintenance}/></section></Modal>}
     {detailsOpen&&<Modal className={`detail-card ${styles.detailsDialog}`} title="Job details and rates" onClose={()=>setDetailsOpen(false)}><div className={styles.jobFacts}>
-      <p className={styles.factsEyebrow}>Your cleaning</p>
+      <p className={styles.factsEyebrow}>{current.management==='private'?'Your cleaning team':'Bloom Cleaning'} · Paid by {current.payerName??'Bloom'}</p>
       <h2>{current.propertyName}</h2>
       {!data?.startedAt&&current.status==='open'&&countdownSeconds>0&&<p className={styles.startCountdown}>{beforeReminder?'Start reminder in':'Start in'} {startCountdown}</p>}
       <p className={styles.factsDate}>{new Intl.DateTimeFormat('en-US',{timeZone:'UTC',weekday:'long',month:'long',day:'numeric',year:'numeric'}).format(new Date(`${current.checkoutDate}T12:00:00Z`))}</p>
       <div className={styles.timeWindow}><div><strong>{formatTime(current.startAt,current.timezone)}</strong><span>Start</span></div><div className={styles.timeLine} aria-hidden="true"/><div><strong>{formatTime(current.endAt,current.timezone)}</strong><span>Finish</span></div></div>
       <div className={styles.teamSection}><p>{current.timezone}</p>
         <div className={styles.teamMember}><span className={styles.avatar} aria-hidden="true">Y</span><div><strong>You</strong><p>Assigned to this cleaning</p></div></div>
-        <div className={styles.teamMember}><span className={`${styles.avatar} ${current.activeCleanerCount<2?styles.openSlot:''}`} aria-hidden="true">{current.activeCleanerCount<2?'+':'✓'}</span><div><strong>{current.activeCleanerCount>=2?'Second cleaner assigned':current.status==='open'?'Second slot available':'Second slot unfilled'}</strong><p>{current.activeCleanerCount>=2?'Assigned to this cleaning':current.status==='open'?'Another eligible cleaner can join':'No second cleaner assigned'}</p></div></div>
+        {current.management==='private'?<p>{current.activeCleanerCount}/{current.capacity??2} cleaners assigned. The owner manages replacements.</p>:<div className={styles.teamMember}><span className={`${styles.avatar} ${current.activeCleanerCount<2?styles.openSlot:''}`} aria-hidden="true">{current.activeCleanerCount<2?'+':'✓'}</span><div><strong>{current.activeCleanerCount>=2?'Second cleaner assigned':current.status==='open'?'Second slot available':'Second slot unfilled'}</strong><p>{current.activeCleanerCount>=2?'Assigned to this cleaning':current.status==='open'?'Another eligible cleaner can join':'No second cleaner assigned'}</p></div></div>}
       </div>
-      <div className={styles.rateSection}><div><span>Your payout:</span><strong>{current.status==='completed'?(current.myCompletedPayCents===null?'Unavailable':money(current.myCompletedPayCents)):money(current.activeCleanerCount>=2?current.sharedRateCents:current.soloRateCents)}</strong></div>{current.status==='open'&&<p>Provisional until completion.</p>}</div>
+      <div className={styles.rateSection}><div><span>Your payout:</span><strong>{current.status==='completed'?(current.myCompletedPayCents===null?'Unavailable':money(current.myCompletedPayCents)):current.management==='private'?(current.myAgreedPayCents!=null?money(current.myAgreedPayCents):'Equal share at completion'):money(current.activeCleanerCount>=2?current.sharedRateCents:current.soloRateCents)}</strong></div>{current.status==='open'&&<p>{current.management==='private'&&current.myAgreedPayCents==null?`${money(current.soloRateCents)} total, divided among eligible participants at completion.`:'Provisional until completion.'}</p>}</div>
 
     </div></Modal>}
   </Modal>;

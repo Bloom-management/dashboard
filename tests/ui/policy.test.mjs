@@ -34,3 +34,10 @@ test('claim hints never close the second slot and have no daily job limit', () =
 });
 
 test('explicit server practice exception lifts only the withdrawal deadline',()=>{assert.equal(mayWithdraw({startAt:'2026-09-19T15:00:00Z',withdrawalDeadlineExempt:true},Date.parse('2026-09-19T18:00:00Z')),true);assert.equal(mayWithdraw({startAt:'2026-09-19T15:00:00Z'},Date.parse('2026-09-19T18:00:00Z')),false);});
+
+
+test('private assignments withdraw without the Bloom cutoff and never expose public claiming',()=>{
+ const privateJob={management:'private',status:'open',startAt:'2026-09-19T15:00:00Z',endAt:'2026-09-19T19:00:00Z',activeCleanerCount:0,capacity:4,myAssignmentId:null,reviewRequired:false};
+ assert.equal(mayWithdraw(privateJob,Date.parse('2026-09-19T18:00:00Z')),true);
+ assert.equal(mayClaim(privateJob,Date.parse('2026-09-19T14:00:00Z')),false);
+});
