@@ -1,0 +1,134 @@
+PRIVATE CLEANING TEAMS — LOCAL RELEASE CANDIDATE
+2026-09-26
+Implementation commit: aece328 (integrated on local main; not pushed).
+
+What is implemented
+- Existing properties remain Bloom-managed. New owner-created listings are private,
+  with the creating owner fixed as payer. Adding a co-owner does not change that payer.
+- Property settings offer "Bloom is managing the cleaning", pending approval,
+  defaults, capacity (1–20), total/individual compensation, and property-only invitations.
+  Supported, previously approved properties can activate service immediately.
+  Pending requests remain private; per-turnover coverage has an explicit admin review.
+  Property-default changes do not rewrite existing job commitments or completed earnings.
+- Verified Clerk identities accept trusted property invitations. New private cleaners
+  see the existing welcome dialog with Bloom participation off; existing cleaners
+  accept without repeating account onboarding. Incompatible roles are rejected.
+  Owners can invite during onboarding or after successful listing creation; retries
+  retain the listing and invitation operation identity.
+- Network participation is independent of property membership. Opting out hides
+  public discovery/new-job alerts but retains accepted Bloom jobs and private work.
+- Default cleaners are assigned once; there is no automatic rotation. Membership
+  removal flags outstanding work. Private withdrawal requires a comment without
+  Bloom's six-hour restriction. Owners review vacancies and assign replacements.
+- Existing start/photos/instructions/supplies/maintenance/completion experience is
+  reused. Job headers identify responsible team and payer.
+- Integer, deterministic completion earnings freeze agreed pricing. Equal $90
+  becomes $45/$45 or $90 for the sole remaining participant. Individual agreements
+  do not increase automatically; documented adjustments are available.
+- Owner Payouts reuses the ledger: completed jobs, adjustments, partial external
+  payments, references, and audited void/correction. Cleaner earnings are grouped
+  by payer; owner obligations never become Bloom obligations.
+- Inbox integrates invitation, staffing, assignment and management duties, using
+  current state so resolved work disappears. Existing dismissals remain supported.
+  Private jobs do not generate public city-wide discovery pushes.
+
+Verification actually completed
+1. Authenticated local Next.js + real development Clerk + local Supabase:
+   - New private invitations/welcome, network off, no service-city gate, retry.
+   - Four-member team with two defaults; private job visibility and cross-owner denial.
+   - Required-comment withdrawal and owner vacancy inbox.
+   - Separate network opt-in/out; pending Bloom management stays private.
+   - Real image upload/finalization, start and completion; sole remaining cleaner
+     earns $90 once, including repeated completion.
+   - Owner/cleaner payout isolation; $30 partial external payment replay and
+     documented void; Bloom obligation stays zero.
+   - Existing cleaner accepts a second owner's invitation without onboarding again.
+   - Existing Bloom claim/withdraw works, including retaining a claim after opt-out.
+   - Owner settings and admin review controls, desktop and mobile browser layouts.
+   Reusable script: tests/integration/private-teams-browser.mjs.
+   Uses the existing ignored secure test setup, development Clerk keys and test-only
+   addresses. Synthetic jobs are inserted locally. It is NOT a live Airbnb feed test.
+   Browser sessions were revoked. Synthetic local fixtures are retained for review.
+2. Real disposable PostgreSQL with simulated authenticated JWT identities:
+   Full suite through migration043: 129/129 tests passed.
+   Covers repeated calendar-import RPC deduplication, assignment/default capacity,
+   invalid invitation cases, role/property/payer isolation, deterministic rounding,
+   explicit compensation, shared completion, private/public reminders and legacy flows.
+   Separate legacy payout SQL passed.
+   Migration044 focused results are recorded below.
+3. Automated code checks:
+   npm test, TypeScript no-emit, ESLint, git diff --check all passed.
+   Production Next.js webpack build passed in an isolated temporary checkout.
+   Unit/render/provider fixtures are automated checks, not physical delivery tests.
+4. No physical phone acceptance, production acceptance, real email deliverability,
+   actual push receipt, or recurring production calendar sync is claimed.
+
+Database state checked
+Local Supabase: 202609260044 applied.
+Hosted ledger (read-only): 202609260037.
+Hosted private.push_control: NOT activated.
+Hosted cron.job catalog: absent. External scheduler status is not inferred from this.
+No hosted migrations, production data changes, scheduler activation or deploy performed.
+
+Exact new migrations, in order
+202609260038_private_cleaning_teams.sql
+202609260039_private_payouts.sql
+202609260040_private_property_locations.sql
+202609260041_private_team_notifications.sql
+202609260042_practice_withdrawal_guard.sql
+202609260043_private_assignment_pricing.sql
+202609260044_private_property_payer.sql
+
+Release procedure AFTER review/authorization
+1. Confirm production project wgysricxviqefdvdixtj and ledger037 again. Review the
+   seven files above and obtain a recoverable database backup.
+2. Fetch origin/main; inspect divergence and integrate remote work without resetting
+   or overwriting it. Re-run checks for any resulting changes. Do not push yet:
+   Vercel tracks main and pushing triggers deployment.
+3. Coordinate a short maintenance window for writes. The new DB defaults should
+   not run against the old owner creation/onboarding UI for an extended interval.
+4. With the verified Supabase project linked, run:
+   npx supabase@2.117.0 db push --linked --dry-run
+   The plan must contain ONLY038–044. If prerequisites differ, stop and reconcile
+   the ledger rather than marking migrations applied or using include-all blindly.
+5. Apply that reviewed plan:
+   npx supabase@2.117.0 db push --linked
+   Confirm all seven versions in the hosted ledger and private helper ACLs.
+6. Push the reviewed integrated main commit to origin/main; verify the Vercel build
+   and production deployment. No new environment variables are required.
+7. Using allowlisted test accounts, verify private listing/invite/acceptance,
+   cross-owner denial, default assignment, withdrawal/replacement, completion
+   and separate owner/Bloom balances. Confirm existing Bloom jobs stay Bloom-managed.
+8. Resume writes only after smoke checks. Do not enable scheduling as part of this release.
+
+Rollback
+- Prefer a forward fix; preserve memberships, job snapshots, earnings and payment audit.
+- Vercel can promote the preceding deployment, but older UI is not a complete
+  functional rollback for newly created private work. Pause new listing/onboarding
+  writes while assessing compatibility and keep private data inaccessible publicly.
+- Do NOT drop the new tables/columns, mark private jobs public, or rewrite payer
+  snapshots to make old code run.
+- A database restore requires a reviewed backup/recovery plan and paused writes;
+  preserve/reconcile every post-release earning/payment before restoring. There is
+  no safe automatic destructive down migration for financial history.
+
+Operational dependencies and limits
+- Existing Clerk delivery configuration is required; acceptance used development
+  test identities only. No real cleaners were invited.
+- Scheduled pushes remain inactive. Recurring sync and reminder delivery need their
+  existing hosted scheduler/queue configured and independently verified.
+- Private properties outside Bloom service areas can use registered inactive cities.
+  Admins must register an unlisted city and its verified notification timezone;
+  this does not activate Bloom service. Private access does not require network eligibility.
+- Individual default amounts must be entered for all selected defaults or all left
+  blank for equal sharing. Mixed pricing is rejected explicitly.
+- Bloom records external payments and host charges; it neither transfers money nor
+  charges owners in this implementation.
+- No additional paid provider or new secret is introduced by this feature.
+
+Final migration044 verification
+Fresh001–044 disposable PostgreSQL migration chain compiled successfully.
+2/2 new focused checks passed: creator remains payer after co-owner joins;
+registered inactive-city private creation does not enable the public network.
+4/4 owner-creation regression checks passed through044.
+No remaining observed local test failures.
