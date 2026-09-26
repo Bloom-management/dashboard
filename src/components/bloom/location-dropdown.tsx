@@ -27,7 +27,7 @@ export function LocationDropdown({ locations, value, onValueChange, label, place
     <DropdownMenuTrigger ref={trigger} className={styles.trigger} disabled={disabled} aria-invalid={ariaInvalid} aria-describedby={describedBy} aria-label={`${label}: ${selected?.name ?? placeholder}`}>
       <span>{selected?.name ?? placeholder}</span><svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m4 6 4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
     </DropdownMenuTrigger>
-    <DropdownMenuContent container={container} keepBelow>
+    <DropdownMenuContent container={container} collisionBoundary={container??undefined} keepBelow={!container}>
       <div className={styles.search}><Input ref={input} aria-label={searchLabel} placeholder={`${searchLabel}…`} value={search} onChange={event => setSearch(event.target.value)} onKeyDown={event => {
         if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
           event.preventDefault(); event.stopPropagation();
