@@ -91,7 +91,7 @@
 .teamMember { display: flex; align-items: center; gap: 14px; margin-top: 20px; }
 .teamMember strong { font-size: 15px; }
 .teamMember p { font-size: 13px; margin-top: 6px; }
-.avatar { width: 46px; height: 46px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: #efebe1; border-radius: 50%; font-size: 15px; font-weight: 700; }
+.avatar { width: 46px; height: 46px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: #d8c3ab; border-radius: 50%; font-size: 15px; font-weight: 700; }
 .openSlot { background: white; border: 1px dashed #a8a399; font-size: 28px; font-weight: 400; }
 .rateSection { padding-top: 24px; }
 .rateSection > div { display: flex; justify-content: space-between; gap: 14px; margin-bottom: 18px; font-size: 15px; }

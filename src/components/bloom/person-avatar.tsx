@@ -1,1 +1,1 @@
-export function PersonAvatar(){return <svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg>;}
+export function PersonAvatar(){return <svg aria-hidden="true" width="28" height="28" viewBox="0 0 64 64"><circle cx="32" cy="32" r="32" fill="#d8c3ab"/><circle cx="32" cy="24" r="11" fill="#fff"/><path d="M10 57a22 22 0 0 1 44 0 32 32 0 0 1-44 0Z" fill="#fff"/></svg>;}

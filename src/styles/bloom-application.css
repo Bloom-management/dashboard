@@ -757,3 +757,7 @@ dialog.cleaner-city-dialog { width:min(480px,calc(100vw - 24px)); border-radius:
 .onboarding-invite-step > label{display:grid;gap:10px}
 .onboarding-invite-step > label input,.onboarding-invite-step > label select{width:100%;box-sizing:border-box;min-width:0}
 .onboarding-invite-step > button{justify-self:start;max-width:100%}
+
+.admin-pricing-inbox .bloom-inbox-heading .bloom-inbox-settings:disabled{opacity:.4;cursor:default;background:transparent}
+
+.bloom-initial,.property-avatar:not(.property-avatar-count),.bloom-cleaner .bloom-slot{background:#d8c3ab;color:#2d2a1f}
