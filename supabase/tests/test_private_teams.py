@@ -106,4 +106,19 @@ class Teams(unittest.TestCase):
   changed=self.call(o,p,'defaults',{'cleaners':[{'cleanerId':cs[2][1],'individualAmountCents':4000},{'cleanerId':cs[3][1],'individualAmountCents':5000}]})
   self.assertEqual(sorted(m['individualAmountCents'] for m in changed['members'] if m['defaultAssigned']),[4000,5000])
   self.assertEqual({x for x in scalar(f"select string_agg(cleaner_id::text,',') from assignments where job_id='{j}' and ended_at is null;").split(',')},{cs[0][1],cs[1][1]})
+ def test_invitation_invalid_states_and_verified_email_mismatch(self):
+  o,oid,p,j,cs=self.fixture()
+  for state in ['pending','revoked','expired','mismatched']:
+   email=state+'@example.com'
+   iid=json.loads(scalar(f"select public.bloom_team_invite('{p}','{email}','{state}');",o))['id']
+   if state!='pending':
+    stored='sent' if state in ['expired','mismatched'] else state
+    sql(f"update private.cleaner_invitations set status='{stored}' where id='{iid}';")
+   if state=='expired':sql(f"update private.cleaner_invitations set expires_at=now()-interval '1 second' where id='{iid}';")
+   subject='rejected_'+uuid.uuid4().hex
+   verified='someoneelse@example.com' if state=='mismatched' else email
+   result=sql(f"select public.bloom_team_invite_accept('{iid}','{subject}',array['{verified}'],'Cleaner',false,null,true);",'server','service_role',ok=False)
+   self.assertNotEqual(result.returncode,0,state)
+   self.assertEqual(scalar(f"select count(*) from public.users where clerk_user_id='{subject}';"),'0')
+  self.assertEqual(scalar(f"select count(*) from private.property_cleaner_members where property_id='{p}';"),'4')
 if __name__=='__main__':unittest.main()
