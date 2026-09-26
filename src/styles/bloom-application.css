@@ -663,7 +663,7 @@ dialog.cleaner-city-dialog { width:min(480px,calc(100vw - 24px)); border-radius:
 .bloom-job-sections > .pill-row { grid-column:1 / -1; }
 .bloom-cleaner button.bloom-section-folder { display:flex; flex-direction:column; align-items:center; gap:12px; min-width:0; padding:16px; border:1px solid #e5e0d6; border-radius:22px; background:#fff; color:var(--ink); box-shadow:0 2px 6px #302f260a; cursor:pointer; font:inherit; }
 .bloom-section-preview { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; width:100%; }
-.bloom-section-mini { display:grid; place-items:center; aspect-ratio:1; min-width:0; border-radius:12px; background:#f6f3ec; }
+.bloom-section-mini { display:grid; place-items:center; aspect-ratio:1; min-width:0; box-sizing:border-box; border:1px solid #4a4538; border-radius:12px; background:#fff; }
 .bloom-section-mini svg { width:26px; height:26px; }
 .bloom-section-preview-empty { grid-column:1 / -1; min-height:100px; display:grid; place-items:center; font-size:13px; color:var(--muted); }
 .bloom-cleaner button.bloom-section-folder:is(:hover,:focus-visible) { border-color:#b85563; background:#fff6f8; }
