@@ -5,7 +5,7 @@ export type PhotoCategory = 'bedrooms' | 'bathrooms' | 'kitchen' | 'living_room'
 export type Provider = 'airbnb' | 'vrbo';
 export type LocalDate = string; // YYYY-MM-DD; validate at runtime
 export type Instant = string; // ISO8601 UTC; validate at runtime
-export type SessionUser = { id: string; role: Role; displayName: string; approvedCityId: string | null };
+export type SessionUser = { id: string; role: Role; displayName: string; approvedCityId: string | null; bloomNetworkEnabled?: boolean };
 export type InlineChange = { id: string; type: 'changed' | 'removed' | 'conflict'; message: string; acknowledged: boolean };
 export type CleanerJob = {
   id: string; propertyId: string; propertyName: string; cityId: string;
@@ -13,6 +13,9 @@ export type CleanerJob = {
   status: 'open' | 'completed' | 'cancelled'; reviewRequired: boolean; version: number;
   soloRateCents: number; sharedRateCents: number; activeCleanerCount: number;
   myAssignmentId: string | null; myCompletedPayCents: number | null;
+  management?: 'bloom' | 'private'; payerId?: string | null; payerName?: string;
+  capacity?: number; compensationMode?: 'equal' | 'individual'; myAgreedPayCents?: number | null;
+  staffingNeedsResolution?: boolean; bloomCoverageRequested?: boolean;
   withdrawalDeadlineExempt?: boolean;
   changes: InlineChange[];
 };
