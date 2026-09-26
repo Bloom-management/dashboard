@@ -1,5 +1,5 @@
 'use client';
-import {InviteCleanerForm} from './team-invitations';
+import {InviteCleanerForm} from './invite-cleaner-form';
 import { DialogClose } from './dialog-close';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';

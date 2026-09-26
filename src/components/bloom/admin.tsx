@@ -196,7 +196,7 @@ function Properties({integration,initialPropertyId}:{integration:BloomIntegratio
  const back=()=>router.push('/admin?view=properties',{scroll:false});
  const range=monthRange(todayIn('UTC').slice(0,7));
  return <div className="bloom-owner admin-properties-workspace">
-  {data.loading?<Loading/>:data.error?<ErrorNotice error={data.error} retry={data.reload}/>:<OwnerListings listings={data.data??[]} initialSelectedId={initialPropertyId} integration={integration} onChanged={changed} from={range.from} toExclusive={range.to} revision={revision}
+  {data.loading?<Loading/>:data.error?<ErrorNotice error={data.error} retry={data.reload}/>:<OwnerListings admin listings={data.data??[]} initialSelectedId={initialPropertyId} integration={integration} onChanged={changed} from={range.from} toExclusive={range.to} revision={revision}
    addListingAction={<div className="bloom-actions"><button className="bloom-button secondary" onClick={changed}>Refresh</button><Link className="bloom-button" href="/admin?view=properties&new=1" scroll={false}>+ Add listing</Link></div>}
    renderSettings={listing=><PropertySettings key={listing.id} id={listing.id} integration={integration} back={back} onRenamed={changed}/>}
   />}

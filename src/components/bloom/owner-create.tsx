@@ -1,5 +1,5 @@
 'use client';
-import {InviteCleanerForm} from './team-invitations';
+import {InviteCleanerForm} from './invite-cleaner-form';
 import {AddressPinPicker} from '../maps/address-pin';
 import type {AddressPin} from '../maps/geocode';
 import {OwnerPinSuggestion} from './owner-pin-suggestion';

@@ -1,3 +1,3 @@
 'use client';
 import {AdminPayouts} from './admin-payouts';
-export function OwnerPayouts(){return <AdminPayouts scope="owner"/>;}
+export function OwnerPayouts(){return <><h2>Payouts</h2><AdminPayouts scope="owner"/></>;}
