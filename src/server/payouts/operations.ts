@@ -25,3 +25,22 @@ export async function cleanerPayouts() {
   if (user.role !== 'cleaner' && user.role !== 'admin') throw new BackendError('FORBIDDEN');
   return userRpc<CleanerPayouts>('bloom_cleaner_payouts');
 }
+
+async function requireOwnerPayer() {
+  const user = await currentUser();
+  if (user.role !== 'owner' && user.role !== 'admin') throw new BackendError('FORBIDDEN');
+}
+export async function ownerPayoutSummary() {
+  await requireOwnerPayer();
+  return userRpc<PayoutSummary>('bloom_owner_payouts');
+}
+export async function ownerPayoutDetail(cleanerId:string) {
+  await requireOwnerPayer();
+  return userRpc<PayoutDetail>('bloom_owner_payouts',{p_cleaner:uuid(cleanerId)});
+}
+export async function ownerPayoutMutation(request:Request,cleanerId:string,action:'payment'|'adjustment'|'void'|'preference',paymentId?:string) {
+  await requireOwnerPayer();
+  const fields={payment:['amountCents','method','paymentDate','note','allocations'],adjustment:['cleaningId','amountCents','reason'],void:['reason'],preference:['method']};
+  const {body,key}=await mutation(request,fields[action]);
+  return userRpc<{id:string}>('bloom_owner_payout_action',{p_cleaner:uuid(cleanerId),p_action:action,p_data:paymentId?{...body,paymentId:uuid(paymentId)}:body,p_key:key});
+}

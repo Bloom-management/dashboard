@@ -8,4 +8,5 @@ export type PayoutPayment = { id:string; amountCents:number; method:PaymentMetho
 export type PayoutDetail = PayoutPerson & { cleanings:PayoutCleaning[]; payments:PayoutPayment[] };
 export type RecordPaymentInput = { amountCents:number; method:PaymentMethod; paymentDate:string; note?:string; allocations:{cleaningId:string;amountCents:number}[] };
 
-export type CleanerPayouts = PayoutDetail & { nextPayoutAt:string; payoutTimezone:string };
+export type PayerPayouts = {payerId:string|null;payerName:string;payerType:'bloom'|'owner';detail:PayoutDetail};
+export type CleanerPayouts = PayoutDetail & { nextPayoutAt:string; payoutTimezone:string; payers?:PayerPayouts[] };

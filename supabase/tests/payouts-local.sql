@@ -81,7 +81,7 @@ declare a public.users;other_admin public.users;c uuid;c2 uuid;o uuid;city uuid;
  detail:=public.bloom_admin_payouts(c);
  perform set_config('request.jwt.claims',jsonb_build_object('sub',(select clerk_user_id from public.users where id=c))::text,true);
  result:=public.bloom_cleaner_payouts();
- if result-'nextPayoutAt'-'payoutTimezone'<>detail then raise exception 'Cleaner/admin ledger mismatch';end if;
+ if result-'nextPayoutAt'-'payoutTimezone'-'payers'<>detail then raise exception 'Cleaner/admin ledger mismatch';end if;
  if (result->>'id')::uuid<>c then raise exception 'Other cleaner data leaked';end if;
  if extract(isodow from (result->>'nextPayoutAt')::timestamptz at time zone 'America/Detroit')<>1 or extract(hour from (result->>'nextPayoutAt')::timestamptz at time zone 'America/Detroit')<>8 or (result->>'nextPayoutAt')::timestamptz<=now() then raise exception 'Invalid Monday schedule';end if;
  perform set_config('request.jwt.claims',jsonb_build_object('sub',(select clerk_user_id from public.users where id=c2))::text,true);

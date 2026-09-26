@@ -1,6 +1,6 @@
 'use client';
 
-import {useCallback,useRef,useState,type FormEvent} from 'react';
+import {createContext,useContext,useCallback,useRef,useState,type FormEvent} from 'react';
 import {paymentMethods,type PaymentMethod,type PayoutSummary,type PayoutDetail,type PayoutCleaning,type PayoutPayment} from '../../contracts/payouts';
 import {request} from './api';
 import {Modal,Loading,ErrorNotice,useResource} from './primitives';
@@ -24,16 +24,19 @@ function usePayoutMutation(){
   }
   return{busy,error,run};
 }
-const base=(id:string)=>`/admin/payouts/${encodeURIComponent(id)}`;
+const PayoutScope=createContext<'admin'|'owner'>('admin');
+function usePayoutBase(){const scope=useContext(PayoutScope);return useCallback((id:string)=>`/${scope}/payouts/${encodeURIComponent(id)}`,[scope]);}
 const timestamp=(value:string)=>new Date(value).toLocaleString('en-US',{dateStyle:'medium',timeStyle:'short'});
 function MethodSelect({value,onChange,optional=false,label='Method'}:{value:string;onChange:(value:string)=>void;optional?:boolean;label?:string}){
   return <select aria-label={label} value={value} required={!optional} onChange={event=>onChange(event.target.value)}><option value="">{optional?'Not set':'Choose method'}</option>{paymentMethods.map(method=><option key={method}>{method}</option>)}</select>;
 }
-export function AdminPayouts({initialCleanerId=null,onCloseLinkedCleaner}:{initialCleanerId?:string|null;onCloseLinkedCleaner?:()=>void}={}){
-  const load=useCallback((signal:AbortSignal)=>request<PayoutSummary>('/admin/payouts',{signal}),[]),data=useResource(load);
+export function AdminPayouts(props:{initialCleanerId?:string|null;onCloseLinkedCleaner?:()=>void;scope?:'admin'|'owner'}={}){return <PayoutScope.Provider value={props.scope??'admin'}><PayoutsContent {...props}/></PayoutScope.Provider>;}
+function PayoutsContent({initialCleanerId=null,onCloseLinkedCleaner}:{initialCleanerId?:string|null;onCloseLinkedCleaner?:()=>void}){
+  const scope=useContext(PayoutScope);
+  const load=useCallback((signal:AbortSignal)=>request<PayoutSummary>(`/${scope}/payouts`,{signal}),[scope]),data=useResource(load);
   const[search,setSearch]=useState(''),[outstanding,setOutstanding]=useState(false),[selected,setSelected]=useState<string|null>(initialCleanerId);
   const people=data.data?.people.filter(person=>(!outstanding||person.totalDueCents>0)&&person.name.toLowerCase().includes(search.trim().toLowerCase()))??[];
-  return <section className="admin-payouts" aria-label="Cleaner payouts"><p>Track completed earnings and payments made outside Bloom. Recording a payment does not transfer money.</p>
+  return <section className="admin-payouts" aria-label="Cleaner payouts"><p>{scope==='owner'?'Amounts you owe your private cleaners. ':'Bloom-paid cleaning earnings. '}Track completed earnings and payments made outside Bloom. Recording a payment does not transfer money.</p>
     {data.loading?<Loading/>:data.error?<ErrorNotice error={data.error} retry={data.reload}/>:data.data&&<>
       <div className="payout-summary"><span>Total outstanding</span><strong>{money(data.data.totalOutstandingCents)}</strong><small>All unpaid completed work · USD · All time</small></div>
       {!!data.data.reviewCount&&<p className="bloom-notice">{data.data.reviewCount} completed cleaning {data.data.reviewCount===1?'entry needs':'entries need'} payout review. Unknown earnings are excluded from the total.{data.data.unassignedReviewCount>0&&` ${data.data.unassignedReviewCount} could not be linked to a cleaner.`}</p>}
@@ -43,7 +46,8 @@ export function AdminPayouts({initialCleanerId=null,onCloseLinkedCleaner}:{initi
   </section>;
 }
 function PayoutDetails({id,onChanged}:{id:string;onChanged:()=>void}){
-  const load=useCallback((signal:AbortSignal)=>request<PayoutDetail>(base(id),{signal}),[id]),resource=useResource(load);
+  const base=usePayoutBase();
+  const load=useCallback((signal:AbortSignal)=>request<PayoutDetail>(base(id),{signal}),[id,base]),resource=useResource(load);
   const[mode,setMode]=useState<'payment'|'preference'|null>(null),[message,setMessage]=useState('');
   const reload=(notice:string)=>{setMode(null);setMessage(notice);resource.reload();onChanged();};
   return <div className="admin-payouts">{resource.loading?<Loading/>:resource.error?<ErrorNotice error={resource.error} retry={resource.reload}/>:resource.data&&<>
@@ -55,11 +59,13 @@ function PayoutDetails({id,onChanged}:{id:string;onChanged:()=>void}){
   </>}</div>;
 }
 function PreferenceForm({detail,done,cancel}:{detail:PayoutDetail;done:()=>void;cancel:()=>void}){
+  const base=usePayoutBase();
   const[value,setValue]=useState<string>(detail.preferredMethod??''),mutation=usePayoutMutation();
   return <form className="payout-form" onSubmit={event=>{event.preventDefault();void mutation.run(`${base(detail.id)}/preference`,{method:value||null},done);}}><fieldset disabled={mutation.busy}><legend>Preferred payment method</legend><label>Method<MethodSelect optional value={value} onChange={setValue}/></label><p>This is a default for new records. It does not change previous payments.</p><FormActions busy={mutation.busy} label="Save preferred method" cancel={cancel}/></fieldset>{!!mutation.error&&<ErrorNotice error={mutation.error}/>}</form>;
 }
 function FormActions({busy,label,cancel,disabled=false}:{busy:boolean;label:string;cancel:()=>void;disabled?:boolean}){return <div className="payout-actions"><button className="bloom-button" disabled={busy||disabled}>{busy?'Saving…':label}</button><button type="button" className="bloom-button secondary" disabled={busy} onClick={cancel}>Cancel</button></div>;}
 function PaymentForm({detail,done,cancel}:{detail:PayoutDetail;done:()=>void;cancel:()=>void}){
+  const base=usePayoutBase();
   const[amount,setAmount]=useState(''),[method,setMethod]=useState<string>(detail.preferredMethod??''),[date,setDate]=useState(()=>{const now=new Date();return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;}),[note,setNote]=useState(''),[allocations,setAllocations]=useState<Record<string,string>>({}),[confirmed,setConfirmed]=useState(false);
   const mutation=usePayoutMutation(),balances=detail.cleanings.filter(cleaning=>(cleaning.remainingCents??0)>0&&cleaning.status!=='review');
   const entries=Object.entries(allocations),total=entries.reduce((sum,[,value])=>sum+(payoutCents(value)??0),0),cents=payoutCents(amount);
@@ -69,6 +75,7 @@ function PaymentForm({detail,done,cancel}:{detail:PayoutDetail;done:()=>void;can
     <div className="payout-form-grid"><label>Payment amount (USD)<input inputMode="decimal" required value={amount} onChange={event=>setAmount(event.target.value)}/></label><label>Actual payment method<MethodSelect label="Actual payment method" value={method} onChange={setMethod}/></label><DatePicker label="Payment date" value={date} onChange={setDate}/><label>Transaction reference or note (optional)<textarea maxLength={1000} value={note} onChange={event=>setNote(event.target.value)}/></label></div><p className="payout-allocation-total">Allocated: {money(total)}{cents!==null&&total!==cents?` · Allocate ${money(Math.abs(cents-total))} ${total<cents?'more':'less'} to match the payment.`:''}</p><label className="payout-check"><input type="checkbox" checked={confirmed} onChange={event=>setConfirmed(event.target.checked)}/>I confirm this payment was made outside Bloom. Saving only records it; no money will be transferred.</label><FormActions busy={mutation.busy} label="Record external payment" disabled={!valid} cancel={cancel}/></fieldset>{!!mutation.error&&<ErrorNotice error={mutation.error}/>}</form>;
 }
 function CleaningCard({cleanerId,cleaning,done}:{cleanerId:string;cleaning:PayoutCleaning;done:()=>void}){
+  const base=usePayoutBase();
   const[adjust,setAdjust]=useState(false),[amount,setAmount]=useState(''),[reason,setReason]=useState(''),mutation=usePayoutMutation();const cents=payoutCents(amount);
   return <article className="payout-cleaning" aria-label={`${cleaning.propertyName} ${cleaning.cleaningDate}`}><div className="payout-card-heading"><div><h4>{cleaning.propertyName}</h4><p>{formatDate(cleaning.cleaningDate)} · {cleaning.participation==='solo'?'Solo':'Shared'} participation</p></div><span className={`payout-status ${cleaning.status}`}>{({unpaid:'Unpaid',partial:'Partially paid',paid:'Paid',review:'Needs review'})[cleaning.status]}</span></div>
     {cleaning.status==='review'?<p className="bloom-notice">{cleaning.reviewReason??'No reliable finalized payout snapshot. An admin must review the source record before this work can be paid.'}</p>:<dl className="payout-amounts"><div><dt>Finalized earnings</dt><dd>{money(cleaning.originalEarningsCents??0)}</dd></div><div><dt>Adjustments</dt><dd>{money(cleaning.adjustmentCents)}</dd></div><div><dt>Paid</dt><dd>{money(cleaning.paidCents)}</dd></div><div><dt>Remaining</dt><dd>{money(cleaning.remainingCents??0)}</dd></div></dl>}
@@ -77,6 +84,7 @@ function CleaningCard({cleanerId,cleaning,done}:{cleanerId:string;cleaning:Payou
   </article>;
 }
 function PaymentCard({cleanerId,payment,done}:{cleanerId:string;payment:PayoutPayment;done:()=>void}){
+  const base=usePayoutBase();
   const[voiding,setVoiding]=useState(false),[reason,setReason]=useState(''),mutation=usePayoutMutation();
   return <article className="payout-cleaning" aria-label={`Payment ${payment.paymentDate} ${payment.id}`}><div className="payout-card-heading"><h4>{money(payment.amountCents)} · {payment.method}</h4><span className={`payout-status ${payment.voidedAt?'review':'paid'}`}>{payment.voidedAt?'Voided':'Recorded'}</span></div><p>{formatDate(payment.paymentDate)}</p>{payment.note&&<p className="payout-comments">{payment.note}</p>}<ul className="payout-history-allocations">{payment.allocations.map(item=><li key={item.cleaningId}><span>{item.propertyName} · {formatDate(item.cleaningDate)}</span><strong>{money(item.amountCents)}</strong></li>)}</ul><small className="payout-recorded-by">Recorded by {payment.enteredBy} · {timestamp(payment.createdAt)}</small>
     {payment.voidedAt?<div className="payout-audit"><p>Void reason: {payment.voidReason}</p><small>Voided by {payment.voidedBy} · {timestamp(payment.voidedAt)}</small></div>:!voiding?<button className="bloom-button secondary" onClick={()=>setVoiding(true)}>Correct / void record</button>:<form className="payout-form" onSubmit={event=>{event.preventDefault();if(reason.trim())void mutation.run(`${base(cleanerId)}/payments/${encodeURIComponent(payment.id)}/void`,{reason:reason.trim()},done);}}><fieldset disabled={mutation.busy}><legend>Void this payment record</legend><p>This keeps the original record and restores its allocated balances. It does not reverse a real transfer. After voiding, record the corrected payment if needed.</p><label>Reason (required)<textarea required maxLength={1000} value={reason} onChange={event=>setReason(event.target.value)}/></label><FormActions busy={mutation.busy} disabled={!reason.trim()} label="Void payment record" cancel={()=>setVoiding(false)}/></fieldset>{!!mutation.error&&<ErrorNotice error={mutation.error}/>}</form>}
