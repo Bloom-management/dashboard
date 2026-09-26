@@ -33,7 +33,10 @@ class InboxTests(unittest.TestCase):
   sql(f"insert into public.property_owners values('{prop}','{oid}');update public.calendar_sources set last_error_code='SYNC_FAILED' where id='{sid}';")
   self.assertEqual(self.inbox(owner)['total'],1);self.assertEqual(self.inbox(other)['total'],0)
   self.assertNotEqual(sql(f"select public.bloom_notification_dismiss('sync:{sid}');",owner,ok=False).returncode,0)
-  self.assertTrue(any(x['id']=='sync:'+sid for x in self.inbox(admin)['items']))
+  admin_page=self.inbox(admin)
+  admin_items=admin_page['items']
+  for offset in range(10,admin_page['total'],10):admin_items.extend(self.inbox(admin,offset)['items'])
+  self.assertTrue(any(x['id']=='sync:'+sid for x in admin_items))
   sql(f"update public.calendar_sources set last_error_code=null where id='{sid}';")
   self.assertEqual(self.inbox(owner)['total'],0)
 if __name__=='__main__':unittest.main()
