@@ -24,6 +24,9 @@ try {
   for(let i=0;i<offset/10;i++){await page.getByRole('button',{name:'Next',exact:true}).last().click();await page.waitForTimeout(250);}
   await page.locator('a[href="'+notice.href+'"]').click();
   await page.getByRole('heading',{name:'Completion photos',exact:true}).waitFor();
+  await page.getByRole('button',{name:'Next room',exact:true}).click();
+  await page.getByRole('button',{name:'Previous room',exact:true}).click();
+  await page.getByRole('button',{name:'Grid',exact:true}).click();
   await page.waitForFunction(()=>{const imgs=[...document.querySelectorAll('section[aria-label="Completed cleaning activity"] img')];return imgs.length===2&&imgs.every(i=>i.complete&&i.naturalWidth>0);});
   await page.screenshot({path:'.bloom-local/private/activity-'+hub+'-desktop.png'});
   await page.setViewportSize({width:390,height:844});

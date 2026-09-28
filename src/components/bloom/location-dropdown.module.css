@@ -13,3 +13,9 @@
 .dialog .search {padding:0 0 16px;margin:0 0 16px}
 .dialog .options {max-height:min(360px,50dvh);padding:2px}
 .dialog .options button {width:100%;text-align:left}
+/* Override the shared dialog reset so every hub retains the same inset. */
+.dialog.dialog.dialog { padding:28px; }
+@media(max-width:600px) {
+ .dialog.dialog.dialog { width:calc(100vw - 32px);padding:24px 20px 20px; }
+ .dialog .heading { margin-bottom:20px;padding-right:12px;font-size:22px; }
+}

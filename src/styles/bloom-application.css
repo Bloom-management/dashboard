@@ -761,3 +761,14 @@ dialog.cleaner-city-dialog { width:min(480px,calc(100vw - 24px)); border-radius:
 .admin-pricing-inbox .bloom-inbox-heading .bloom-inbox-settings:disabled{opacity:.4;cursor:default;background:transparent}
 
 .bloom-initial,.property-avatar:not(.property-avatar-count),.bloom-cleaner .bloom-slot{background:#d8c3ab;color:#2d2a1f}
+
+/* Fixed square sizing prevents flex shrink and shared button padding making ovals. */
+:is(.bloom-cleaner,.bloom-owner) .cal-nav .icon-btn {
+ box-sizing:border-box;flex:0 0 44px;width:44px;height:44px;min-width:44px;min-height:44px;padding:0;border-radius:50%;
+}
+@media(max-width:600px) {
+ .bloom-cleaner.cleaner-hub .job-detail-compact .detail-body {
+  padding:16px max(20px,env(safe-area-inset-right)) max(20px,env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left));
+ }
+ .bloom-cleaner .job-detail-compact .detail-body > p { margin:0;overflow-wrap:anywhere; }
+}
