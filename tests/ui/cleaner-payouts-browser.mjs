@@ -31,6 +31,19 @@ try{
   await tabs.getByRole('button',{name:'Available-job calendar'}).click();await page.getByRole('heading',{name:'All properties',exact:true}).waitFor();
   failed=true;await tabs.getByRole('button',{name:'My payouts'}).click();await page.getByRole('button',{name:'Try again'}).waitFor();failed=false;data.cleanings=[];data.payments=[];data.totalDueCents=0;
   await page.getByRole('button',{name:'Try again'}).click();await page.getByRole('heading',{name:'No earnings yet'}).waitFor();
+  data=structuredClone(fixture);data.payers=[{payerId:null,payerName:'Bloom Cleaning',payerType:'bloom',detail:{...fixture,payments:[]}},{payerId:'host',payerName:'Test host',payerType:'owner',detail:fixture}];
+  await page.goto('http://127.0.0.1:'+server.address().port+'/?view=payouts&history=payments&payer=host');
+  await page.getByText('Paid on job day',{exact:true}).waitFor();await page.getByRole('button',{name:'Choose payer: Test host',exact:true}).click();
+  const dialog=page.getByRole('dialog',{name:'Choose payer',exact:true});await dialog.waitFor();
+  assert.equal(await dialog.evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(255, 255, 255)');
+  await dialog.getByRole('textbox',{name:'Search payers'}).fill('Bloom');
+  await dialog.getByRole('button',{name:'Bloom Cleaning',exact:true}).click();
+  await page.getByRole('button',{name:'Choose payer: Bloom Cleaning',exact:true}).waitFor();
+  await page.getByRole('heading',{name:'No payments recorded yet',exact:true}).waitFor();
+  assert.equal(await page.locator('.cp-payer-picker select').count(),0);
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false);
+  await page.getByRole('button',{name:'Choose payer: Bloom Cleaning',exact:true}).click();await page.keyboard.press('Escape');
+  assert(await page.getByRole('button',{name:'Choose payer: Bloom Cleaning',exact:true}).evaluate(el=>el===document.activeElement));
   console.log(`PASS ${width}: cleaner tab, totals, early payment, void sync, white cards, responsive layout, retry and empty state`);await page.close();
  }
 }finally{await browser.close();await new Promise(resolve=>server.close(resolve));}

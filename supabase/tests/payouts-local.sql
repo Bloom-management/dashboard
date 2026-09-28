@@ -64,6 +64,7 @@ declare a public.users;other_admin public.users;c uuid;c2 uuid;o uuid;city uuid;
  begin perform public.bloom_admin_payout_action(c2,'payment',jsonb_build_object('amountCents',1,'method','Cash','paymentDate',current_date,'allocations',jsonb_build_array(jsonb_build_object('cleaningId',shared,'amountCents',1))),'wrong-payee');raise exception 'Other payee allocation allowed';exception when raise_exception then if sqlerrm<>'NOT_FOUND' then raise;end if;end;
  perform public.bloom_admin_payout_action(c,'adjustment',jsonb_build_object('cleaningId',shared,'amountCents',-200,'reason','LOCAL TEST agreed correction'),'negative-valid');
  if (select completed_pay_cents from public.assignments where id=shared)<>4200 or (select remaining_cents from private.payout_balances where id=shared)<>4000 then raise exception 'Negative adjustment failed';end if;
+ if (select count(*) from private.payout_notification_events where payment_id=pay)<>1 then raise exception 'Payment replay duplicated notification';end if;
  -- Role changes never remove historical earnings from the directory.
  update public.users set role='owner' where id=c;
  if not exists(select 1 from jsonb_array_elements(public.bloom_admin_payouts()->'people') x where x->>'id'=c::text) then raise exception 'Historic participant disappeared';end if;

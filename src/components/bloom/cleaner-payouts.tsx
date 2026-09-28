@@ -1,5 +1,5 @@
 'use client';
-import {Select} from '../ui/select';
+import {LocationDropdown} from './location-dropdown';
 import { useCallback, useEffect, useState } from 'react';
 import { DateTime } from 'luxon';
 import type { CleanerPayouts as PayoutData } from '../../contracts/payouts';
@@ -13,8 +13,8 @@ export function CleanerPayouts() {
   const load = useCallback((signal:AbortSignal) => request<PayoutData>('/cleaner/payouts', {signal}), []);
   const resource = useResource(load, true);
   const {reload} = resource;
-  const [payer,setPayer]=useState<string|null>(null);
-  const [history,setHistory] = useState<'earnings'|'payments'>('earnings');
+  const [payer,setPayer]=useState<string|null>(()=>typeof window==='undefined'?null:new URLSearchParams(window.location.search).get('payer'));
+  const [history,setHistory] = useState<'earnings'|'payments'>(()=>typeof window!=='undefined'&&new URLSearchParams(window.location.search).get('history')==='payments'?'payments':'earnings');
   useEffect(() => {
     const refresh = () => { if(document.visibilityState === 'visible') reload(); };
     const timer = window.setInterval(refresh,30000);
@@ -39,7 +39,7 @@ export function CleanerPayouts() {
   return <section className="cleaner-payouts" aria-label="My payouts">
     <header className="cp-heading"><div><h1>Payouts</h1><p>Your earnings and recorded payments by payer</p></div><button className="bloom-button secondary" onClick={reload} disabled={resource.loading}>{resource.loading?'Refreshing…':'Refresh'}</button></header>
     {!!resource.error&&<ErrorNotice error={resource.error} retry={reload}/>}
-    <label className="cp-card cp-payer-picker"><span>Payer</span><Select aria-label="Payer" value={selected?.payerId??'bloom'} onChange={event=>setPayer(event.target.value)}>{groups.map(group=><option key={group.payerId??'bloom'} value={group.payerId??'bloom'}>{group.payerName}</option>)}</Select></label>
+    <div className="cp-card cp-payer-picker"><span>Payer</span><LocationDropdown label="Choose payer" searchLabel="Search payers" emptyLabel="No payers found." value={selected?.payerId??'bloom'} onValueChange={setPayer} locations={groups.map(group=>({id:group.payerId??'bloom',name:group.payerName}))}/></div>
     <p>{selected?.payerType==='owner'?'This owner pays you directly. These amounts are not owed by Bloom.':'Bloom is responsible for the earnings shown below.'}</p>
     <div className="cp-summary">
       <article className="cp-card"><h2>Total earned</h2><strong>{money(earned)}</strong><p>Completed cleanings, including adjustments</p></article>

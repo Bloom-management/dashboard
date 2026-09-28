@@ -6,7 +6,7 @@ import choice from '../ui/choice-card.module.css';
 import { Input } from '../ui/input';
 import styles from './location-dropdown.module.css';
 
-export function LocationDropdown({ locations, value, onValueChange, label, placeholder = 'Choose city', disabled = false, searchLabel = 'Search locations', ariaInvalid, describedBy }: {
+export function LocationDropdown({ locations, value, onValueChange, label, placeholder = 'Choose city', disabled = false, searchLabel = 'Search locations', emptyLabel, ariaInvalid, describedBy }: {
   locations: readonly { id: string; name: string }[];
   value: string;
   onValueChange: (value: string) => void;
@@ -14,6 +14,7 @@ export function LocationDropdown({ locations, value, onValueChange, label, place
   placeholder?: string;
   disabled?: boolean;
   searchLabel?: string;
+  emptyLabel?: string;
   ariaInvalid?: boolean;
   describedBy?: string;
 }) {
@@ -32,7 +33,7 @@ export function LocationDropdown({ locations, value, onValueChange, label, place
       <div className={styles.search}><Input ref={input} aria-label={searchLabel} placeholder={`${searchLabel}…`} value={search} onChange={event=>setSearch(event.target.value)}/></div>
       <div className={`${styles.options} ${choice.group}`} role="group" aria-label={label}>
         {filtered.map(location=><button type="button" className={choice.card} key={location.id} aria-pressed={location.id===value} data-selected={location.id===value?'':undefined} onClick={()=>{onValueChange(location.id);setOpen(false);}}><span className={choice.label}>{location.name}</span><span className={choice.indicator} aria-hidden="true">{location.id===value&&<span className={choice.dot}/>}</span></button>)}
-        {!filtered.length&&<p className={styles.empty} role="status">{locations.length?'No locations found.':'No locations available.'}</p>}
+        {!filtered.length&&<p className={styles.empty} role="status">{emptyLabel??(locations.length?'No locations found.':'No locations available.')}</p>}
       </div>
     </Modal>}
   </>;

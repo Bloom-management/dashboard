@@ -10,5 +10,5 @@
 
 .cleaner-payouts .cp-payer-picker{display:flex;align-items:center;flex-wrap:wrap;gap:16px}
 .cleaner-payouts .cp-payer-picker > span{flex-shrink:0}
-.cleaner-payouts .cp-payer-picker select{min-width:200px;max-width:100%;margin:0}
-@media(max-width:600px){.cleaner-payouts .cp-payer-picker{align-items:stretch;flex-direction:column;gap:12px}.cleaner-payouts .cp-payer-picker select{width:100%;min-width:0}}
+.cleaner-payouts .cp-payer-picker > button{min-width:200px;max-width:100%;margin:0}
+@media(max-width:600px){.cleaner-payouts .cp-payer-picker{align-items:stretch;flex-direction:column;gap:12px}.cleaner-payouts .cp-payer-picker > button{width:100%;min-width:0}}
