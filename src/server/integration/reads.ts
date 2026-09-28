@@ -1,3 +1,4 @@
+import {profileAvatar} from '../../lib/avatar';
 import 'server-only';
 import { adminIdentityClient } from '../auth/admin-identity';
 import { authenticatedDatabase, currentUser, requireAdmin } from '../auth/session';
@@ -37,7 +38,7 @@ export async function integrationRead(operation:string, request:Request, id?:str
    for(const identity of identities.data){
     const name=[identity.firstName,identity.lastName].filter(Boolean).join(' ').trim()||identity.username?.trim();
     if(name)names.set(identity.id,name);
-    if(identity.imageUrl)avatars.set(identity.id,identity.imageUrl);
+    avatars.set(identity.id,profileAvatar(identity));
     const primary=identity.emailAddresses.find(email=>email.id===identity.primaryEmailAddressId);
     if(primary)emails.set(identity.id,primary.emailAddress);
    }

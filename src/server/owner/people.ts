@@ -1,3 +1,4 @@
+import {DEFAULT_AVATAR} from '../../lib/avatar';
 import 'server-only';
 import { clerkClient, currentUser as clerkCurrentUser } from '@clerk/nextjs/server';
 import { authenticatedDatabase,currentUser } from '../auth/session';
@@ -17,7 +18,7 @@ export async function propertyPeople(id:string):Promise<PropertyPeople>{
  const images=new Map<string,string>();const names=new Map<string,string>();
  // A temporarily unavailable profile image must not break property access.
  try{const client=await clerkClient();for(let offset=0;offset<members.length;offset+=100){const users=await client.users.getUserList({userId:members.slice(offset,offset+100).map(m=>m.subject),limit:100});for(const user of users.data){const name=[user.firstName,user.lastName].filter(Boolean).join(' ').trim()||user.username;if(name)names.set(user.id,name);const url=new URL(user.imageUrl);if(url.protocol==='https:'&&user.hasImage)images.set(user.id,url.href);}}}catch{/* Initials remain available. */}
- return {...data,members:members.map(({id,displayName,subject,location})=>({id,displayName:names.get(subject)??displayName,location:location??null,imageUrl:images.get(subject)??null}))};
+ return {...data,members:members.map(({id,displayName,subject,location})=>({id,displayName:names.get(subject)??displayName,location:location??null,imageUrl:images.get(subject)??DEFAULT_AVATAR}))};
 }
 export async function invitePropertyPerson(id:string,request:Request){
  const user=await currentUser();const {body,key}=await mutation(request,['email','resend']);const email=text(body.email,254).trim().toLowerCase();
