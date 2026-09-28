@@ -6,7 +6,7 @@ import {propertyCalendarService} from '../calendar/property';
 import {serviceRpc} from '../calendar/store';
 import {calculateOwnerPerformance} from '../calendar/owner-metrics';
 import type {CalendarReviewEntry,CalendarReviewPage,OwnerCalendarBlock} from '../../contracts';
-import type {OwnerListing,OwnerListingsPage,OwnerSource,OwnerAnalyticsInput} from '../../contracts/owner-hub';
+import type {OwnerListingsPage,OwnerSource,OwnerAnalyticsInput} from '../../contracts/owner-hub';
 
 type Property={id:string;name:string;timezone:string;active:boolean};
 /** Actual admin identity, existing admin/user-token RPCs only. Never impersonates an owner. */
@@ -22,12 +22,10 @@ async function sources(propertyId:string,actor:string):Promise<OwnerSource[]> {
  return result;
 }
 export async function adminOwnerListings(cursor:string|null):Promise<OwnerListingsPage> {
- const actor=await requireAdmin();const page=await propertyPage(cursor);
- const items:OwnerListing[]=[];
- for(const p of page.slice(0,100)) {
-  items.push({id:p.id,name:p.name,timezone:p.timezone,active:p.active,currency:'USD',nightlyGuestRateCents:null,hostPayoutCents:null,supplies:[],suppliesUnavailable:true,sources:await sources(p.id,actor.id)});
- }
- return {items,nextCursor:page.length>100?page[99].id:null};
+ await requireAdmin();
+ // The shared authorized projection includes the actual latest completed supply
+ // and maintenance reports; do not manufacture empty admin placeholders.
+ return userRpc<OwnerListingsPage>('bloom_owner_listings',{p_cursor:cursor});
 }
 async function allProperties(ids:string[]|null) {
  await requireAdmin();const {db}=await authenticatedDatabase();
