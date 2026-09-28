@@ -1,4 +1,5 @@
 'use client';
+import {CleanerAvatar,useJobTeam} from './cleaner-identity';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CleanerJob, CompletionResult, JobJourney, SessionUser, SupplyLevel } from '../../contracts';
 import type { BloomIntegration } from './integration';
@@ -14,6 +15,7 @@ import styles from './cleaner-journey.module.css';
 export function CleanerJourney({ job, user, integration, onClose, onUpdate }: {job: CleanerJob;user:SessionUser;integration:BloomIntegration;onClose:()=>void;onUpdate:(job:CleanerJob)=>void}) {
   const load=useCallback((signal:AbortSignal)=>request<JobJourney>(`/jobs/${job.id}/journey`,{signal}),[job.id]);
   const resource=useResource(load,true);
+  const team=useJobTeam(job.id,job.version);
   const [draft,setDraft]=useState<JourneyDraft>({step:'progress',answers:{},notes:'',version:0});
   const [hydrated,setHydrated]=useState(false);
   const [coverage,setCoverage]=useState(false);
@@ -115,8 +117,9 @@ export function CleanerJourney({ job, user, integration, onClose, onUpdate }: {j
       <p className={styles.factsDate}>{new Intl.DateTimeFormat('en-US',{timeZone:'UTC',weekday:'long',month:'long',day:'numeric',year:'numeric'}).format(new Date(`${current.checkoutDate}T12:00:00Z`))}</p>
       <div className={styles.timeWindow}><div><strong>{formatTime(current.startAt,current.timezone)}</strong><span>Start</span></div><div className={styles.timeLine} aria-hidden="true"/><div><strong>{formatTime(current.endAt,current.timezone)}</strong><span>Finish</span></div></div>
       <div className={styles.teamSection}><p>{current.timezone}</p>
-        <div className={styles.teamMember}><span className={styles.avatar} aria-hidden="true">Y</span><div><strong>You</strong><p>Assigned to this cleaning</p></div></div>
-        {current.management==='private'?<p>{current.activeCleanerCount}/{current.capacity??2} cleaners assigned. The owner manages replacements.</p>:<div className={styles.teamMember}><span className={`${styles.avatar} ${current.activeCleanerCount<2?styles.openSlot:''}`} aria-hidden="true">{current.activeCleanerCount<2?'+':'✓'}</span><div><strong>{current.activeCleanerCount>=2?'Second cleaner assigned':current.status==='open'?'Second slot available':'Second slot unfilled'}</strong><p>{current.activeCleanerCount>=2?'Assigned to this cleaning':current.status==='open'?'Another eligible cleaner can join':'No second cleaner assigned'}</p></div></div>}
+        {team.loading&&!team.data?<Loading/>:team.error?<ErrorNotice error={team.error} retry={team.reload}/>:team.data?.map(cleaner=><div className={styles.teamMember} key={cleaner.id}><span className={styles.avatar}><CleanerAvatar name={cleaner.displayName} url={cleaner.avatarUrl}/></span><div><strong>{cleaner.displayName}{cleaner.id===user.id?' (You)':''}</strong><p>{current.status==='completed'?'Completed this cleaning':'Assigned to this cleaning'}</p></div></div>)}
+        {current.activeCleanerCount<(current.capacity??2)&&<div className={styles.teamMember}><span className={`${styles.avatar} ${styles.openSlot}`} aria-hidden="true">+</span><div><strong>{current.status==='open'?'Open cleaning slot':'Unfilled cleaning slot'}</strong><p>{current.management==='private'?'The owner manages replacements.':current.status==='open'?'Another eligible cleaner can join':'No cleaner assigned'}</p></div></div>}
+
       </div>
       <div className={styles.rateSection}><div><span>Your payout:</span><strong>{current.status==='completed'?(current.myCompletedPayCents===null?'Unavailable':money(current.myCompletedPayCents)):current.management==='private'?(current.myAgreedPayCents!=null?money(current.myAgreedPayCents):'Equal share at completion'):money(current.activeCleanerCount>=2?current.sharedRateCents:current.soloRateCents)}</strong></div>{current.status==='open'&&<p>{current.management==='private'&&current.myAgreedPayCents==null?`${money(current.soloRateCents)} total, divided among eligible participants at completion.`:'Provisional until completion.'}</p>}</div>
 

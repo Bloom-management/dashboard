@@ -31,11 +31,13 @@ export async function integrationRead(operation:string, request:Request, id?:str
   const {data,error}=await query;if(error)databaseError(error);const rows=data??[];
   const emails=new Map<string,string>();
   const names=new Map<string,string>();
+  const avatars=new Map<string,string>();
   if(rows.length)try{
    const identities=await adminIdentityClient().users.getUserList({userId:rows.slice(0,10).map(u=>u.clerk_user_id),limit:10});
    for(const identity of identities.data){
     const name=[identity.firstName,identity.lastName].filter(Boolean).join(' ').trim()||identity.username?.trim();
     if(name)names.set(identity.id,name);
+    if(identity.imageUrl)avatars.set(identity.id,identity.imageUrl);
     const primary=identity.emailAddresses.find(email=>email.id===identity.primaryEmailAddressId);
     if(primary)emails.set(identity.id,primary.emailAddress);
    }
@@ -43,7 +45,7 @@ export async function integrationRead(operation:string, request:Request, id?:str
    if(error instanceof BackendError)throw error;
    throw new BackendError('SOURCE_UNAVAILABLE');
   }
-  return {items:rows.slice(0,10).map(u=>({id:u.id,role:u.role,displayName:names.get(u.clerk_user_id)||(u.display_name?.trim()&&u.display_name.trim()!=='Account'?u.display_name.trim():emails.get(u.clerk_user_id)||'Name not provided'),approvedCityId:u.approved_city_id,email:emails.get(u.clerk_user_id)??null,location:u.role==='cleaner'?(u.cities as unknown as {name:string}|null)?.name??null:u.home_base})),nextCursor:rows.length>10?rows[9].id:null};
+  return {items:rows.slice(0,10).map(u=>({id:u.id,role:u.role,displayName:names.get(u.clerk_user_id)||(u.display_name?.trim()&&u.display_name.trim()!=='Account'?u.display_name.trim():emails.get(u.clerk_user_id)||'Name not provided'),approvedCityId:u.approved_city_id,avatarUrl:avatars.get(u.clerk_user_id)??null,email:emails.get(u.clerk_user_id)??null,location:u.role==='cleaner'?(u.cities as unknown as {name:string}|null)?.name??null:u.home_base})),nextCursor:rows.length>10?rows[9].id:null};
  }
  if(operation==='cityRequests') {
   let query=db.from('city_change_requests').select('id,status,users!cleaner_id(display_name),cities!requested_city_id(name)').order('id').limit(101);if(after)query=query.gt('id',after);
