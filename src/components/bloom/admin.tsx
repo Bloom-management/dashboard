@@ -13,7 +13,7 @@ import {calendarSaveMessage,type CalendarSaveResult} from '../../contracts/calen
 import '../../styles/bloom-owner.css';
 import { CalendarSetupSection, initialCalendars } from './calendar-setup-section';
 import { AdminPayouts } from './admin-payouts';
-import {PushDiagnostics} from '../push/diagnostics';
+import {ServiceCities} from './service-cities';
 import { AdminPricingInbox, AdminUnitPricing, AdminPricingEditor } from './admin-pricing';
 import { CleanerDayDialog } from './cleaner-day-dialog';
 import { OwnerListings } from './owner-listings';
@@ -36,7 +36,7 @@ import { parseSoloRate, propertyOwnership } from './property-form';
 import type { CleanerJob, Role, SessionUser } from '../../contracts';
 import { ApiError, request } from './api';
 import { formatDate, formatTime, monthRange, money, shiftMonth, todayIn } from './dates';
-import type { AdminPerson, BloomIntegration, CityOption, CityRequest, Page, PropertyOption, SourceHealth } from './integration';
+import type { AdminPerson, BloomIntegration, CityRequest, Page, PropertyOption, SourceHealth } from './integration';
 import { Account, Brand, HubSelector, Changes, Empty, ErrorNotice, Loading, Modal, MonthHead, RoleGate, useResource } from './primitives';
 import { Photos } from './photos';
 import { CalendarReviewList } from './calendar-review';
@@ -90,14 +90,6 @@ function RequestRow({ item, reload, integration }: { item: CityRequest; reload: 
     if (await mutation.run({ decision }, key => integration.admin!.resolveCityRequest(item.id, decision, key))) reload();
   }
   return <article className="bloom-admin-card"><h3>{item.cleanerName}</h3><p>Requested city: {item.requestedCityName} · {item.status}</p>{item.status === 'pending' && <div className="bloom-actions"><button className="bloom-button" disabled={mutation.busy} onClick={() => decide('approved')}>Approve city change</button><button className="bloom-button secondary" disabled={mutation.busy} onClick={() => decide('rejected')}>Reject</button></div>}<Result mutation={mutation} /></article>;
-}
-function Cities({ integration }: { integration: BloomIntegration }) {
-  const load = useCallback((signal: AbortSignal) => integration.listCities!(signal), [integration]);
-  const resource = useResource(load);
-  const [name, setName] = useState('');
-  const mutation = useMutation();
-  async function save(city: CityOption) { if (await mutation.run(city, key => integration.admin!.saveCity!(city, key))) resource.reload(); }
-  return <>{resource.loading ? <Loading /> : resource.error ? <ErrorNotice error={resource.error} retry={resource.reload} /> : resource.data?.map(city => <article className="bloom-admin-card" key={city.id}><h3>{city.name}</h3><p>{city.active ? 'Active' : 'Inactive'}</p><button className="bloom-button secondary" disabled={mutation.busy} onClick={() => save({ ...city, active: !city.active })}>{city.active ? 'Deactivate' : 'Activate'}</button></article>)}<form className="bloom-admin-card bloom-form" onSubmit={async event => { event.preventDefault(); const city = { name: name.trim(), active: true }; if (await mutation.run(city, key => integration.admin!.createCity!(city, key))) { setName(''); resource.reload(); } }}><h3>Add city</h3><label>City name<input required value={name} onChange={event => setName(event.target.value)} /></label><button className="bloom-button" disabled={mutation.busy || !name.trim()}>Create city</button></form><Result mutation={mutation} /></>;
 }
 function PropertyForm({ integration, created }: { integration: BloomIntegration; created: (id:string) => void }) {
   const [draft, setDraft] = useState<Omit<PropertyOption, 'id'>>({ name:'',cityId:'',timezone:'America/Detroit',address:'',instructions:'',isBloomOwned:true,active:true,ownerIds:[],soloRateCents:7500 });
@@ -278,14 +270,14 @@ function AdminContent({ user, integration, initialPropertyId }: { user: SessionU
   const router = useRouter();
   const search = useSearchParams();
   const requestedView = search.get('view')==='people'?'users':search.get('view');
-  const view = initialPropertyId ? 'properties' : ['activity', 'properties', 'users', 'payouts', 'notifications', 'cities', 'city requests'].includes(requestedView ?? '') ? requestedView! : 'jobs';
-  return <><header className="topbar bloom-compact-header bloom-admin-header"><Brand role="admin" /><div className="topbar-right"><HubSelector user={user} view="admin"/><AdminPricingInbox/><div className="bloom-header-account">{integration.accountControl?.(user) ?? <Account user={user} />}</div></div></header><main className={`main${view==='properties'?' admin-properties-main':''}`} id="bloom-main"><div className={`main-inner ${(view === 'jobs' || view === 'properties') ? styles.jobsPage : ''}`}><SelectorPill className="bloom-admin-tabs" aria-label="Admin tools">{['jobs', 'activity', 'properties', 'users', 'payouts', 'notifications', 'cities', 'city requests'].map(item => <button key={item} className={`vt-btn${item === view ? ' active' : ''}`} aria-pressed={item === view} onClick={() => router.push(`/admin?${new URLSearchParams({view:item})}`)}>{navigationLabel(item)}</button>)}</SelectorPill><h1 className="loc-name">{navigationLabel(view)}</h1>{view==='notifications'&&<PushDiagnostics/>}
+  const view = initialPropertyId ? 'properties' : ['activity', 'properties', 'users', 'payouts', 'cities', 'city requests'].includes(requestedView ?? '') ? requestedView! : 'jobs';
+  return <><header className="topbar bloom-compact-header bloom-admin-header"><Brand role="admin" /><div className="topbar-right"><HubSelector user={user} view="admin"/><AdminPricingInbox admin/><div className="bloom-header-account">{integration.accountControl?.(user) ?? <Account user={user} />}</div></div></header><main className={`main${view==='properties'?' admin-properties-main':''}`} id="bloom-main"><div className={`main-inner ${(view === 'jobs' || view === 'properties') ? styles.jobsPage : ''}`}><SelectorPill className="bloom-admin-tabs" aria-label="Admin tools">{['jobs', 'activity', 'properties', 'users', 'payouts', 'cities', 'city requests'].map(item => <button key={item} className={`vt-btn${item === view ? ' active' : ''}`} aria-pressed={item === view} onClick={() => router.push(`/admin?${new URLSearchParams({view:item})}`)}>{navigationLabel(item)}</button>)}</SelectorPill><h1 className="loc-name">{navigationLabel(view)}</h1>
     {view === 'activity' && <CleaningActivity hub="admin"/>}
     {view === 'payouts' && <AdminPayouts key={search.get('cleaner')??'all'} initialCleanerId={search.get('cleaner')} onCloseLinkedCleaner={()=>router.replace('/admin?view=payouts')}/>}
     {view === 'jobs' && <Jobs user={user} integration={integration} />}
     {view === 'properties' && (integration.admin && integration.listCities ? <Properties integration={integration} initialPropertyId={initialPropertyId}/> : unavailable)}
     {view === 'users' && (integration.admin ? <><InvitePerson onSent={()=>setInvitationRevision(v=>v+1)}/><PendingInvitations revision={invitationRevision}/><Paginated loader={integration.admin.users} render={(users, reload) => <div className="admin-people-table-scroll"><table className="admin-people-table"><thead><tr><th scope="col">Name</th><th scope="col">Email</th><th scope="col">Role</th><th scope="col">Location</th></tr></thead><tbody>{users.map(item => <UserRow key={item.id} user={item} currentUser={user} reload={reload} />)}</tbody></table>{!users.length&&<p>No people found.</p>}</div>} /></> : unavailable)}
-    {view === 'cities' && (integration.admin?.saveCity && integration.admin.createCity && integration.listCities ? <Cities integration={integration} /> : unavailable)}
+    {view === 'cities' && <ServiceCities/>}
     {view === 'city requests' && (integration.admin ? <Paginated loader={integration.admin.cityRequests} render={(items, reload) => <>{items.length ? items.map(item => <RequestRow key={item.id} item={item} reload={reload} integration={integration} />) : <Empty title="No city change requests" />}</>} /> : unavailable)}
 
   </div></main></>;
