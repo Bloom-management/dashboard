@@ -1,4 +1,5 @@
 import 'server-only';
+import {profileName} from './profile-name';
 import { clerkClient, currentUser as clerkCurrentUser } from '@clerk/nextjs/server';
 import type { CompleteOnboardingInput, CompleteOnboardingResult, OnboardingState } from '../../contracts/onboarding';
 import { authenticatedDatabase } from './session';
@@ -54,6 +55,7 @@ export async function completeOnboarding(request:Request):Promise<CompleteOnboar
  if(ctx.state.status==='blocked')throw new BackendError('FORBIDDEN');
  if((ctx.state.status==='setup'||ctx.state.status==='complete')&&ctx.state.role!==input.role)throw new BackendError('FORBIDDEN');
  if(ctx.state.status==='complete')return ctx.state;
+ if(!profileName(ctx.name))throw new BackendError('VALIDATION_ERROR');
  if(ctx.state.status==='setup'&&ctx.state.privateInvitations?.length&&input.role==='cleaner'){
   const enabled=input.bloomNetworkEnabled===true;if(enabled&&!input.cityId)throw new BackendError('VALIDATION_ERROR');
   const accepted=await privilegedDatabase().rpc('bloom_team_onboard',{p_ids:ctx.state.privateInvitations.map(invite=>invite.id),p_subject:ctx.subject,p_emails:ctx.emails??[],p_name:ctx.name,p_network:enabled,p_city:input.cityId});

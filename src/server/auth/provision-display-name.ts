@@ -1,4 +1,5 @@
 import 'server-only';
+import {profileName} from './profile-name';
 import { currentUser as clerkCurrentUser } from '@clerk/nextjs/server';
 import type { SessionUser } from '../../contracts';
 import { authenticatedDatabase } from './session';
@@ -12,9 +13,12 @@ export async function provisionVerifiedDisplayName(): Promise<SessionUser> {
   const { subject } = await authenticatedDatabase();
   const clerkUser = await clerkCurrentUser();
   if (!clerkUser || clerkUser.id !== subject) throw new BackendError('UNAUTHENTICATED');
-  const name = (clerkUser.fullName || clerkUser.username || 'Account')
-    .replace(/[\p{Cc}\p{Cf}]/gu, '')
-    .trim().slice(0, 100) || 'Account';
+  let name = profileName(clerkUser.fullName) || profileName(clerkUser.username);
+  if(!name){
+    const saved=await privilegedDatabase().from('users').select('display_name').eq('clerk_user_id',subject).maybeSingle();
+    if(saved.error)databaseError(saved.error);
+    name=profileName(saved.data?.display_name)||'Account';
+  }
   const { data, error } = await privilegedDatabase().rpc('bloom_provision_display_name', {
     p_subject: subject, p_display_name: name,
   });
