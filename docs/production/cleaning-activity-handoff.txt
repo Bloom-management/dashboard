@@ -1,0 +1,40 @@
+Cleaning Activity — 2026-09-28 (local only)
+Photo bytes already live in the private Supabase job-photos Storage bucket.
+public.job_photos records job, uploader, assigned room, MIME/size, and ready state.
+Completion validates ready photo coverage; Activity does not duplicate image storage.
+
+Added owner/admin Activity tabs with 10-item server pagination and completed-job
+detail galleries. Labels come from the job's frozen cleaning configuration, not
+today's property room configuration. Legacy photos use their saved category.
+Only ready photos are shown. Reads use existing authorized 60-second signed URLs.
+Owners now have read-only photo access for completed jobs on their own properties.
+Admin/assigned-cleaner rules remain unchanged.
+
+New completion events produce dismissible in-app notices for authorized owners
+and admins. Links open that job's Activity detail. Retries produce one event.
+Existing completed jobs appear in Activity but do not create historical notices.
+No owner/admin device push schedule was enabled.
+
+Migrations applied locally:
+202609280048_cleaning_activity.sql
+202609280049_owner_completion_photos.sql
+Local ledger now049. Existing payment-notification work/migration047 was already
+present/applied before this task; it is separate unfinished work and was not copied
+or committed as part of Activity. Review/integrate it before releasing the complete
+branch. No hosted migration or deployment performed.
+
+Verification:
+- Real local Clerk + Supabase authenticated cleaning acceptance re-run passed:
+  start, real PNG upload/finalization, completion/retry, private payout checks.
+- Real owner/admin browsers clicked actual completion inbox notices; loaded the
+  saved private Storage images under room labels; dismissed notices.
+- Another owner was denied both Activity detail and photo read URL.
+- Desktop and390px mobile Chrome viewport checked; no physical phone test.
+- SQL rollback-only checks: ready-only photos, historical room label preservation,
+  role/property isolation, owner cannot upload, event deduplication, notification
+  links/dismissal, private event ACL.
+- npm test, typecheck, lint, production webpack build passed.
+  The Node render-test CSS loader was updated to accept shared non-module styles.
+- Scripts: tests/integration/cleaning-activity-browser.mjs (existing secure ignored
+  development fixtures required); supabase/tests/cleaning-activity-local.sql.
+No credentials or private image links are committed.

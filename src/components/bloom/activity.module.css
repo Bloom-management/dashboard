@@ -1,0 +1,11 @@
+.activity { display:grid;gap:20px; }
+.heading { display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap; }
+.heading p,.card p { color:#8b8779; }
+.card { background:white;border:1px solid #e6e2d9;border-radius:28px;padding:28px; }
+.card h3 { margin-top:0; }
+.grid { display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px; }
+.photo { margin:0;min-width:0;background:#f6f3ed;border-radius:20px;overflow:hidden; }
+.photo img { width:100%;height:260px;object-fit:contain;display:block; }
+.photo figcaption { padding:16px;font-weight:600; }
+.photo small { display:block;font-weight:400;color:#716d61;margin-top:6px; }
+@media(max-width:600px) { .card {padding:20px;} .grid {grid-template-columns:1fr;} }
