@@ -1,3 +1,12 @@
+2026-10-02 deployment verification
+- Migrations 051–053 applied to hosted production. Migration 053 targets the
+  push_control singleton explicitly, fixing PostgREST safeupdate rejecting ticks.
+- Production /api/push/tick returned 200; wrong scheduler credentials returned 401.
+- Vault configured and bloom-push-delivery scheduled once per minute.
+- Real physical-phone delivery still requires device verification and acceptance.
+- Full disposable DB suite reaches a stale owner-hub assertion expecting admin
+  access to be forbidden; targeted push/pool-request/team-notification checks pass.
+
 2026-10-02 background delivery update (supersedes historical release notes below)
 
 Verified read-only in production: no cron.job catalog, push_control.activated_at
@@ -10,7 +19,7 @@ heartbeat in delivery diagnostics. It does NOT activate hosted delivery.
 The existing pending migration 051 is the separate cleaner-pool Requests feature.
 
 Release order:
-1. Apply pending migrations in order through 052 using the normal migration ledger.
+1. Apply pending migrations in order through 053 using the normal migration ledger.
 2. Deploy the application/worker. Preserve existing OneSignal app and registrations.
 3. Verify production ONESIGNAL_APP_ID and ONESIGNAL_REST_API_KEY. Configure a random
    BLOOM_PUSH_SCHEDULER_SECRET (at least 32 characters), NEXT_PUBLIC_APP_URL as
