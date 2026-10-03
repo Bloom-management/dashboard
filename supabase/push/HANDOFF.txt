@@ -1,3 +1,52 @@
+2026-10-02 background delivery update (supersedes historical release notes below)
+
+Verified read-only in production: no cron.job catalog, push_control.activated_at
+is null, and zero verified devices. Trumbull's October 2 completion has an Activity
+inbox event but the old implementation never created a completion push.
+
+Migration 052 enables admin/owner/cleaner device registration, adds completion
+preferences and durable per-recipient completion messages, and exposes scheduler
+heartbeat in delivery diagnostics. It does NOT activate hosted delivery.
+The existing pending migration 051 is the separate cleaner-pool Requests feature.
+
+Release order:
+1. Apply pending migrations in order through 052 using the normal migration ledger.
+2. Deploy the application/worker. Preserve existing OneSignal app and registrations.
+3. Verify production ONESIGNAL_APP_ID and ONESIGNAL_REST_API_KEY. Configure a random
+   BLOOM_PUSH_SCHEDULER_SECRET (at least 32 characters), NEXT_PUBLIC_APP_URL as
+   https://admin.bloomcleaning.org, and BLOOM_PUSH_MODE=live for intended delivery.
+   Test mode sends only to BLOOM_PUSH_TEST_SUBJECTS; off sends nothing.
+4. Store the exact same scheduler secret in Supabase Vault as
+   bloom_push_scheduler_secret; store the full endpoint in bloom_push_url.
+   Never commit or print these secret values.
+5. Run enable-schedule.sql to activate and install the once-per-minute sender.
+   No calendar-sync schedule is added or changed.
+6. Confirm diagnostics show a recent Last scheduler tick, then verify a device
+   in each role via the notification bell's gear. Admin gear retains diagnostics
+   and includes Notification settings. Test while Bloom is backgrounded/phone locked.
+
+Completion notifications go to admins, current property owners, and the completing
+job's assigned cleaners; withdrawn cleaners and unrelated owners are excluded.
+Owner/admin taps open Activity/photos. Cleaner taps open earnings. Current access
+is checked again before send/display. The completion transaction queues messages
+without requiring an open browser. Repeated completion/ticks do not duplicate them.
+Historical completions are not broadcast on activation.
+
+Provider TTL now uses each message's remaining validity (max 24h), rather than
+expiring all notifications in 60 seconds. Verification still expires at 60s.
+6PM/8AM reminders tolerate up to one hour of temporary scheduler downtime and
+recheck outstanding assignments. Completion messages expire after 24h.
+Sign-out/revoked sessions and disabled preferences still stop personalized push.
+OS permissions, Focus modes, browser background support, and connectivity matter;
+provider acceptance is not a guarantee the user saw an alert.
+
+Rollback: set BLOOM_PUSH_MODE=off and unschedule bloom-push-delivery. Keep message
+and delivery records to preserve deduplication. Do not roll back earned work.
+Local checks use real PostgreSQL with synthetic identity claims, mocked provider
+and service-worker events; physical-phone delivery must be confirmed separately.
+
+--- Historical implementation notes (not current operational status) ---
+
 Bloom web push — local implementation, production OFF
 
 Release state

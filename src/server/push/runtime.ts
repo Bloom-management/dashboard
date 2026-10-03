@@ -21,11 +21,12 @@ export async function deviceId(create=false){
  }
  return hash(value);
 }
-export async function cleaner(){const identity=await auth();const user=await currentUser();if(user.role!=='cleaner'||!identity.sessionId||!identity.userId)throw new BackendError('FORBIDDEN');return {user,session:identity.sessionId,subject:identity.userId};}
+export async function pushActor(){const identity=await auth();const user=await currentUser();if(!['cleaner','owner','admin'].includes(user.role)||!identity.sessionId||!identity.userId)throw new BackendError('FORBIDDEN');return {user,session:identity.sessionId,subject:identity.userId};}
 export async function deviceAction(action:string,input:Record<string,unknown>={}):Promise<Record<string,unknown>>{
- const actor=await cleaner();const device=await deviceId(true);
+ const actor=await pushActor();const device=await deviceId(true);
  const status=await pushRpc<Record<string,unknown>>('bloom_push_device',{p_device:device,p_user:actor.user.id,p_session:actor.session,p_action:action,p_input:input});
- return {...status,configured:permitted(actor.subject)&&!!process.env.ONESIGNAL_APP_ID&&!!process.env.ONESIGNAL_REST_API_KEY,appId:permitted(actor.subject)?process.env.ONESIGNAL_APP_ID:null};
+ const health=await pushRpc<{activated:boolean;lastTickAt:string|null}>('bloom_push_health',{});
+ return {...status,backgroundReady:health.activated&&!!health.lastTickAt&&Date.now()-Date.parse(health.lastTickAt)<5*60000,role:actor.user.role,settingsUrl:`/${actor.user.role}?notifications=1`,configured:permitted(actor.subject)&&!!process.env.ONESIGNAL_APP_ID&&!!process.env.ONESIGNAL_REST_API_KEY,appId:permitted(actor.subject)?process.env.ONESIGNAL_APP_ID:null};
 }
 export async function sessionActive(sessionId:string,subject:string){const client=await clerkClient();const session=await client.sessions.getSession(sessionId);return session.status==='active'&&session.userId===subject&&session.expireAt>Date.now();}
 export type Delivery={subscription:string;session:string;subject:string;userId:string;expiresAt:string;kind:string;content:{body:string;url:string;count?:number}};

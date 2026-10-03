@@ -48,7 +48,7 @@ export async function currentUser(): Promise<SessionUser> {
   if (result.error) accountLookupError(result.error, result.status);
   if (result.status < 200 || result.status >= 300 || !isSessionUser(result.data)) throw new BackendError('CONFIGURATION_ERROR');
   const user = result.data;
-  return { id: user.id, role: user.role, displayName: user.displayName, approvedCityId: user.approvedCityId, ...(user.bloomNetworkEnabled===undefined?{}:{bloomNetworkEnabled:user.bloomNetworkEnabled}) };
+  return { id: user.id, role: user.role, displayName: user.displayName, approvedCityId: user.approvedCityId, ...(user.bloomPoolStatus===undefined?{}:{bloomPoolStatus:user.bloomPoolStatus}), ...(user.bloomNetworkEnabled===undefined?{}:{bloomNetworkEnabled:user.bloomNetworkEnabled}) };
 }
 export async function requireAdmin(): Promise<SessionUser> {
   const user = await currentUser();

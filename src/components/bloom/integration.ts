@@ -7,7 +7,7 @@ export type AdminPerson = SessionUser & { avatarUrl?:string|null; email?: string
 export type CityOption = { id: string; name: string; active: boolean };
 export type PropertyOption = { id: string; name: string; cityId: string; timezone: string; address: string; isBloomOwned: boolean; active: boolean; ownerIds: string[]; pendingOwnerEmail?: string | null; instructions: string; soloRateCents: number };
 export type SourceHealth = { id: string; propertyId: string; provider: 'airbnb' | 'vrbo'; enabled: boolean; lastSuccessAt: string | null; lastAttemptAt?: string | null; errorMessage: string | null };
-export type CityRequest = { id: string; cleanerName: string; requestedCityName: string; status: 'pending' | 'approved' | 'rejected' };
+export type CityRequest = { type?: 'city_change' | 'bloom_pool'; id: string; cleanerName: string; requestedCityName: string; status: 'pending' | 'approved' | 'rejected' };
 export type Page<T> = { items: T[]; nextCursor: string | null };
 export type UploadTicket = { photoId: string; upload: (file: File, onProgress: (percent: number) => void, signal: AbortSignal) => Promise<void> };
 export interface BloomIntegration {
@@ -25,7 +25,7 @@ export interface BloomIntegration {
     properties: (cursor: string | null, signal: AbortSignal) => Promise<Page<PropertyOption>>;
     users: (cursor: string | null, signal: AbortSignal) => Promise<Page<AdminPerson>>;
     cityRequests: (cursor: string | null, signal: AbortSignal) => Promise<Page<CityRequest>>;
-    resolveCityRequest: (id: string, decision: 'approved' | 'rejected', key: string) => Promise<void>;
+    resolveCityRequest: (id: string, decision: 'approved' | 'rejected', key: string, type?: 'city_change' | 'bloom_pool') => Promise<void>;
     sources: (cursor: string | null, signal: AbortSignal) => Promise<Page<SourceHealth>>;
     saveProperty?: (property: PropertyOption, key: string) => Promise<void>;
     property: (id: string, signal: AbortSignal) => Promise<PropertyOption>;

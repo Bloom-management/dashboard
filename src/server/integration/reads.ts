@@ -49,9 +49,7 @@ export async function integrationRead(operation:string, request:Request, id?:str
   return {items:rows.slice(0,10).map(u=>({id:u.id,role:u.role,displayName:names.get(u.clerk_user_id)||(u.display_name?.trim()&&u.display_name.trim()!=='Account'?u.display_name.trim():emails.get(u.clerk_user_id)||'Name not provided'),approvedCityId:u.approved_city_id,avatarUrl:avatars.get(u.clerk_user_id)??null,email:emails.get(u.clerk_user_id)??null,location:u.role==='cleaner'?(u.cities as unknown as {name:string}|null)?.name??null:u.home_base})),nextCursor:rows.length>10?rows[9].id:null};
  }
  if(operation==='cityRequests') {
-  let query=db.from('city_change_requests').select('id,status,users!cleaner_id(display_name),cities!requested_city_id(name)').order('id').limit(101);if(after)query=query.gt('id',after);
-  const {data,error}=await query;if(error)databaseError(error);const rows=data??[];
-  return {items:rows.slice(0,100).map(r=>({id:r.id,status:r.status,cleanerName:(r.users as unknown as {display_name:string}|null)?.display_name||'Cleaner',requestedCityName:(r.cities as unknown as {name:string}|null)?.name||'Requested city'})),nextCursor:rows.length>100?rows[99].id:null};
+  const {data,error}=await db.rpc('bloom_admin_requests',{p_cursor:after});if(error)databaseError(error);return data;
  }
  if(operation==='adminProperties' || operation==='adminProperty') {
   const {data,error}=await db.rpc('bloom_admin_property_options',{p_id:operation==='adminProperty'?uuid(id):null,p_cursor:after});

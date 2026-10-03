@@ -56,7 +56,7 @@ export function ConnectedHub({role,initialPropertyId}:{role:Role;initialProperty
    properties:async(cursor,signal)=>{const page=await request<Page<PropertyOption>>(`/admin/property-options${query(cursor)}`,{signal});return {...page,items:page.items.map(property=>({...property,pendingOwnerEmail:property.pendingOwnerEmail??null}))};},
    users:(cursor,signal)=>request<Page<AdminPerson>>(`/admin/users${query(cursor)}`,{signal}),
    cityRequests:(cursor,signal)=>request<Page<CityRequest>>(`/admin/city-change-requests${query(cursor)}`,{signal}),
-   resolveCityRequest:async(id,decision,key)=>{await request(`/admin/city-change-requests/${encodeURIComponent(id)}/resolve`,{body:{decision},key});},
+   resolveCityRequest:async(id,decision,key,type)=>{await request(`/admin/${type==='bloom_pool'?'bloom-pool-requests':'city-change-requests'}/${encodeURIComponent(id)}/resolve`,{body:{decision},key});},
    sources:async(cursor,signal)=>{const page=await request<Page<SourceHealth & {action:string|null}>>(`/admin/calendar/sources${query(cursor)}`,{signal});return {...page,items:page.items.map(s=>({...s,errorMessage:s.action}))};},
    createProperty:async(property,key)=>{const {active:_active,...body}=property;return request<{id:string}>('/admin/properties',{body,key});},
    assignments:(jobId,signal)=>request(`/admin/jobs/${encodeURIComponent(jobId)}/assignments`,{signal}),

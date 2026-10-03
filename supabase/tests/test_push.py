@@ -85,8 +85,10 @@ class PushTests(unittest.TestCase):
             self.assertIsNone(self.content('morning',f'{day} 18:00Z'))
         job,_=make_job(day="date '2027-12-10'")
         sql(f"insert into public.assignments(job_id,cleaner_id,slot,claimed_at) values('{job}','{self.user}',1,'2026-01-01Z');")
-        self.tick('2027-12-10 13:11Z')
+        self.tick('2027-12-10 14:01Z')
         self.assertEqual(scalar("select count(*) from private.push_messages where kind='morning' and job_date='2027-12-10';"),'0')
+        self.tick('2027-12-10 13:11Z')
+        self.assertEqual(scalar("select count(*) from private.push_messages where kind='morning' and job_date='2027-12-10';"),'1')
     def test_concurrency_leases_and_bounded_retry(self):
         self.activate();make_job()
         with concurrent.futures.ThreadPoolExecutor() as pool:list(pool.map(lambda _:self.tick(),range(4)))
