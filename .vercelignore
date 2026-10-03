@@ -1,0 +1,15 @@
+# Upload application source only; local credentials, fixtures and backups stay local.
+.git/
+.vercel/
+.bloom-local/
+.env*
+node_modules/
+.next/
+out/
+coverage/
+.design-reference/
+docs/
+.zed/
+*.tsbuildinfo
+.DS_Store
+supabase/.temp/
