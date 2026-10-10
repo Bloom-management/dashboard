@@ -1,6 +1,6 @@
 .inputGroup { display:flex; align-items:center; width:min(100%,360px); border:1px solid #c9c3b6; border-radius:12px; box-shadow:inset 0 1px 3px #2d2a1f12; background:#fff; }
 .input { width:100%; min-width:0; border:0!important; background:transparent!important; padding:12px 14px!important; font:inherit; color:#2d2a1f; outline:none!important; box-shadow:none!important; }
-.inputGroup:focus-within { outline:2px solid #cf7f8d; outline-offset:2px; }
+.inputGroup:focus-within { border-color:#cb7c8b; outline:none; box-shadow:none; }
 .icon { display:inline-flex; align-items:center; justify-content:center; flex:0 0 44px; width:44px; height:44px; padding:0; margin:0; border:0; background:none; color:#4a4538; font-size:20px; cursor:pointer; }
 .positioner { z-index:100; max-width:calc(100vw - 24px); }
 .popup { width:var(--anchor-width); max-height:min(360px,var(--available-height)); overflow:auto; padding:8px; background:#fff; border:1px solid #e7e3d9; border-radius:14px; box-shadow:0 6px 22px #2d2a1f1a; color:#2d2a1f; font-family:'Plus Jakarta Sans',sans-serif; font-size:14px; }

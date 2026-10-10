@@ -28,3 +28,12 @@ test('maintenance defaults missing categories and requires a note for attention,
  assert.equal(input.maintenance.at(-1).notes,'Tap leaks');
  assert.deepEqual(JSON.parse(JSON.stringify({step:'maintenance',pending:{key:'stable',input}})).pending.input,input);
 });
+
+test('guest review validates half-step 1–5 ratings and preserves notes and comments in retry payload',()=>{
+ for(const rating of [0,6,2.25])assert.equal(completionInput(1,[],{},'Photo note',{}, {rating,comment:'Guest comment'}),null);
+ assert.equal(completionInput(1,[],{},'',{}, {rating:4,comment:'x'.repeat(1501)}),null);
+ for(const rating of [1,1.5,2.5,3.5,4.5,5])assert.equal(completionInput(1,[],{},'',{}, {rating,comment:''}).guestReview.rating,rating);
+ const input=completionInput(1,[],{},'Photo note',{}, {rating:4,comment:'Tidy rooms'});
+ assert.equal(input.notes,'Photo note');assert.deepEqual(input.guestReview,{rating:4,comment:'Tidy rooms'});
+ assert.deepEqual(JSON.parse(JSON.stringify({step:'guest',pending:{key:'same',input}})).pending.input,input);
+});

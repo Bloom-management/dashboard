@@ -35,7 +35,7 @@ export interface BloomIntegration {
     createCity?: (city: Omit<CityOption, 'id'>, key: string) => Promise<void>;
     createJob?: (input: { propertyId: string; checkoutDate: string }, key: string) => Promise<void>;
     assignJob?: (jobId: string, input: { cleanerId: string; reason: string; expectedVersion: number }, key: string) => Promise<void>;
-    assignments: (jobId: string, signal: AbortSignal) => Promise<{ id: string; cleanerName: string }[]>;
+    assignments: (jobId: string, signal: AbortSignal) => Promise<{ id: string; cleanerName: string; avatarUrl?:string|null; completedPayCents?:number|null }[]>;
   };
 }
 export const rolePath: Record<Role, string> = { cleaner: '/cleaner', owner: '/owner', admin: '/admin' };

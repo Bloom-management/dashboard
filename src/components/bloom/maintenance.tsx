@@ -34,7 +34,7 @@ export function MaintenanceCheck({answers,onChange,disabled}:{answers:Partial<Re
   const observer=new ResizeObserver(([entry])=>setColumns(entry.contentRect.width<440?1:entry.contentRect.width<740?2:3));
   if(root.current)observer.observe(root.current);
   return ()=>observer.disconnect();
- },[]);
+ },[columns]);
  const animation=useRef<number>(0);
  useEffect(()=>()=>cancelAnimationFrame(animation.current),[]);
  function animateLayout(group:GroupImperativeHandle|null|undefined,target:Record<string,number>){
@@ -61,6 +61,7 @@ export function MaintenanceCheck({answers,onChange,disabled}:{answers:Partial<Re
   }
   animation.current=requestAnimationFrame(frame);
  }
+ if(columns===1)return <div ref={root} className="maintenance-mobile-stack">{maintenanceItems.map(item=>{const answer=answers[item.category];return <fieldset key={item.category} className="maintenance-card maintenance-report-card" disabled={disabled}><legend>{item.label}</legend><div className="maintenance-options">{(['ok','attention'] as const).map(status=><button type="button" key={status} className="maintenance-choice" aria-label={`${item.label}: ${maintenanceStatuses[status]}`} aria-pressed={answer?.status===status} onClick={()=>onChange({...answers,[item.category]:{category:item.category,status:answer?.status===status?'not_applicable':status,notes:answer?.notes??''}})}><MaintenanceIcon path={item.path}/><span>{maintenanceStatuses[status]}</span></button>)}</div>{answer?.status==='attention'&&<label>{item.label} issue<textarea aria-label={`${item.label} issue`} required maxLength={500} value={answer.notes} onChange={event=>onChange({...answers,[item.category]:{...answer,notes:event.target.value}})}/></label>}</fieldset>;})}</div>;
  return <div ref={root} className="maintenance-check maintenance-workspace" style={{aspectRatio:`${columns} / ${rows}`}}>
   <ResizablePanelGroup key={columns} orientation="horizontal" groupRef={horizontal}>
    {Array.from({length:columns},(_,col)=><Fragment key={col}>

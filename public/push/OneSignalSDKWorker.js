@@ -1,4 +1,6 @@
-const bloomDestination=path=>typeof path==='string'&&/^\/(?:cleaner|owner|admin)(?:\?[^#\\]*)?$/.test(path)?path:null;
+// This worker only handles push; activate fixes without waiting for open app windows.
+self.addEventListener('install',event=>event.waitUntil(self.skipWaiting()));
+const bloomDestination=path=>typeof path==='string'&&(/^(?:\/(?:cleaner|owner|admin)(?:\?[^#\\]*)?)$/.test(path)||/^\/notifications\/open\?delivery=[a-f0-9-]{36}$/.test(path))?path:null;
 /* Register before OneSignal: Bloom messages use an authenticated display check.
    Non-Bloom notifications retain the provider's standard behavior. */
 self.addEventListener('push',event=>{
@@ -8,13 +10,13 @@ self.addEventListener('push',event=>{
  if(typeof delivery!=='string')return;
  event.stopImmediatePropagation();
  event.waitUntil((async()=>{
-  let body='Open Bloom to check your notifications.',url='/';
+  let body='Open Bloom to check your notifications.',url=bloomDestination(`/notifications/open?delivery=${delivery}`)||'/';
   try{
-   const result=await fetch('/api/push/display',{method:'POST',credentials:'include',cache:'no-store',signal:AbortSignal.timeout(4000),headers:{'Content-Type':'application/json','Idempotency-Key':delivery},body:JSON.stringify({delivery})});
+   const result=await fetch('/api/push/display',{method:'POST',credentials:'include',cache:'no-store',signal:AbortSignal.timeout(10000),headers:{'Content-Type':'application/json','Idempotency-Key':delivery},body:JSON.stringify({delivery})});
    if(result.ok){const value=(await result.json()).data;if(typeof value?.body==='string'&&typeof value?.url==='string'&&bloomDestination(value.url)){body=value.body;url=value.url;}}
-  }catch{/* Offline, signed out or switched accounts: never expose the previous user's counts. */}
+  }catch{/* Offline or revoked device: display only a generic fallback. */}
   // Always display a visible, non-sensitive fallback; Safari forbids silent pushes.
-  await self.registration.showNotification('Bloom Cleaning',{body,icon:'/icons/bloom-192.png',tag:`bloom-${delivery}`,data:{bloom:true,url}});
+  await self.registration.showNotification('Bloom',{body,icon:'/icons/bloom-192.png',tag:`bloom-${delivery}`,data:{bloom:true,url}});
  })());
 });
 self.addEventListener('notificationclick',event=>{

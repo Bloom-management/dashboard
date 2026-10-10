@@ -7,7 +7,7 @@ import { Input } from '../ui/input';
 import styles from './location-dropdown.module.css';
 
 export function LocationDropdown({ locations, value, onValueChange, label, placeholder = 'Choose city', disabled = false, searchLabel = 'Search locations', emptyLabel, ariaInvalid, describedBy }: {
-  locations: readonly { id: string; name: string }[];
+  locations: readonly { id: string; name: string; unavailableReason?: string; disabled?: boolean }[];
   value: string;
   onValueChange: (value: string) => void;
   label: string;
@@ -32,7 +32,7 @@ export function LocationDropdown({ locations, value, onValueChange, label, place
       <h2 className={styles.heading}>{label}</h2>
       <div className={styles.search}><Input ref={input} aria-label={searchLabel} placeholder={`${searchLabel}…`} value={search} onChange={event=>setSearch(event.target.value)}/></div>
       <div className={`${styles.options} ${choice.group}`} role="group" aria-label={label}>
-        {filtered.map(location=><button type="button" className={choice.card} key={location.id} aria-pressed={location.id===value} data-selected={location.id===value?'':undefined} onClick={()=>{onValueChange(location.id);setOpen(false);}}><span className={choice.label}>{location.name}</span><span className={choice.indicator} aria-hidden="true">{location.id===value&&<span className={choice.dot}/>}</span></button>)}
+        {filtered.map(location=><div className={styles.optionWrap} key={location.id}><button type="button" className={choice.card} data-unavailable={!!location.unavailableReason||undefined} aria-disabled={location.disabled||undefined} aria-describedby={location.unavailableReason?`unit-reason-${location.id}`:undefined} aria-pressed={location.id===value} data-selected={location.id===value?'':undefined} onClick={()=>{if(location.disabled)return;onValueChange(location.id);setOpen(false);}}><span className={choice.label}>{location.name}</span><span className={choice.indicator} aria-hidden="true">{location.id===value&&<span className={choice.dot}/>}</span></button>{location.unavailableReason&&<span role="tooltip" id={`unit-reason-${location.id}`} className={styles.availabilityTip}>{location.unavailableReason}</span>}</div>)}
         {!filtered.length&&<p className={styles.empty} role="status">{emptyLabel??(locations.length?'No locations found.':'No locations available.')}</p>}
       </div>
     </Modal>}

@@ -1,7 +1,7 @@
 import type { ApiResult, CleanerJob, ErrorCode, JobPhoto, OwnerCalendarBlock, SessionUser, SyncResult } from '../../contracts';
 
 export class ApiError extends Error {
-  constructor(public code: ErrorCode | 'NETWORK_ERROR', message: string, public requestId?: string) { super(message); }
+  constructor(public code: ErrorCode | 'NETWORK_ERROR', message: string, public requestId?: string, public details?: Record<string, unknown>) { super(message); }
 }
 
 /** Cookie-authenticated same-origin only. Never accepts a role, user ID or token from the UI. */
@@ -23,7 +23,7 @@ export async function request<T>(path: string, options: { body?: unknown; key?: 
   try { result = await response.json(); } catch {
     throw new ApiError(response.status === 401 ? 'UNAUTHENTICATED' : response.status === 403 ? 'FORBIDDEN' : 'SOURCE_UNAVAILABLE', 'Bloom could not complete the request. Please try again.');
   }
-  if (result && typeof result === 'object' && 'error' in result && result.error && typeof result.error.code === 'string' && typeof result.error.message === 'string') throw new ApiError(result.error.code, result.error.message, result.error.requestId);
+  if (result && typeof result === 'object' && 'error' in result && result.error && typeof result.error.code === 'string' && typeof result.error.message === 'string') throw new ApiError(result.error.code, result.error.message, result.error.requestId, result.error.details);
   if (!response.ok || !result || typeof result !== 'object' || !('data' in result)) throw new ApiError(response.status === 401 ? 'UNAUTHENTICATED' : response.status === 403 ? 'FORBIDDEN' : 'SOURCE_UNAVAILABLE', 'Bloom returned an unexpected response. Please try again.');
   return result.data;
 }

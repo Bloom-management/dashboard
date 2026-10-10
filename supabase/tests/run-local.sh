@@ -56,6 +56,7 @@ python3 -B "$BLOOM_REPO/supabase/tests/test_onboarding.py"
 
 python3 -B "$BLOOM_REPO/supabase/tests/test_push.py"
 python3 -B "$BLOOM_REPO/supabase/tests/test_completion_push.py"
+python3 -B "$BLOOM_REPO/supabase/tests/test_device_accounts.py"
 
 python3 -B "$BLOOM_REPO/supabase/tests/test_notification_inbox.py"
 
@@ -68,3 +69,10 @@ python3 -B "$BLOOM_REPO/supabase/tests/test_private_payouts.py"
 python3 -B "$BLOOM_REPO/supabase/tests/test_private_team_notifications.py"
 
 python3 -B "$BLOOM_REPO/supabase/tests/test_private_property_locations.py"
+
+python3 -B "$BLOOM_REPO/supabase/tests/test_calendar_add_interface.py"
+
+python3 -B "$BLOOM_REPO/supabase/tests/test_manual_calendar.py"
+python3 -B "$BLOOM_REPO/supabase/tests/test_calendar_export.py"
+
+python3 -B "$BLOOM_REPO/supabase/tests/test_remove_assignment.py"

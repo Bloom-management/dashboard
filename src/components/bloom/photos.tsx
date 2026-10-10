@@ -114,3 +114,9 @@ export function Photos({ job, user, integration, onCoverage, rooms, locked = fal
     <div aria-live="polite">{queue.filter(item => item.state !== 'ready').map(item => <div className="bloom-upload" key={item.id}><span>{item.file.name} · {rooms?.find(room=>room.id===item.roomId)?.label ?? categories[item.category]}</span><progress max="100" value={item.progress} aria-label={`Uploading ${item.file.name}`} /><span>{item.state === 'failed' ? 'Upload failed' : `${Math.round(item.progress)}%`}</span>{item.state === 'failed' && <ErrorNotice error={item.error} retry={canUpload ? () => void upload(item) : undefined} />}</div>)}</div>
   </section>;
 }
+
+export function CompletionPhotos({jobId}:{jobId:string}) {
+ const load=useCallback((signal:AbortSignal)=>api.photos(jobId,signal),[jobId]);
+ const photos=useResource(load);
+ return photos.loading?<Loading/>:photos.error?<ErrorNotice error={photos.error} retry={photos.reload}/>:<div className="bloom-room-grid">{photos.data?.filter(photo=>photo.state==='ready').map(photo=><Photo key={photo.id} photo={photo} jobId={jobId} label={photo.uploaderName??'Cleaner'}/>)}{!photos.data?.length&&<p>No room photos were provided.</p>}</div>;
+}

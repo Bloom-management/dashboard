@@ -1,7 +1,7 @@
 import 'server-only';
 import { createHash,randomBytes,timingSafeEqual } from 'node:crypto';
 import { cookies } from 'next/headers';
-import { auth,clerkClient } from '@clerk/nextjs/server';
+import { auth } from '@clerk/nextjs/server';
 import { currentUser } from '../auth/session';
 import { BackendError } from '../db/errors';
 import { CalendarError } from '../calendar/errors';
@@ -28,7 +28,6 @@ export async function deviceAction(action:string,input:Record<string,unknown>={}
  const health=await pushRpc<{activated:boolean;lastTickAt:string|null}>('bloom_push_health',{});
  return {...status,backgroundReady:health.activated&&!!health.lastTickAt&&Date.now()-Date.parse(health.lastTickAt)<5*60000,role:actor.user.role,settingsUrl:`/${actor.user.role}?notifications=1`,configured:permitted(actor.subject)&&!!process.env.ONESIGNAL_APP_ID&&!!process.env.ONESIGNAL_REST_API_KEY,appId:permitted(actor.subject)?process.env.ONESIGNAL_APP_ID:null};
 }
-export async function sessionActive(sessionId:string,subject:string){const client=await clerkClient();const session=await client.sessions.getSession(sessionId);return session.status==='active'&&session.userId===subject&&session.expireAt>Date.now();}
 export type Delivery={subscription:string;session:string;subject:string;userId:string;expiresAt:string;kind:string;content:{body:string;url:string;count?:number}};
 export async function dispatch(only?:string){
  if(pushMode()==='off')return {disabled:true};
@@ -39,10 +38,9 @@ export async function dispatch(only?:string){
    const d=await pushRpc<Delivery|null>('bloom_push_delivery',{p_id:row.id,p_lease:row.lease});
    if(!d)return void await finish('skipped','INELIGIBLE');
    if(!permitted(d.subject))return void await finish('skipped','TEST_ONLY');
-   if(!await sessionActive(d.session,d.subject))return void await finish('skipped','SESSION_ENDED',null,true);
    const fresh=await pushRpc<Delivery|null>('bloom_push_delivery',{p_id:row.id,p_lease:row.lease});
    if(!fresh)return void await finish('skipped','INELIGIBLE');
-   const sent=await sendPush({subscription:fresh.subscription,key:row.id,delivery:row.id,url:appUrl(fresh.content.url),ttl:Math.floor((Date.parse(fresh.expiresAt)-Date.now())/1000)});
+   const sent=await sendPush({subscription:fresh.subscription,key:row.id,delivery:row.id,url:appUrl(`/notifications/open?delivery=${row.id}`),ttl:Math.floor((Date.parse(fresh.expiresAt)-Date.now())/1000)});
    await finish(sent.state,sent.error??null,sent.providerId??null,sent.invalid);
   }catch{await finish('pending','TRANSIENT');}
  }));return {attempted:rows.length};

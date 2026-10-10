@@ -5,7 +5,7 @@ from test_push import call
 
 class CompletionPush(unittest.TestCase):
  def setUp(self):
-  sql("truncate private.push_deliveries,private.push_messages,private.push_publications,private.push_devices,private.push_preferences;update private.push_control set activated_at=null;")
+  sql("truncate private.push_device_accounts,private.push_deliveries,private.push_messages,private.push_publications,private.push_devices,private.push_preferences;update private.push_control set activated_at=null;")
  def bind(self,uid):
   device=uuid.uuid4().hex*2
   call('device',f"'{device}','{uid}','session','challenge','{json.dumps({'subscription':str(uuid.uuid4()),'hash':'a'*64})}'")

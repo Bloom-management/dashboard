@@ -1,0 +1,120 @@
+# Manual calendar actions and subscription API
+
+Migration ownership: main integration agent, migration 055. These routes do not bypass SQL authorization. Owner/property authority and admin permissions must be enforced in the authenticated RPCs. Never send an actor/role from the browser.
+
+## Shared transport
+
+Authenticated endpoints use existing `request()` from `src/components/bloom/api.ts`. POST requires same-origin JSON and `Idempotency-Key` (reuse it for retries of the same draft; change it when the intended operation changes). Bodies are limited to 16 KiB. Standard success envelope is `{data: result}`; authentication and validation failures retain existing error behavior.
+
+`ApiError.details` now optionally preserves structured conflict data. Keep the form draft open on HTTP 409 and use `details.reason` to choose actionable conflict UI; do not treat every conflict as a generic refresh requirement.
+
+## Calendar actions
+
+`POST /api/properties/:propertyId/calendar-actions`
+
+```json
+{"action":"preview","data":{}}
+```
+
+Allowed actions: `preview`, `create_cleaning`, `move_cleaning`, `create_booking`, `edit_booking`, `cancel_booking`, `resolve_return`.
+
+Maps directly to `bloom_property_calendar_action(p_property uuid,p_action text,p_data jsonb,p_key text)` using authenticated `userRpc`. `data` must be an object. SQL owns field validation, defaults, authorization, atomic conflict checks, mutation/retry behavior and audit records.
+
+Successful result: `{data:{ok:true,...actionSpecificResult}}`.
+
+Actionable conflict:
+
+```json
+{"error":{"code":"CONFLICT","message":"Application-authored explanation","requestId":"...","details":{"reason":"SQL_CONFLICT_CODE","...":"action-specific structured fields"}}}
+```
+
+HTTP 409 is returned when SQL returns `{ok:false,conflict:{code,message,details}}`. Only this structured application contract is exposed; raw database exceptions remain redacted. The main integration agent maintains the exact per-action fields and conflict list alongside migration 055.
+
+## Export settings
+
+`GET /api/properties/:propertyId/calendar-export` calls `bloom_calendar_export_settings` with `p_action:'status',p_key:null`.
+
+`POST` to the same endpoint takes `{action:'create'|'regenerate'|'disable'|'confirm'}` and an idempotency key.
+
+Response for both:
+
+```json
+{"data":{"enabled":true,"url":"https://admin.bloomcleaning.org/api/calendar/export/<64hex>.ics","lastFetchedAt":null,"ownerConfirmedAt":null}}
+```
+
+`url` is null when SQL supplies no active token. The raw token is not separately returned. `lastFetchedAt` proves a fetch only; `ownerConfirmedAt` is owner confirmation, not provider verification. Never infer connected/applied status from copying the URL. Regeneration invalidates the previous URL and requires reconnecting at Airbnb.
+
+Deployment requires an HTTPS `NEXT_PUBLIC_APP_URL`. Local HTTP must not be presented as a usable subscription URL; use an authorized HTTPS test origin for provider acceptance. No token values belong in logs, analytics, screenshots, or bug reports.
+
+## Public subscription
+
+`GET /api/calendar/export/<64 lowercase hex>.ics` requires no Clerk session. Proxy bypass is restricted to this exact shape and GET/HEAD. Route hashes the raw token using SHA-256, then calls service-role-only `bloom_calendar_export_feed(p_token_hash text)`. Invalid/revoked tokens return generic HTTP 404; upstream failure returns generic 503.
+
+SQL returns null or `{events:[{id,checkIn,checkout,updatedAt,sequence}]}`. It must select only active manual bookings. The serializer emits stable UIDs, generic `Reserved` summaries, all-day local dates and exclusive checkout. Cancellations disappear from subsequent full snapshots. Responses use `text/calendar`, `no-store, max-age=0`, `no-referrer` and `nosniff`.
+
+## Verification scope
+
+`tests/calendar/manual-http.test.ts`: local unit checks for exact token/URL format, HTTPS requirement, structured 409 detail mapping, success and authorization response preservation. These are not authenticated endpoint or Airbnb acceptance checks.
+
+Typecheck and focused lint passed after route implementation. Main integration owns authenticated SQL/HTTP concurrency/isolation tests and controlled Airbnb round-trip verification. Do not claim live Airbnb blocking, cancellation propagation or loop prevention from serializer/unit checks alone.
+
+## Exact action data (migration 055)
+
+Dates are `YYYY-MM-DD` property-local dates; times are `HH:mm` local wall-clock times. Use UUIDs for IDs and integer cents for money. Do not UTC-convert date-only input. Nonexistent DST wall-clock windows are rejected. Preview/check-in range must be finite and no longer than 1,830 days.
+
+| Action | Required data | Optional/confirmation data | Success fields after `ok:true` |
+|---|---|---|---|
+| `preview` | `date` for cleaning, or `checkIn`,`checkout` for booking | `startTime`,`endTime` | `preview` |
+| `create_cleaning` | `date`,`reviewToken` | `startTime`,`endTime`,`instructions`,`bloomManaged`; private only: `capacity`,`totalCents`,`payerOwnerId`,`cleaners:[{cleanerId,amountCents:null\|integer}]`; admin only `soloRateCents`; `bookingId` or `eventId` for explicit association; `acknowledgeInStay`,`confirmAdditional` | `jobId`,`job` |
+| `move_cleaning` | `date`,`reviewToken`,`jobId`,`jobVersion`,`reason` | `startTime`,`endTime`,`acknowledgeInStay`,`confirmAssignments`,`confirmAdditional` | `jobId`,`job` |
+| `create_booking` | `checkIn`,`checkout`,`reviewToken` | `note`; if existing checkout cleaning: `checkoutCleaning:'associate'\|'additional'`; association: `jobId`,`jobVersion`,`confirmAssociation:true`,`confirmAssignments:true` when assigned; additional: `confirmAdditional:true` | `bookingId`,`version`,`jobId`,`source:'manual'`,`connectToAirbnb`,`message` |
+| `edit_booking` | `bookingId`,`bookingVersion`,`checkIn`,`checkout`,`reviewToken`,`reason` | `note`,`confirmAssignments` | same as `create_booking` |
+| `cancel_booking` | `bookingId`,`bookingVersion`,`reason` | `confirmAssignments` | `bookingId`,`version`,`message` |
+| `resolve_return` | `eventId`,`eventVersion`,`bookingId`,`bookingVersion`,`resolution:'confirmed'\|'unrelated'`,`reason` | none | `bookingId` |
+
+`reason` is 1–1,000 trimmed characters; instructions at most 4,000 and booking notes at most 2,000. Private staffing capacity is 1–20; total compensation 20–100,000,000 cents. Private cleaner IDs must be unique authorized active team members; number selected must not exceed capacity. Amounts must be all explicit or all null. Individual amounts are 1–100,000,000 cents. Bloom solo rates are even integer cents from 2–100,000,000 and owners cannot override them. Booking checkout cleaning always takes property defaults, not arbitrary job-price fields.
+
+The review token hashes server-visible current defaults, stays, assignments and relevant jobs. Request a fresh preview when date/window changes, and after a stale-review response. A mutation with the same key and identical body returns the prior successful result. Reusing a key with a changed intent is an error. Failed structured conflicts do not consume the key; preserve draft and refresh review as necessary.
+
+Preview fields: `propertyId,date,timezone,startAt,endAt,reviewToken,defaults,stays,jobs`.
+
+- `defaults`: `management,bloomApproved,serviceAvailable,startTime,endTime,checkInTime,checkoutTime,soloRateCents,hostChargeCents,capacity,totalCents,payerOwnerId,cleaners`.
+- Each default team member: `cleanerId,name,defaultAssigned,amountCents,unavailable`.
+- Each stay: `id,source,startDate,endDate,kind,reason,version,inStay`. `source:'manual'` is a Bloom booking, other source values identify imported providers. `inStay` compares the proposed cleaning window to actual local arrival/departure defaults.
+- Each job: `id,date,version,status,startedAt,management,payerOwnerId,bookingId,eventIds,canMove,assignments`. Each assignment: `id,cleanerId,amountCents`. Use the specific ID/version for Move; do not infer which cleaning the owner meant.
+
+| `details.reason` | Recovery / extra fields |
+|---|---|
+| `STALE_REVIEW` | Show fresh `details.preview` when supplied and ask user to review again. For return review, reload event/booking versions. |
+| `STALE_JOB` / `STALE_BOOKING` | Reload the selected record and preserve draft. |
+| `IN_STAY_ACK_REQUIRED` | Show `details.stays` and request explicit acknowledgment; never edit stay dates. |
+| `ADDITIONAL_CONFIRMATION_REQUIRED` | Show relevant `details.jobs` when supplied; choose Move or confirm another paid cleaning. |
+| `ASSIGNMENTS_REQUIRE_CONFIRMATION` | Show affected assignments for `details.jobId`; require confirmation. |
+| `PROTECTED_CLEANING` | Stop creation-flow move/edit: the associated job is not future/open/unstarted. |
+| `UNAVAILABLE_NIGHTS` | Show `details.periods:[{id,source,startDate,endDate,reason}]`; reasons include `OCCUPIED`,`BLOCKED`,`UNRESOLVED_SOURCE`. Choose an available range. |
+| `CHECKOUT_CLEANING_EXISTS` | Show `details.jobs`; explicitly associate a eligible standalone job or confirm additional paid cleaning. |
+| `NOT_STANDALONE` | Selected checkout job is not eligible for association. |
+| `ASSOCIATION_CONFIRMATION_REQUIRED` | Confirm association preserves staffing/pay, including affected assignments. |
+| `RETURN_DATES_DIFFER` | Do not confirm imported block provenance when dates differ; review source. |
+
+`supabase/tests/test_manual_calendar.py` now passes 13 tests against a freshly initialized disposable PostgreSQL cluster with all current migrations applied. These execute real SQL/RLS/RPCs with simulated authenticated JWT identities, not real Clerk/browser or Airbnb accounts. Coverage: owner/admin isolation; private visibility and assignment defaults; private/Bloom pricing controls; pending management requests; in-stay/additional confirmations; adjacent/cross-month/interior-night availability; concurrent save and idempotent checkout creation; assigned move audit/identity; started/completed protection; explicit checkout association/edit; property-local DST; blocked/unknown source periods; and imported moved-job preservation with two assignments across identical and changed source syncs. No hosted migrations were applied by this test runner.
+
+## Release and operational handoff
+
+Do not deploy solely from serializer or mocked-browser results. Migration 055 is owned by this backend work. Migration 054 belongs to the preceding persistent-device notification work; 056 is the companion calendar Add interface. Inspect the hosted ledger before applying anything; this turn did not inspect or mutate production. Never assume local ledger state matches hosted state.
+
+1. Review the complete integration diff, including pre-existing push work. Back up the database and confirm the release commit and current deployment for rollback.
+2. Inspect hosted migration history. Apply only missing migrations in order: 054, 055, then the reviewed companion 056. Do not rerun existing migrations. 055 preserves existing imported jobs and changes their date uniqueness to permit explicitly additional cleanings.
+3. Build/deploy the matching application after the schema is ready. NEXT_PUBLIC_APP_URL must be the canonical HTTPS origin accessible to calendar providers. Existing Supabase server credentials and Clerk authentication remain required. No new scheduler is activated by this release.
+4. Verify owner/admin authorization, preview/create/retry, public token feed, token regeneration and revoked-link 404 on the release. Keep real calendar tokens out of logs and screenshots.
+5. Run an explicitly authorized Airbnb test listing/date range: import the private .ics URL, refresh, check occupied nights and exclusive checkout; edit then cancel and check subsequent refreshes; reimport Airbnb into Bloom and confirm no extra booking, cleaning, or occupancy. A fetched timestamp and owner setup confirmation are not acceptance evidence.
+
+Rollback: pause manual creation and export access, retain all booking/assignment/audit rows, and revert the application only to a schema-compatible release. Do not drop 055 or restore the old unique date index once additional cleanings exist. Revoking an export does not prove Airbnb removed previously imported blocks; owners must check Airbnb availability and disconnect/reconnect as appropriate. Use a forward corrective migration for data/schema repair.
+
+## Remaining acceptance limits
+
+No controlled Airbnb round trip was possible without an authorized test listing and date range. Live Airbnb edit/cancellation propagation and rewritten-UID behavior remain unverified. SQL fixtures simulate provider returns conservatively; they are not Airbnb evidence.
+
+The broad database suite currently stops on an existing Owner Hub expectation that admins cannot call bloom_owner_listings, although current application permissions intentionally allow it. This is separate from the focused manual calendar/export regression suites; do not report the whole database suite as passing.
+
+Final local verification: 30 focused PostgreSQL checks pass against all current migrations (13 manual calendar, 5 export, 12 companion interface). These use real PostgreSQL with simulated JWT claims. npm test passed 187 checks before the final admin return-projection refinement; final typecheck/lint pass. Export browser checks use real development Clerk sign-in but mocked export responses, at widths 320/375/393/430px. No end-to-end authenticated HTTP mutation or physical-phone/provider acceptance is claimed.

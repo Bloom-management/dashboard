@@ -56,12 +56,11 @@ export function BloomSignInLayout({ children }: { children: ReactNode }) {
 }
 
 /** Same branded shell as login; only the panel changes while recovering a session. */
-export function BloomSessionRecovery({ requestId, retry }: { requestId?: string; retry?: () => void }) {
+export function BloomSessionRecovery({ retry }: { requestId?: string; retry?: () => void }) {
   return <BloomSignInLayout><div className={styles.recovery} role="alert">
     <h1>Let’s get you back in.</h1>
     <p>We couldn’t verify your session. Sign in again to return to your Bloom workspace.</p>
     <a className={styles['recovery-primary']} href="/sign-in">Sign in to Bloom</a>
     {retry && <button type="button" className={styles['recovery-retry']} onClick={retry}>Already signed in? Try again</button>}
-    {requestId && <details><summary>Support details</summary><small>Reference: {requestId}</small></details>}
   </div></BloomSignInLayout>;
 }

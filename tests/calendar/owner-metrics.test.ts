@@ -30,12 +30,12 @@ test('deduplicates nights, reservations win over blocks, blocks origin is always
   const result = run([event(), event(), event({ id: 'block', kind: 'blocked', confirmed: false, endDate: to, origin: 'vrbo' })], true).totals;
   assert.equal(result.bookedNights, 2); assert.equal(result.blockedNights, 2); assert.equal(result.checkIns, 1);
   assert.equal(result.occupiedNights, 4); assert.equal(result.occupancy, 1);
-  assert.deepEqual(result.platformShare.map(x => x.nights), [2, 0, 2]);
+  assert.deepEqual(result.platformShare.map(x => x.nights), [2, 0, 0, 2]);
 });
 test('ambiguous overlapping booking origins attribute unknown rather than double counting', () => {
   const result = run([event(), event({ id: 'other', origin: 'vrbo' })]).totals;
   assert.equal(result.bookedNights, 2); assert.equal(result.checkIns, 2);
-  assert.deepEqual(result.platformShare.map(x => x.nights), [0, 0, 2]);
+  assert.deepEqual(result.platformShare.map(x => x.nights), [0, 0, 0, 2]);
 });
 test('unknown, tentative and removed records are neither occupied nor proven free', () => {
   const result = run([event({ kind: 'unknown' }), event({ id: 'tentative', confirmed: false }), event({ id: 'removed', removed: true })]).totals;
@@ -60,3 +60,15 @@ test('same-day timed stay contributes a confirmed arrival and zero occupied nigh
   assert.equal(result.occupancy, 0);
   assert.throws(() => run([event({ endDate: '2026-03-06' })]));
 });
+
+ test('manual bookings keep direct origin and returned imported blocks never double count occupied nights', () => {
+  const result = run([event({ origin: 'manual' }), event({ id: 'returned-airbnb-block', kind: 'blocked', confirmed: false, origin: 'airbnb' })], true).totals;
+  assert.equal(result.bookedNights, 2); assert.equal(result.blockedNights, 0);
+  assert.equal(result.occupiedNights, 2); assert.equal(result.checkIns, 1);
+  assert.equal(result.platformShare.find(x => x.platform === 'manual')?.nights, 2);
+  assert.equal(result.platformShare.find(x => x.platform === 'airbnb')?.nights, 0);
+ });
+ test('canceled manual bookings contribute no arrivals or occupied nights', () => {
+  const result = run([event({ origin: 'manual', removed: true })], true).totals;
+  assert.equal(result.bookedNights, 0); assert.equal(result.checkIns, 0);
+ });

@@ -46,3 +46,8 @@ test('property avatars cap at two with accurate overflow and unchanged Bloom ass
  const bloom=renderToStaticMarkup(<PropertyAvatarStack bloomOwned members={members}/>);
  assert.match(bloom,/src="\/icon.svg"/);assert.match(bloom,/alt="Bloom"/);assert.doesNotMatch(bloom,/img.clerk.com/);
 });
+
+test('manual booking performance labels direct origin without inventing Airbnb attribution',()=>{
+ const html=renderToStaticMarkup(<OwnerPlatformShare totals={{...totals,platformShare:[{platform:'manual',nights:5,share:1}]}}/>);
+ assert.match(html,/Manual \/ direct/);assert.match(html,/5 nights/);assert.doesNotMatch(html,/<strong>Airbnb<\/strong>|<strong>Vrbo<\/strong>/);
+});

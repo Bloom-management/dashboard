@@ -1,0 +1,18 @@
+.picker { display:grid; gap:16px; color:#302f26; }
+.fields { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.picker .fields button { min-width:0; display:grid; gap:8px; padding:16px; text-align:left; background:white; border:1px solid #d6cfc2; border-radius:16px; color:inherit; font:inherit; cursor:pointer; }
+.fields button[aria-pressed=true] { border-color:#cf7f8d; box-shadow:0 0 0 1px #cf7f8d; }
+.fields button:disabled { opacity:.5; cursor:default; }
+.fields span { font-size:13px; color:#817c6e; }
+.fields strong { font-size:15px; }
+.fields button:focus-visible { outline:3px solid #cf7f8d; outline-offset:3px; }
+.surface { display:flex; justify-content:center; background:white; border-radius:20px; padding:12px 0; user-select:none; }
+.surface > div { min-width:0!important; width:100%!important; max-width:420px!important; }
+.surface button[data-booking-date] { width:100%; min-height:40px; }
+.picker .unavailable button { color:#99958c; text-decoration:line-through; background:#f2f0eb; }
+.preview,.help,.error { margin:0; line-height:1.6; }
+.preview { font-weight:600; }
+.help { font-size:13px; color:#817c6e; }
+.legend { text-decoration:line-through; }
+.error { color:#a24859; font-size:14px; }
+@media(max-width:380px) { .fields { gap:8px; } .fields button { padding:12px; } .surface { margin-inline:-8px; } }

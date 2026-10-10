@@ -6,9 +6,8 @@ import { useCallback, useRef, useState } from 'react';
 import type { CleaningConfig, PhotoCategory, JobJourney } from '../../contracts';
 import { ApiError, request } from './api';
 import { ErrorNotice, Loading, useResource } from './primitives';
-import { MaintenanceGrid } from './maintenance';
+import { CompletionReportContent } from './cleaning-report';
 import { SupplySetupGrid } from './supply-setup-grid';
-import { supplyLevels } from './journey-draft';
 
 const roomNames:Record<PhotoCategory,string>={bedrooms:'Bedroom',bathrooms:'Bathroom',kitchen:'Kitchen',living_room:'Living room'};
 function defaultLabel(type:PhotoCategory,rooms:CleaningConfig['rooms']){
@@ -65,7 +64,7 @@ function ConfigForm({section,path,owner,bedroomCount,bathroomCount,initial,saved
     </div><div hidden={section!==1}><SupplySetupGrid supplies={config.supplies} onChange={supplies=>setConfig({...config,supplies})} disabled={busy||uncertain}/></div>
     <p>Changes apply to future and unconfigured cleanings. Existing cleaning checklists and uploaded photos stay unchanged. Saving with no supplies explicitly confirms an empty supply checklist.</p><button className="bloom-button" disabled={busy||config.supplies.some(s=>!s.name.trim())||config.rooms.some(r=>!r.label.trim())||!config.rooms.some(r=>r.type==='kitchen')||!config.rooms.some(r=>r.type==='living_room')}>{busy?'Saving…':uncertain?'Retry saving configuration':'Save room and supply configuration'}</button>{uncertain&&<p role="status">The save result is uncertain. Retry the same configuration safely before making other changes.</p>}{!!error&&<ErrorNotice error={error}/>} {error instanceof ApiError&&error.code==='CONFLICT'&&<button type="button" className="bloom-button secondary" onClick={saved}>Discard draft and reload saved configuration</button>}</form>;
 }
-export function CompletionReport({jobId}:{jobId:string}) {
+export function CompletionReport({jobId,propertyName,date}:{jobId:string;propertyName:string;date:string}) {
   const load=useCallback((signal:AbortSignal)=>request<JobJourney>(`/jobs/${jobId}/journey`,{signal}),[jobId]);const data=useResource(load);
-  return data.loading?<Loading/>:data.error?<ErrorNotice error={data.error} retry={data.reload}/>:data.data?.receipt?<section className="info-row"><h3>Completion supply report</h3>{data.data.receipt.reports.map(report=><p className={['low','empty','not_found'].includes(report.level)?'bloom-notice':undefined} key={report.supplyId}>{report.name}: {supplyLevels[report.level]}</p>)}<p className="bloom-prewrap">{data.data.receipt.notes}</p>{data.data.receipt.maintenance&&<MaintenanceGrid reports={data.data.receipt.maintenance}/>}<p>Completed · No approval required.</p></section>:null;
+  return data.loading?<Loading/>:data.error?<ErrorNotice error={data.error} retry={data.reload}/>:data.data?.receipt?<CompletionReportContent report={{jobId,propertyName,date,receipt:data.data.receipt}}/>:null;
 }

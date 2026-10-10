@@ -21,7 +21,7 @@ export async function dispatch(operation: string, request: Request, params: Reco
       return listProperties(integer(Number(q.get('limit') ?? 50), 1, 100), integer(Number(q.get('offset') ?? 0), 0, 1_000_000));
     }
     const allowed: Record<string, string[]> = {
-      propertyRename: ['name'], onboard: ['cityId'], cityRequest: ['cityId'], cityResolve: ['decision'], claim: [], withdraw: ['comment'], complete: ['configVersion', 'answers', 'notes', 'maintenance'],
+      propertyRename: ['name'], onboard: ['cityId'], cityRequest: ['cityId'], cityResolve: ['decision'], claim: [], withdraw: ['comment'], complete: ['configVersion', 'answers', 'notes', 'maintenance', 'guestReview', 'handoffRevision'],
       upload: ['category', 'mime', 'bytes', 'roomId'], finalize: [], readUrl: [],
       propertyCreate: ['cityId', 'name', 'timezone', 'address', 'isBloomOwned', 'soloRateCents', 'ownerIds', 'instructions', 'pendingOwnerEmail'],
       role: ['role'], cancel: ['reason', 'expectedVersion'], reassign: ['reason', 'expectedVersion', 'removeAssignmentId', 'cleanerId'],

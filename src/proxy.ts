@@ -4,6 +4,10 @@ import { clerkMiddleware } from '@clerk/nextjs/server';
 // Session verification is also performed independently inside every sensitive operation.
 const clerk = clerkMiddleware();
 export default async function proxy(request: NextRequest, event: NextFetchEvent) {
+ if (/^\/api\/calendar\/export\/[a-f0-9]{64}\.ics$/.test(request.nextUrl.pathname) && ['GET', 'HEAD'].includes(request.method)) return NextResponse.next();
+ // Display is authenticated by a verified HttpOnly device capability in the route.
+ // A sleeping PWA must not depend on a refreshable Clerk browser session.
+ if (request.nextUrl.pathname === '/api/push/display' && request.method === 'POST') return NextResponse.next();
  const configured = [process.env.CLERK_SECRET_KEY, process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY].every(value => value && !value.startsWith('replace_'));
  if (!configured) {
    if (request.nextUrl.pathname.startsWith('/api/')) return NextResponse.json({error:{code:'CONFIGURATION_ERROR',message:'The service is not configured.',requestId:crypto.randomUUID()}},{status:503,headers:{'Cache-Control':'no-store'}});

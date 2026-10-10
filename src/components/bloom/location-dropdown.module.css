@@ -19,3 +19,8 @@
  .dialog.dialog.dialog { width:calc(100vw - 32px);padding:24px 20px 20px; }
  .dialog .heading { margin-bottom:20px;padding-right:12px;font-size:22px; }
 }
+
+.optionWrap{position:relative}.optionWrap>button{width:100%}.optionWrap>button[data-unavailable]{background:#f3f1ec;color:#89857b;border-color:#e3ded5}.availabilityTip{display:none;position:relative;margin:8px 12px 12px;padding:14px 16px;border:1px solid #d5bdab;border-radius:16px;background:#faf7f1;color:#51493f;font-size:14px;line-height:1.5;box-shadow:0 6px 18px #302d2310}.optionWrap:hover .availabilityTip,.optionWrap:focus-within .availabilityTip{display:block}
+
+/* Preserve the shared white control surface against hub button resets. */
+button.trigger.trigger.trigger { background:#fff; }

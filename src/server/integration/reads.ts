@@ -23,8 +23,12 @@ export async function integrationRead(operation:string, request:Request, id?:str
  }
  await requireAdmin();
  if(operation==='assignments') {
-  const {data,error}=await db.from('assignments').select('id,users!cleaner_id(display_name)').eq('job_id',uuid(id)).is('ended_at',null).order('slot');if(error)databaseError(error);
-  return (data??[]).map(row=>({id:row.id,cleanerName:(row.users as unknown as {display_name:string}|null)?.display_name||'Cleaner'}));
+  const {data,error}=await db.from('assignments').select('id,completed_pay_cents,users!cleaner_id(display_name,clerk_user_id)').eq('job_id',uuid(id)).is('ended_at',null).order('slot');if(error)databaseError(error);
+  const rows=(data??[]).map(row=>({...row,person:row.users as unknown as {display_name:string;clerk_user_id:string}|null}));
+  const avatars=new Map<string,string>();
+  const identities=rows.flatMap(row=>row.person?.clerk_user_id?[row.person.clerk_user_id]:[]);
+  if(identities.length)try{const result=await adminIdentityClient().users.getUserList({userId:identities,limit:100});for(const identity of result.data)avatars.set(identity.id,profileAvatar(identity));}catch{/* Keep recorded payouts available when profile images cannot load. */}
+  return rows.map(row=>({id:row.id,cleanerName:row.person?.display_name||'Cleaner',avatarUrl:avatars.get(row.person?.clerk_user_id??'')??null,completedPayCents:row.completed_pay_cents}));
  }
  const after=cursor(request);
  if(operation==='users') {

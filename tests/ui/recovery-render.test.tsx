@@ -43,6 +43,6 @@ test('session recovery reuses the login shell with a safe return action', async 
   assert.match(html, /Let’s get you back in/);
   assert.match(html, /href="\/sign-in"/);
   assert.match(html, /Already signed in/);
-  assert.match(html, /Support details/);
+  assert.doesNotMatch(html, /Support details|test-reference/);
   assert.doesNotMatch(html, /role="onboarding"/);
 });

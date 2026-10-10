@@ -1,0 +1,26 @@
+Production calendar polling enabled 2026-10-08 UTC.
+Endpoint: POST https://admin.bloomcleaning.org/api/admin/calendar/scheduled-sync
+Schedule: Supabase cron bloom-calendar-sync, */5 * * * *.
+Secret: Vercel CALENDAR_SYNC_SECRET matches Vault bloom_calendar_scheduler_secret.
+URL stored in Vault bloom_calendar_url. No secret values belong in source/logs.
+
+Redeployed existing production deployment source to pick up the scheduler secret;
+did not deploy the shared checkout's unrelated pending UI/database work.
+Manual production run succeeded at 04:03 UTC: 7 created, 10 removed source
+records, 27 unchanged, 0 conflicts. Missing October 7/8 jobs for 3628 created.
+Airbnb iCal is polled, not event-pushed. Five-minute polling is Bloom's cadence,
+not a guarantee Airbnb publishes changes immediately. Reads use existing
+conditional request validators; reconciliation retains existing lease/idempotency,
+private staffing, payout and protected-work behavior.
+
+Operational verification: cron.job_run_details proves dispatch only. Also inspect
+net._http_response status AND calendar_sync_runs status/error/counts. HTTP200 may
+contain individual source failures. Source last_success_at older than 15 minutes
+needs investigation. Existing calendar settings expose last sync/error information;
+a proactive stale-sync notification is not implemented by this configuration fix.
+
+Rollback/pause: select cron.unschedule('bloom-calendar-sync');
+Manual property sync remains available. Do not remove imported jobs to roll back.
+Use enable-schedule.sql to restore after verifying endpoint and Vault secrets.
+
+Observed first automatic production run at 2026-10-08 04:05 UTC: cron succeeded; source reconciliation succeeded, 34 unchanged, zero creates/removals/conflicts. Confirms scheduled delivery and no duplicate jobs on the repeat sync.

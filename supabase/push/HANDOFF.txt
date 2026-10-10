@@ -1,3 +1,35 @@
+2026-10-02 persistent device subscriptions (migration 054; prepared locally)
+
+- Verified devices remember authenticated accounts after sign-out/session expiry.
+  Signing into another supported Bloom account on a verified device adds a link;
+  it does not replace prior links or require another receipt challenge.
+- Explicit account opt-out survives reload/sign-in. Device-wide disable stops all
+  links. New/unverified devices still require receipt proof. Migration backfills
+  only currently verified registrations; it does not revive disabled devices.
+- Delivery/display use the HttpOnly device capability, enabled account link,
+  generation, expiry and current database permissions. Active Clerk sessions are
+  no longer a delivery condition. Ordinary application access still requires auth.
+- Alerts start with [Admin], [Owner] or [Cleaner]. Notification taps go through
+  /notifications/open and require the matching authenticated account before any
+  private job destination. Offline/revoked-device fallback stays generic.
+- This is per browser/Home Screen installation; clearing cookies/site data or
+  revoking OS permission can require setup again. Category preferences remain per
+  account; link stop/resume and device disable are specific to this device.
+
+Release: temporarily unschedule bloom-push-delivery, apply 054, deploy matching
+app/worker, then rerun enable-schedule.sql and verify automatic HTTP 200 ticks.
+Pause the timer to avoid the previous sender invalidating persistent links while
+old/new server code overlaps. No new environment variables or provider keys.
+Rollback: pause delivery; retain link data. Do not deploy the old session-bound
+sender against 054 without restoring its previous device/delivery functions.
+
+Checks: 14 real disposable-Postgres push tests with synthetic claims and receipt;
+10 mocked provider/worker tests; mocked mobile permission and stop/resume controls.
+Authenticated local Clerk acceptance separately exercises account linking and
+notification-tap isolation with receipt simulated in SQL. No physical-phone send.
+The persistent local dev DB already had 051/052 schema without their ledger rows;
+054 was applied directly there for browser checks. Hosted schema is unchanged.
+
 2026-10-02 deployment verification
 - Migrations 051–053 applied to hosted production. Migration 053 targets the
   push_control singleton explicitly, fixing PostgREST safeupdate rejecting ticks.

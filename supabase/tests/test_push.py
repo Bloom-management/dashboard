@@ -11,7 +11,7 @@ def call(name, args):
 
 class PushTests(unittest.TestCase):
     def setUp(self):
-        sql("truncate private.push_deliveries,private.push_messages,private.push_publications,private.push_devices,private.push_preferences; update private.push_control set activated_at=null;")
+        sql("truncate private.push_device_accounts,private.push_deliveries,private.push_messages,private.push_publications,private.push_devices,private.push_preferences; update private.push_control set activated_at=null;")
         self.sub,self.user=make_user()
         self.device=uuid.uuid4().hex*2
         self.subscription=str(uuid.uuid4())
@@ -108,7 +108,7 @@ class PushTests(unittest.TestCase):
         self.activate();make_job();self.tick();row=json.loads(call('take','5'))[0]
         self.assertIsNotNone(json.loads(call('delivery',f"'{row['id']}','{row['lease']}'")))
         _,other=make_user();self.device_action('status',user=other,session='session_two')
-        self.assertIsNone(json.loads(call('delivery',f"'{row['id']}','{row['lease']}'")))
+        self.assertIsNotNone(json.loads(call('delivery',f"'{row['id']}','{row['lease']}'")))
         proof=sql(f"select public.bloom_push_device('{self.device}','{other}','session_two','verify','{{\"hash\":\"{'b'*64}\"}}');",ok=False)
         self.assertNotEqual(proof.returncode,0)
         self.device_action('status');sql(f"update private.push_devices set last_test_at=null where id='{self.device}';");self.bind()
@@ -120,7 +120,7 @@ class PushTests(unittest.TestCase):
         self.assertEqual(len(only),1)
         self.assertEqual(only[0]['id'],result['testDeliveryId'])
         self.assertEqual(scalar("select count(*) from private.push_deliveries d join private.push_messages m on m.id=d.message_id where m.kind='test';"),'1')
-        call('device',f"'{self.device}',null,'unmapped_new_account_session','reconcile'");self.assertEqual(scalar(f"select verified from private.push_devices where id='{self.device}';"),'f')
+        call('device',f"'{self.device}',null,'unmapped_new_account_session','reconcile'");self.assertEqual(scalar(f"select verified from private.push_devices where id='{self.device}';"),'t')
         self.assertEqual(scalar(f"select verified from private.push_devices where id='{second}';"),'t')
 
 if __name__=='__main__':unittest.main(verbosity=2)

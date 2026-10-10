@@ -350,7 +350,10 @@ dialog.cleaner-city-dialog { width:min(480px,calc(100vw - 24px)); border-radius:
 .bloom-booking-tooltip span { color:#777367; }
 .bloom-dialog.bk-card { position:relative; padding:0; overflow-x:hidden; overflow-y:auto; }
 .bloom-dialog.bk-card > .detail-close { position:absolute; top:12px; right:12px; width:36px; height:36px; display:grid; place-items:center; padding:0; border:0; border-radius:50%; background:#ffffffd9; z-index:2; }
-.bloom-dialog.bk-card .bk-banner { padding-right:64px; }
+.bloom-dialog.bk-card .bk-body { padding-top:52px; }
+.bloom-dialog.bk-card .bk-source-card { margin:0 0 24px; padding:24px; border:1px solid #f0ede7; border-radius:24px; background:#fff; box-shadow:0 2px 6px #302f260a; text-align:left; }
+.bloom-dialog.bk-card .bk-source-card h3 { margin:0 0 12px; font-size:18px; font-weight:700; }
+.bloom-dialog.bk-card .bk-source-card p { margin:0; font-size:16px; }
 .bloom-dialog.bk-card .bk-stay { display:grid; grid-template-columns:minmax(0,1fr) 24px minmax(0,1fr); gap:12px; }
 .bloom-dialog.bk-card .bk-stay-date { font-size:16px; font-weight:600; text-align:center; }
 .bloom-dialog.bk-card .bk-stay-line { width:100%; }
@@ -583,12 +586,18 @@ dialog.cleaner-city-dialog { width:min(480px,calc(100vw - 24px)); border-radius:
 .bloom-push-dialog p { margin:12px 0; }
 .bloom-push-dialog fieldset { min-width:0; border:0; padding:20px 0; margin:0; }
 .bloom-push-dialog legend { padding:0; font-weight:600; }
-.bloom-push-dialog label { display:flex; gap:12px; align-items:flex-start; min-height:44px; margin:12px 0; padding:8px 0; cursor:pointer; }
-.bloom-push-dialog input[type="checkbox"] { appearance:none; -webkit-appearance:none; box-sizing:border-box; display:block; flex:0 0 20px; width:20px; height:20px; min-width:20px; min-height:20px; padding:0; margin:2px 0 0; border:1.5px solid var(--ink); border-radius:5px; background:#fff; cursor:pointer; }
-.bloom-push-dialog input[type="checkbox"]:checked { border-color:var(--bloom-deep); background-color:var(--bloom-deep); background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='m4 10 4 4 8-8' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
-.bloom-push-dialog input[type="checkbox"]:focus-visible { outline:2px solid var(--bloom-deep); outline-offset:3px; }
-.bloom-push-dialog input[type="checkbox"]:disabled { opacity:.5; cursor:wait; }
-@media(forced-colors:active) { .bloom-push-dialog input[type="checkbox"] { appearance:auto; } }
+.bloom-push-dialog label { display:flex; flex-direction:row-reverse; justify-content:space-between; gap:20px; align-items:center; min-height:48px; margin:0; padding:12px 0; cursor:pointer; }
+.bloom-push-dialog input[role="switch"] { appearance:none; -webkit-appearance:none; box-sizing:border-box; position:relative; flex:0 0 44px; width:44px; height:26px; min-width:44px; min-height:26px; padding:0; margin:0; border:1px solid #aaa69c; border-radius:20px; background:#ddd9d0; cursor:pointer; }
+.bloom-push-dialog input[role="switch"]::after { content:""; position:absolute; top:3px; left:3px; width:18px; height:18px; border-radius:50%; background:#fff; box-shadow:0 1px 3px #0002; transition:transform 180ms ease; }
+.bloom-push-dialog input[role="switch"]:checked { border-color:var(--bloom-deep); background:var(--bloom-deep); }
+.bloom-push-dialog input[role="switch"]:checked::after { transform:translateX(18px); }
+.bloom-push-dialog input[role="switch"]:focus-visible { outline:2px solid var(--bloom-deep); outline-offset:3px; }
+.bloom-push-dialog input[role="switch"]:disabled { opacity:.5; cursor:wait; }
+.bloom-push-device { border-top:1px solid #eee8df; padding-top:16px; }
+.bloom-push-device summary { cursor:pointer; padding:8px 0; font-weight:600; }
+.bloom-push-device .bloom-button { display:block; }
+@media(prefers-reduced-motion:reduce) { .bloom-push-dialog input[role="switch"]::after { transition:none; } }
+@media(forced-colors:active) { .bloom-push-dialog input[role="switch"] { appearance:auto; } .bloom-push-dialog input[role="switch"]::after { display:none; } }
 .bloom-push-dialog .bloom-button { max-width:100%; white-space:normal; margin:8px 0; }
 @media(max-width:360px) {
  :is(.bloom-cleaner,.bloom-owner) .bloom-dialog.bloom-dialog-surface { padding:24px 20px; }
@@ -641,6 +650,10 @@ dialog.cleaner-city-dialog { width:min(480px,calc(100vw - 24px)); border-radius:
 
 .bloom-cleaner .cleaner-day-jobs li { border:1px solid var(--line-2); border-radius:20px; overflow:hidden; transition:background-color 180ms ease,border-color 180ms ease,box-shadow 180ms ease; }
 .bloom-cleaner .cleaner-day-jobs li > button { border:0; background:transparent; }
+.bloom-cleaner .cleaner-day-jobs li > button.cleaner-day-link { display:inline-flex; flex-direction:row; align-items:center; justify-content:center; line-height:1.4; box-sizing:border-box; width:fit-content; max-width:calc(100% - 40px); margin:4px 20px 20px; padding:10px 16px; min-height:44px; border:1px solid #c9c3b8; border-radius:12px; background:#fff; }
+.bloom-cleaner .cleaner-day-jobs li > button.cleaner-day-link:hover { border-color:#b85563; }
+.bloom-cleaner .cleaner-day-jobs li > button.cleaner-day-link:focus-visible { border-color:#b85563; outline:2px solid #cf7f8d; outline-offset:2px; }
+
 .bloom-cleaner .cleaner-day-jobs li:is(:hover,:focus-within,.selected) { border-color:#b85563; background:#fff6f8; box-shadow:0 2px 10px #b8556314; }
 .cleaner-day-card-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; width:100%; }
 .cleaner-day-card-heading strong { min-width:0; }
@@ -772,3 +785,85 @@ dialog.cleaner-city-dialog { width:min(480px,calc(100vw - 24px)); border-radius:
  }
  .bloom-cleaner .job-detail-compact .detail-body > p { margin:0;overflow-wrap:anywhere; }
 }
+.owner-cleaning-report-row { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; }
+.owner-cleaning-report-row > div { min-width:0; }
+.owner-cleaning-report-row > button { flex-shrink:0; }
+@media(max-width:600px) { .owner-cleaning-report-row { flex-wrap:wrap; } }
+.bloom-job-subscreen button.bloom-section-folder { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; padding:16px; border:1px solid #e5e0d6; border-radius:22px; background:white; color:var(--ink); font:inherit; cursor:pointer; }
+.bloom-job-subscreen button.bloom-section-folder:hover { border-color:#b85563; background:#fff6f8; }
+
+.calendar-date-navigation { display:flex; align-items:center; gap:6px; flex-shrink:0; }
+.calendar-date-navigation .calendar-today { order:-1; }
+@media(max-width:700px) {
+ :is(.bloom-owner,.bloom-cleaner) .cal-nav { display:flex; flex-wrap:nowrap; align-items:center; gap:6px; width:100%; min-width:0; }
+ .calendar-date-navigation { margin-left:auto; gap:4px; }
+ .calendar-date-navigation .calendar-today { order:0; min-height:40px; padding:8px 10px; font-size:13px; white-space:nowrap; }
+ :is(.bloom-cleaner,.bloom-owner) .calendar-date-navigation .icon-btn { flex:0 0 36px; width:36px; height:36px; min-width:36px; min-height:36px; padding:0; }
+ :is(.bloom-owner,.bloom-cleaner) .cal-nav .bloom-selector-pill { min-width:0; padding:3px; flex-shrink:1; }
+ :is(.bloom-owner,.bloom-cleaner) .cal-nav .bloom-selector-pill .vt-btn { font-size:12px; padding:9px 8px; min-width:0; white-space:nowrap; }
+}
+
+.bloom-mobile-view-menu { display:none; }
+@media(max-width:700px) {
+ .bloom-mobile-view-menu { display:block; width:100%; min-width:0; }
+ .bloom-mobile-view-menu .bloom-hub-trigger { display:flex; align-items:center; justify-content:space-between; width:100%; min-height:48px; padding:14px 18px; border:1px solid #efebe1; border-radius:28px; background:#fff; color:#2d2a1f; font:inherit; box-shadow:0 2px 5px #302f260a; }
+ .bloom-mobile-view-menu svg { flex-shrink:0; margin-left:12px; }
+ .bloom-cleaner .main .view-toggle.bloom-admin-tabs.bloom-selector-pill { display:none; }
+ .bloom-owner .topbar.bloom-compact-header .bloom-mobile-view-menu { grid-column:1 / -1; grid-row:2; }
+ .cal-nav { display:flex; flex-wrap:nowrap; align-items:center; width:100%; gap:6px; }
+ .cal-nav .calendar-date-navigation { margin-left:auto; }
+}
+
+/* All selector labels stay centered inside their measured indicator target. */
+.bloom-selector-pill.view-toggle { position:relative; isolation:isolate; }
+.bloom-selector-pill.view-toggle .vt-btn { display:inline-flex; align-items:center; justify-content:center; text-align:center; box-sizing:border-box; }
+.calendar-date-navigation .icon-btn { aspect-ratio:1; box-sizing:border-box; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; }
+
+/* A lone preview item occupies the complete shared Supplies/Maintenance grid. */
+.bloom-section-preview:has(> .bloom-section-mini:only-child) { grid-template-columns:minmax(0,1fr); }
+.bloom-section-preview > .bloom-section-mini:only-child { grid-column:1 / -1; width:100%; }
+.maintenance-mobile-stack { display:flex; flex-direction:column; align-items:center; gap:16px; width:100%; }
+.maintenance-mobile-stack .maintenance-report-card { width:100%; box-sizing:border-box; height:auto; padding:16px; border:1px solid #ddd7cd; border-radius:18px; margin:0; }
+.maintenance-mobile-stack .maintenance-options { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.maintenance-mobile-stack textarea { width:100%; box-sizing:border-box; min-height:80px; }
+/* Shared navigation surfaces: white fill and circular arrow controls. */
+:is(.bloom-cleaner,.bloom-owner) button.icon-btn,.bloom-dialog button.icon-btn { background:#fff; border:1px solid #eee8df; box-shadow:0 2px 6px #302f2610; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; width:44px; height:44px; min-width:44px; min-height:44px; padding:0; flex-shrink:0; }
+.bloom-dialog .view-toggle.bloom-selector-pill { background:#fff; border:1px solid #eee8df; }
+.calendar-date-navigation .calendar-today { background:#fff; }
+
+/* Shared field focus stays on the existing border, including inside clipped dialogs. */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):is(:focus,:focus-visible),
+textarea:is(:focus,:focus-visible),
+select:is(:focus,:focus-visible) {
+  border-color:#cb7c8b !important;
+  outline:none !important;
+  box-shadow:none !important;
+}
+@media(forced-colors:active) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus,
+  textarea:focus, select:focus { border-color:Highlight !important; }
+}
+
+.bk-source-list { display:flex; align-items:center; flex-wrap:wrap; gap:20px 28px; }
+.bk-source-brand { display:flex; align-items:center; gap:10px; min-height:44px; }
+.bk-source-brand > img { width:44px; height:44px; object-fit:contain; }
+/* Frame the supplied wordmark without its large surrounding canvas. */
+.bk-source-vrbo { display:block; position:relative; width:140px; height:48px; overflow:hidden; }
+.bk-source-vrbo img { position:absolute; width:240px; height:160px; max-width:none; left:-50px; top:-51px; mix-blend-mode:multiply; }
+
+.admin-pricing-inbox button.bloom-inbox-clear { display:block; margin:0 0 12px auto; padding:8px 0; min-height:44px; border:0; border-radius:0; background:transparent; box-shadow:none; color:#b85563; font:inherit; font-weight:600; cursor:pointer; }
+.admin-pricing-inbox button.bloom-inbox-clear:hover { background:transparent; text-decoration:underline; }
+.admin-pricing-inbox button.bloom-inbox-clear:focus-visible { outline:none; text-decoration:underline; text-decoration-thickness:2px; }
+.admin-pricing-inbox button.bloom-inbox-clear:disabled { opacity:.5; cursor:wait; }
+
+.admin-pricing-inbox .bloom-inbox-heading:has(+ .bloom-inbox-clear) { margin-bottom:0; }
+.admin-pricing-inbox button.bloom-inbox-clear { margin-top:0; padding-top:2px; padding-bottom:8px; min-height:36px; }
+
+.bloom-job-payouts { list-style:none; padding:0; margin:16px 0 0; display:grid; gap:14px; }
+.bloom-job-payouts li { display:flex; align-items:center; gap:12px; min-width:0; overflow-wrap:anywhere; }
+.bloom-job-payout-avatar { display:block; width:40px; height:40px; flex:0 0 40px; border-radius:50%; overflow:hidden; }
+
+.bloom-handoff { margin:0 24px 24px; padding:20px; border:1px solid #e8e3da; border-radius:16px; background:white; display:grid; gap:12px; }
+.bloom-handoff:empty { display:none; }
+.bloom-handoff p,.bloom-handoff h3,.bloom-handoff ul { margin:0; }
+.bloom-handoff button { justify-self:start; }

@@ -82,6 +82,19 @@ class JourneyTests(unittest.TestCase):
         finally:sql("drop trigger test_journey_fail on public.admin_notification_events;drop function public.test_journey_fail();")
         self.assertEqual(finish(a,job,body,'retry-atomic').returncode,0)
         self.assertEqual(scalar(f"select count(*) from public.admin_notification_events where job_id='{job}';"),'1')
+    def test_guest_review_validation_receipt_and_retry(self):
+        admin,a,b,uid,job,prop,c,body=fixture();photos(a,job,c)
+        for review in [None,{}, {'rating':0,'comment':''},{'rating':6,'comment':''},{'rating':2.25,'comment':''},{'rating':'5','comment':''},{'rating':3,'comment':'x'*1501}]:
+            self.assertIn('VALIDATION_ERROR',finish(a,job,{**body,'guestReview':review}).stderr)
+        self.assertEqual(scalar(f"select count(*) from public.job_supply_reports where job_id='{job}';"),'0')
+        body={**body,'notes':'Notes about room photos','guestReview':{'rating':4,'comment':'Guest left tidy rooms'}}
+        result=finish(a,job,body,'guest-review');self.assertEqual(result.returncode,0,result.stderr)
+        receipt=json.loads(result.stdout)['receipt'];self.assertEqual(receipt['guestReview'],body['guestReview']);self.assertEqual(receipt['notes'],body['notes'])
+        self.assertEqual(finish(a,job,body,'guest-review').stdout,result.stdout)
+        self.assertIn('CONFLICT',finish(a,job,{**body,'guestReview':{'rating':1,'comment':''}},'guest-review').stderr)
+        self.assertEqual(json.loads(scalar(f"select public.bloom_job_journey('{job}');",b))['receipt']['guestReview'],body['guestReview'])
+        self.assertEqual(json.loads(scalar(f"select payload from public.admin_notification_events where job_id='{job}';",admin))['guestReview'],body['guestReview'])
+
     def test_unconfigured_and_early_start(self):
         a,_=make_user();job,_=make_job();action(a,job,'claim')
         self.assertIn('INVALID_STATE',sql(f"select public.bloom_job_start('{job}','early');",a,ok=False).stderr)
