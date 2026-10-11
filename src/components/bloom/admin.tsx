@@ -1,4 +1,5 @@
 'use client';
+import {PropertyThumbnailSettings} from './property-thumbnail';
 import {AccessInfo} from './access-info';
 import {CalendarTypeToggle} from './calendar-add-flow';
 import type {OwnerCalendarBlock} from '../../contracts';
@@ -28,7 +29,6 @@ import { PendingInvitations } from './pending-invitations';
 import { InvitePerson } from './invite-person';
 import { DatePicker } from './date-picker';
 import { CleaningConfiguration, CompletionReport } from './cleaning-config';
-import { PropertyName } from './property-name';
 import { LocationDropdown } from './location-dropdown';
 import { BookingCalendar } from '../ui/calendar';
 import styles from './admin-jobs.module.css';
@@ -167,7 +167,7 @@ function SourceForm({propertyId,reload}:{propertyId:string;reload:()=>void}) {
  const [provider,setProvider]=useState('airbnb');const [url,setUrl]=useState('');const mutation=useMutation();const [syncMessage,setSyncMessage]=useState('');
  return <form className="bloom-admin-card bloom-form" onSubmit={async e=>{e.preventDefault();if(await mutation.run({propertyId,provider,url},async key=>{const saved=await request<CalendarSaveResult>(`/admin/properties/${encodeURIComponent(propertyId)}/calendar-sources`,{body:{provider,url},key});setSyncMessage(calendarSaveMessage(saved.sync));})){setUrl('');reload();}}}><h3>Add calendar source</h3><p>The property is already saved. If saving or syncing this calendar fails, the property remains available and you can retry here.</p><p>{provider==='airbnb'?'Paste the Airbnb calendar export link for this property. Use the calendar export (iCal) link, not the listing page or an import link.':'Paste the Vrbo calendar export (iCal) link for this property.'} Links are private.</p><p>Saving a link automatically starts an import. Review its result below. If it fails, the link remains saved and you can choose Sync now to retry.</p><label>Platform<Select value={provider} onChange={e=>setProvider(e.target.value)}><option value="airbnb">Airbnb</option><option value="vrbo">Vrbo</option></Select></label><label>Private calendar export link<input type="password" autoComplete="off" required maxLength={4096} value={url} onChange={e=>setUrl(e.target.value)}/></label><button className="bloom-button" disabled={mutation.busy}>{mutation.busy?'Saving and syncing…':'Save calendar link'}</button><p role="status">{syncMessage}</p><Result mutation={mutation}/></form>;
 }
-function PropertySettings({id,integration,back,onRenamed,section='settings'}:{id:string;integration:BloomIntegration;back:()=>void;onRenamed:()=>void;section?:'settings'|'calendars'}) {
+function PropertySettings({id,integration,back,section='settings'}:{id:string;integration:BloomIntegration;back:()=>void;onRenamed:()=>void;section?:'settings'|'calendars'}) {
  const load=useCallback((signal:AbortSignal)=>integration.admin!.property(id,signal),[integration,id]);const property=useResource(load);
  const [revision,setRevision]=useState(0);const reload=()=>setRevision(v=>v+1);
  const [syncOutcome,setSyncOutcome]=useState('');
@@ -176,7 +176,7 @@ function PropertySettings({id,integration,back,onRenamed,section='settings'}:{id
  const sources=useCallback((cursor:string|null,signal:AbortSignal)=>integration.admin!.propertySources(id,cursor,signal),[integration,id]);
  if(property.loading)return <><button type="button" className="bloom-button secondary" onClick={back}>Back to Properties</button><Loading/></>;if(property.error)return <><button className="bloom-button" onClick={back}>Back to Properties</button><ErrorNotice error={property.error} retry={property.reload}/></>;
  const p=property.data!;
- return <>{section==='settings'?<><article className="bloom-admin-card"><h2>{p.name}</h2><PropertyName key={p.id} property={p} rename={integration.renameProperty} onSaved={()=>{property.reload();onRenamed();}}/><p>{p.isBloomOwned?'Bloom-owned':`Owner-owned · ${p.ownerIds.length} linked owner account(s)`}</p>{p.pendingOwnerEmail&&<p className="bloom-notice">Pending owner: {p.pendingOwnerEmail}. Access begins after sign-in with this verified primary email. No invitation has been sent.</p>}<p>{p.address}</p><p>11 AM–3 PM · {p.timezone} · Checkout day</p><p>Solo {money(p.soloRateCents)} · Shared {money(p.soloRateCents/2)} per cleaner</p><h3>Cleaning instructions</h3><p className="bloom-prewrap">{p.instructions}</p></article><PropertyPin id={id} address={p.address}/><AdminUnitPricing id={id} onSaved={property.reload}/><h3>Access info</h3><AccessInfo propertyId={id}/><CleaningConfiguration propertyId={id}/><PropertyPeoplePanel listing={p}/></>:<><h2>Connected calendars</h2><p>Airbnb and Vrbo sources for {p.name}. Links are kept private.</p><Paginated key={revision} loader={sources} render={(items,refresh)=><>{items.length?items.map(s=><SourceRow source={s} reload={()=>{refresh();setReviewRevision(value=>value+1);}} onOutcome={setSyncOutcome} key={s.id}/>):<Empty title="No calendar sources">Add an export link for this property below.</Empty>}</>}/><p role="status">{syncOutcome}</p><details><summary>Add a calendar connection</summary><SourceForm propertyId={id} reload={reload}/></details><CalendarExport key={id} propertyId={id}/><section aria-label="Flagged calendar entries"><h2>Needs attention</h2><p>Read-only inspection of blocked, unconfirmed, or source-flagged stays. Dates are local to this property. Classification changes are not available here; use Jobs to resolve changes affecting existing cleanings.</p><Paginated key={reviewRevision} loader={reviews} render={items=><CalendarReviewList entries={items}/>}/></section></>}</>;
+ return <>{section==='settings'?<>{p.pendingOwnerEmail&&<p className="bloom-notice">Pending owner: {p.pendingOwnerEmail}. Access begins after sign-in with this verified primary email. No invitation has been sent.</p>}<PropertyThumbnailSettings key={id} id={id}/><PropertyPin id={id} address={p.address}/><AdminUnitPricing id={id} onSaved={property.reload}/><h3>Access info</h3><AccessInfo propertyId={id}/><CleaningConfiguration propertyId={id}/><PropertyPeoplePanel listing={p}/></>:<><h2>Connected calendars</h2><p>Airbnb and Vrbo sources for {p.name}. Links are kept private.</p><Paginated key={revision} loader={sources} render={(items,refresh)=><>{items.length?items.map(s=><SourceRow source={s} reload={()=>{refresh();setReviewRevision(value=>value+1);}} onOutcome={setSyncOutcome} key={s.id}/>):<Empty title="No calendar sources">Add an export link for this property below.</Empty>}</>}/><p role="status">{syncOutcome}</p><details><summary>Add a calendar connection</summary><SourceForm propertyId={id} reload={reload}/></details><CalendarExport key={id} propertyId={id}/><section aria-label="Flagged calendar entries"><h2>Needs attention</h2><p>Read-only inspection of blocked, unconfirmed, or source-flagged stays. Dates are local to this property. Classification changes are not available here; use Jobs to resolve changes affecting existing cleanings.</p><Paginated key={reviewRevision} loader={reviews} render={items=><CalendarReviewList entries={items}/>}/></section></>}</>;
 }
 function Properties({integration,initialPropertyId}:{integration:BloomIntegration;initialPropertyId?:string}) {
  const router=useRouter();const search=useSearchParams();const adding=search.get('new')==='1';
@@ -192,7 +192,7 @@ function Properties({integration,initialPropertyId}:{integration:BloomIntegratio
   return items;
  // Reload all authorized pages after mutations.
  },[]);
- const data=useResource(load);const changed=()=>{setRevision(value=>value+1);data.reload();};
+ const data=useResource(load,true);const changed=()=>{setRevision(value=>value+1);data.reload();};
  const back=()=>router.push('/admin?view=properties',{scroll:false});
  const range=monthRange(todayIn('UTC').slice(0,7));
  return <div className="bloom-owner admin-properties-workspace">

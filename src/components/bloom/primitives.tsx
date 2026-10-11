@@ -1,7 +1,9 @@
 'use client';
+import {PropertyThumbnail} from './property-thumbnail';
 import {useStartupResource} from './startup/startup-boundary';
 
 import { AnimatedContent } from './animated-content';
+import modalStyles from './modal.module.css';
 import { DialogClose } from './dialog-close';
 import { lockDialogScroll } from './dialog-scroll';
 import { useRouter } from 'next/navigation';
@@ -80,7 +82,7 @@ export function PropertyRail({ properties, selected, onSelect }: { properties: {
   const remaining=Math.max(0,properties.length-4);
   const hiddenSelected=properties.slice(4).some(property=>property.id===selected);
   const units=[{id:'',name:'All properties'},...properties];
-  return <><aside className="rail" aria-label="Property filters"><div className="rail-label">Properties</div><div className="rail-list">{[{ id: '', name: 'All properties' }, ...properties.slice(0,4)].map(property => <button key={property.id} className={`rail-item${selected === property.id ? ' active' : ''}`} aria-label={property.name} aria-pressed={selected === property.id} title={property.name} onClick={() => onSelect(property.id)}><Icon name={property.id ? 'pin' : 'grid'} /><span className="rail-tip">{property.name}</span></button>)}{remaining>0&&<button type="button" className={`rail-item rail-more${hiddenSelected?' active':''}`} aria-label={`Show all units, ${remaining} more listings`} aria-haspopup="dialog" aria-expanded={open} onClick={()=>{setSearch('');setOpen(true);}}>+{remaining}</button>}</div></aside>{open&&<Modal className="cleaner-day-dialog property-rail-dialog" title="All units" onClose={()=>setOpen(false)}><header><h2>All units</h2><p>Choose a unit to filter the calendar.</p></header><label className="property-rail-search">Search units<input type="search" value={search} onChange={event=>setSearch(event.target.value)} placeholder="Search by name"/></label><ul className="property-rail-units">{units.filter(unit=>unit.name.toLowerCase().includes(search.trim().toLowerCase())).map(unit=><li key={unit.id}><button type="button" aria-pressed={selected===unit.id} onClick={()=>{onSelect(unit.id);setOpen(false);}}><Icon name={unit.id?'pin':'grid'}/><span>{unit.name}</span>{selected===unit.id&&<span aria-hidden="true">✓</span>}</button></li>)}</ul>{!units.some(unit=>unit.name.toLowerCase().includes(search.trim().toLowerCase()))&&<p>No matching units.</p>}</Modal>}</>;
+  return <><aside className="rail" aria-label="Property filters"><div className="rail-label">Properties</div><div className="rail-list">{[{ id: '', name: 'All properties' }, ...properties.slice(0,4)].map(property => <button key={property.id} className={`rail-item${selected === property.id ? ' active' : ''}`} aria-label={property.name} aria-pressed={selected === property.id} title={property.name} onClick={() => onSelect(property.id)}>{property.id?<PropertyThumbnail id={property.id}/>:<Icon name="grid"/>}<span className="rail-tip">{property.name}</span></button>)}{remaining>0&&<button type="button" className={`rail-item rail-more${hiddenSelected?' active':''}`} aria-label={`Show all units, ${remaining} more listings`} aria-haspopup="dialog" aria-expanded={open} onClick={()=>{setSearch('');setOpen(true);}}>+{remaining}</button>}</div></aside>{open&&<Modal className="cleaner-day-dialog property-rail-dialog" title="All units" onClose={()=>setOpen(false)}><header><h2>All units</h2><p>Choose a unit to filter the calendar.</p></header><label className="property-rail-search">Search units<input type="search" value={search} onChange={event=>setSearch(event.target.value)} placeholder="Search by name"/></label><ul className="property-rail-units">{units.filter(unit=>unit.name.toLowerCase().includes(search.trim().toLowerCase())).map(unit=><li key={unit.id}><button type="button" aria-pressed={selected===unit.id} onClick={()=>{onSelect(unit.id);setOpen(false);}}>{unit.id?<PropertyThumbnail id={unit.id}/>:<Icon name="grid"/>}<span>{unit.name}</span>{selected===unit.id&&<span aria-hidden="true">✓</span>}</button></li>)}</ul>{!units.some(unit=>unit.name.toLowerCase().includes(search.trim().toLowerCase()))&&<p>No matching units.</p>}</Modal>}</>;
 
 }
 export function MonthHead({ month, onMonth, owner = false, onDaySelect, beforeToday }: { beforeToday?: ReactNode; month: string; onMonth: (month: string) => void; owner?: boolean; onDaySelect?: (date:string)=>void }) {
@@ -99,7 +101,7 @@ export function MonthHead({ month, onMonth, owner = false, onDaySelect, beforeTo
 export function CalendarGrid({ month, today, children, onDaySelect }: { month: string; today?: string; owner?: boolean; onDaySelect?: (date:string)=>void; children: (date: string) => ReactNode }) {
   return <BookingCalendar month={month} today={today} onDaySelect={onDaySelect}>{children}</BookingCalendar>;
 }
-export function Modal({ title, onClose, children, style, showClose = true, className = 'detail-card' }: { style?: CSSProperties; showClose?: boolean; title: string; onClose: () => void; children: ReactNode; className?: string }) {
+export function Modal({ title, onClose, children, style, showClose = true, className }: { style?: CSSProperties; showClose?: boolean; title: string; onClose: () => void; children: ReactNode; className?: string }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const close = useRef(onClose); close.current = onClose;
   const id = useId();
@@ -110,7 +112,7 @@ export function Modal({ title, onClose, children, style, showClose = true, class
     element?.showModal();
     return () => { element?.close(); unlock(); previous?.focus({preventScroll:true}); };
   }, []);
-  return <dialog ref={dialog} style={style} className={`bloom-dialog ${className}`} aria-labelledby={id} onCancel={event => { event.preventDefault(); event.stopPropagation(); close.current(); }} onClick={event => { if (event.target === event.currentTarget) { const bounds = event.currentTarget.getBoundingClientRect(); if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) close.current(); } }}><h2 id={id} className="bloom-sr-only">{title}</h2>{showClose&&<DialogClose autoFocus onClose={onClose}/>} <AnimatedContent>{children}</AnimatedContent></dialog>;
+  return <dialog ref={dialog} style={style} className={`bloom-dialog ${className??modalStyles.dialog}`} aria-labelledby={id} onCancel={event => { event.preventDefault(); event.stopPropagation(); close.current(); }} onClick={event => { if (event.target === event.currentTarget) { const bounds = event.currentTarget.getBoundingClientRect(); if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) close.current(); } }}>{className!==undefined&&<h2 id={id} className="bloom-sr-only">{title}</h2>}{showClose&&<DialogClose autoFocus onClose={onClose}/>} <AnimatedContent>{className===undefined?<div className={modalStyles.content}><h2 id={id} className={modalStyles.title}>{title}</h2>{children}</div>:children}</AnimatedContent></dialog>;
 }
 
 /** Navigation changes the view only; the server-provided account role is unchanged. */

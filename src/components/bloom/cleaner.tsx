@@ -23,6 +23,7 @@ import type { BloomIntegration } from './integration';
 import { Account, Brand, HubSelector, CalendarGrid, Changes, Empty, ErrorNotice, Icon, Loading, Modal, MonthHead, PropertyRail, RoleGate, useResource } from './primitives';
 import { useCalendar } from './use-calendar';
 import { Photos } from './photos';
+import { CleaningReport } from './cleaning-report';
 import { CleanerJourney } from './cleaner-journey';
 import { LocationDropdown } from './location-dropdown';
 import { mayClaim, mayWithdraw } from './job-policy';
@@ -112,6 +113,7 @@ export function JobDetail({ job, user, integration, onClose, onUpdate, refresh }
       refresh();
     } finally { locked.current = false; setBusy(null); }
   }
+  if (job.status==='completed'&&!job.myAssignmentId) return <CleaningReport jobId={job.id} onClose={onClose}/>;
   if (job.myAssignmentId) return <CleanerJourney key={job.id} job={job} user={user} integration={integration} onClose={onClose} onUpdate={journeyUpdate} />;
   if(detailScreen)return <Modal showClose={false} style={{height:screenHeight}} className="detail-card job-detail-compact bloom-job-surface bloom-job-detail-screen" title={`${job.propertyName} · ${detailScreen}`} onClose={onClose}><div className="detail-body bloom-job-subscreen"><button type="button" className="bloom-job-back" onClick={()=>setDetailScreen(null)}>← Back to cleaning</button><h2 ref={screenHeading} tabIndex={-1}>{detailScreen}</h2><p>{job.propertyName}</p>{detailScreen==='Access info'?(job.myAssignmentId||user.role==='admin'?<AccessInfo propertyId={job.propertyId}/>:<p>Access information is available after claiming this cleaning.</p>):detailScreen==='Supplies'?<JobSupplies jobId={job.id} compact={false}/>:<MaintenanceGrid showHeading={false}/>}</div></Modal>;
   return <Modal className="detail-card job-detail-compact bloom-job-surface" title={`${job.propertyName} cleaning details`} onClose={onClose}><div className="detail-hero"><div className="detail-date">{formatDate(job.checkoutDate)}</div><div className="assign-row">{Array.from({length:job.capacity??2},(_,index)=>index).map(index => <div className="assign-slot" key={index}>{index < job.activeCleanerCount ? <span className="open-circle bloom-slot"><CleanerAvatar name={team.data?.[index]?.displayName??'Cleaner'} url={team.data?.[index]?.avatarUrl}/></span> : <button className="join-btn" disabled={!canClaim || !!busy} onClick={() => act('claim')} aria-label={`Claim open cleaning slot ${index + 1}`}><Icon name="plus" size={26} /></button>}<span className="assign-name">{index < job.activeCleanerCount ? (team.data?.[index]?.displayName ?? (job.activeCleanerCount===1&&job.myAssignmentId?user.displayName:'Cleaner')) : 'Open slot'}</span></div>)}</div><h2 className="detail-headline">{job.propertyName}</h2><div className="fill-chip">{job.activeCleanerCount}/{job.capacity??2} cleaners · {job.status}</div></div>

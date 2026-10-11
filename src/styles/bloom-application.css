@@ -867,3 +867,7 @@ select:is(:focus,:focus-visible) {
 .bloom-handoff:empty { display:none; }
 .bloom-handoff p,.bloom-handoff h3,.bloom-handoff ul { margin:0; }
 .bloom-handoff button { justify-self:start; }
+
+.bloom-owner button.owner-supply-card { font:inherit; color:inherit; text-align:left; border:1px solid transparent; cursor:pointer; }
+.bloom-owner button.owner-supply-card:hover { border-color:#c8b6ad; }
+.bloom-owner button.owner-supply-card:disabled { cursor:default; }
