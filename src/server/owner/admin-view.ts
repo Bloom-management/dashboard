@@ -1,4 +1,5 @@
 import 'server-only';
+import {adminAnalyticsEvent} from './admin-event';
 import {authenticatedDatabase,requireAdmin} from '../auth/session';
 import {BackendError,databaseError} from '../db/errors';
 import {userRpc} from '../db/rpc';
@@ -47,13 +48,12 @@ export async function adminOwnerCalendar(from:string,to:string):Promise<OwnerCal
 }
 export async function adminOwnerPerformance(from:string,toExclusive:string,ids:string[]|null) {
  const properties=await allProperties(ids);const events:OwnerAnalyticsInput['events']=[];
- for(const p of properties)for(const e of await calendarEvents(p.id))if(e.startDate<toExclusive&&(e.endDate>from||e.startDate>=from))events.push({id:e.id,propertyId:p.id,startDate:e.startDate,endDate:e.endDate,kind:e.manualReturn==='ambiguous'?'unknown':e.kind,removed:e.status==='removed'||e.manualReturn==='confirmed',confirmed:e.kind==='reservation'&&!e.reviewRequired&&!e.manualReturn,origin:'unknown'});
+ for(const p of properties)for(const e of await calendarEvents(p.id))if(e.startDate<toExclusive&&(e.endDate>from||e.startDate>=from))events.push(adminAnalyticsEvent(p.id,e));
  const propertyIds=new Set(properties.map(p=>p.id));
  const manual=await userRpc<OwnerCalendarBlock[]>('bloom_manual_calendar',{p_from:from,p_to:toExclusive});
  for(const e of manual)if(propertyIds.has(e.propertyId)&&e.startDate<toExclusive&&(e.endDate>from||e.startDate>=from))events.push({id:e.id,propertyId:e.propertyId,startDate:e.startDate,endDate:e.endDate,kind:'reservation',removed:e.removed,confirmed:true,origin:'manual'});
  if(events.length>50000)throw new BackendError('VALIDATION_ERROR');
- // The existing admin calendar API has no positive booking-origin evidence.
- // Do not attribute booking origin from calendar provider alone.
+ // Attribute only verified reservations, never the calendar provider alone.
  return calculateOwnerPerformance({properties:properties.map(p=>({id:p.id,name:p.name,timezone:p.timezone,coverage:[]})),events},from,toExclusive);
 }
 export async function adminOwnerFreshness(cursor:string|null) {

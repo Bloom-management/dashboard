@@ -38,6 +38,7 @@ export type ApiResult<T> = { data: T } | { error: { code: ErrorCode; message: st
 
 /** Admin-only occupancy review; never includes feed URLs, guest details or raw event identities. */
 export type CalendarReviewEntry = {
+  evidence?: 'airbnb-reservation-link' | 'observed-block' | 'unverified';
   id: string; sourceId: string; provider: Provider; startDate: LocalDate; endDate: LocalDate;
   kind: 'reservation' | 'blocked' | 'unknown'; status: 'active' | 'removed';
   reviewRequired: boolean; missingReason: 'horizon_unknown' | null; manualReturn?: 'confirmed' | 'ambiguous' | null;
