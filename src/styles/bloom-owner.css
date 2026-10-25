@@ -840,3 +840,7 @@
 .bloom-owner .owner-property-title-ending > strong { min-width:0; }
 .bloom-owner .owner-property-title-ending .property-name-edit { align-self:center; }
 .bloom-owner .owner-listing-detail > .owner-detail-navigation > .view-toggle { background:#fff; }
+
+/* Navigation arrows stay together, including embedded onboarding dialogs. */
+.bloom-owner .owner-detail-navigation > .bloom-actions { display:flex; flex-direction:row; flex-wrap:nowrap; align-items:center; gap:10px; margin-top:0; flex-shrink:0; }
+.bloom-owner .owner-detail-navigation > .bloom-actions > button { flex:0 0 auto; }

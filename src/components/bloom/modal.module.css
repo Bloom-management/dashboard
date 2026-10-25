@@ -1,3 +1,4 @@
+:global(dialog.bloom-dialog).surface { border-radius:28px; }
 /* Safe layout for Modal callers without a custom full-screen/card layout. */
 :global(dialog.bloom-dialog).dialog {
  width:min(640px,calc(100vw - 24px));
@@ -12,3 +13,11 @@
 .content > p { margin:0 0 16px; line-height:1.5; }
 .content > :last-child { margin-bottom:0; }
 @media(max-width:480px) { .content { padding:24px 20px; } }
+
+.content[data-has-back] { padding-top:76px; }
+:global(dialog.bloom-dialog) button.back { position:absolute; top:16px; left:28px; right:68px; z-index:10; display:flex; align-items:center; gap:8px; width:fit-content; max-width:calc(100% - 96px); min-height:44px; padding:0; border:0; border-radius:0; background:transparent; color:#b85563; text-decoration:none; font:inherit; font-weight:600; text-align:left; cursor:pointer; }
+.back svg { flex-shrink:0; width:20px; height:20px; }
+:global(dialog.bloom-dialog) button.back:hover { text-decoration:none; opacity:.85; }
+:global(dialog.bloom-dialog) button.back:focus-visible { outline:2px solid currentColor; outline-offset:2px; }
+
+@media(max-width:480px) { :global(dialog.bloom-dialog) button.back { left:20px; max-width:calc(100% - 88px); } }

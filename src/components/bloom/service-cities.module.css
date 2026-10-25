@@ -7,3 +7,5 @@
 .active,.inactive{padding:6px 12px;border-radius:99px;font-size:13px}.active{background:#f8e9ed;color:#98495b}.inactive{background:#eeece5;color:#777164}
 .card dl{display:flex;gap:36px;margin:28px 0}.card dt{color:#777164;font-size:14px}.card dd{font-size:30px;font-weight:600;margin:8px 0 0}.card p,.summary{font-size:14px;color:#777164;margin:0;line-height:1.5}
 @media(max-width:480px){.filters,.card{padding:20px}.filters label{min-width:100%}.heading>a{width:100%;text-align:center;box-sizing:border-box}}
+
+.card label{display:grid;gap:8px;margin-bottom:16px}.card select{width:100%;padding:12px;border:1px solid #e5e0d6;border-radius:14px;background:#fff;font:inherit}

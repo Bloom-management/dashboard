@@ -849,7 +849,7 @@ select:is(:focus,:focus-visible) {
 .bk-source-brand > img { width:44px; height:44px; object-fit:contain; }
 /* Frame the supplied wordmark without its large surrounding canvas. */
 .bk-source-vrbo { display:block; position:relative; width:140px; height:48px; overflow:hidden; }
-.bk-source-vrbo img { position:absolute; width:240px; height:160px; max-width:none; left:-50px; top:-51px; mix-blend-mode:multiply; }
+.bk-source-vrbo img { display:block; width:100%; height:100%; object-fit:contain; }
 
 .admin-pricing-inbox button.bloom-inbox-clear { display:block; margin:0 0 12px auto; padding:8px 0; min-height:44px; border:0; border-radius:0; background:transparent; box-shadow:none; color:#b85563; font:inherit; font-weight:600; cursor:pointer; }
 .admin-pricing-inbox button.bloom-inbox-clear:hover { background:transparent; text-decoration:underline; }
@@ -871,3 +871,29 @@ select:is(:focus,:focus-visible) {
 .bloom-owner button.owner-supply-card { font:inherit; color:inherit; text-align:left; border:1px solid transparent; cursor:pointer; }
 .bloom-owner button.owner-supply-card:hover { border-color:#c8b6ad; }
 .bloom-owner button.owner-supply-card:disabled { cursor:default; }
+
+/* Shared checkbox rows keep the label readable and the control on the right. */
+body label:has(> input[type="checkbox"]:not([role="switch"])) {
+ display:flex; flex-direction:row; align-items:center; justify-content:space-between; gap:16px; text-align:left;
+}
+body label > input[type="checkbox"]:not([role="switch"]) {
+ order:2; flex:0 0 auto; width:20px; height:20px; margin:0 0 0 auto;
+}
+.bloom-management-toggle {
+ display:flex; align-items:center; justify-content:space-between; gap:16px; width:100%;
+ padding:12px 0; border:0; background:transparent; color:inherit; font:inherit; text-align:left; cursor:pointer;
+}
+.bloom-management-toggle:disabled { opacity:.6; cursor:wait; }
+
+.bloom-push-dialog fieldset[aria-label="Notify me about"]:disabled label { opacity:.5; cursor:default; }
+.bloom-push-dialog .bloom-push-enable { padding-bottom:0; }
+
+/* Bloom-wide focus treatment: retain focus behavior without decorative rings. */
+html body :is(:focus, :focus-visible),
+html body :is(:focus, :focus-visible)::before,
+html body :is(:focus, :focus-visible)::after,
+html body label:has(input:focus-visible) :is(span, svg),
+html body input:focus-visible + :is(span, svg, .onboarding-role-body) {
+  outline: none !important;
+  box-shadow: none !important;
+}

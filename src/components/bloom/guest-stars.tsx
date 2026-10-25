@@ -9,7 +9,7 @@ export function GuestStars({value,onChange,disabled=false}:{value:number;onChang
  const [preview,setPreview]=useState<number|null>(null);
  const at=(x:number)=>{const rect=root.current!.getBoundingClientRect();return Math.max(1,Math.min(5,Math.ceil((x-rect.left)/rect.width*10)/2));};
  const shown=preview??value;
- return <div ref={root} className={styles.starRating} role={onChange?'radiogroup':'img'} aria-label={onChange?'Guest rating':`Guest rating: ${value} out of 5`}
+ return <div ref={root} className={styles.starRating} role={onChange?'radiogroup':'img'} aria-label={onChange?'Condition after checkout':`Condition after checkout: ${value} out of 5`}
  onPointerDown={event=>{if(!onChange||disabled||event.button!==0)return;dragging.current=true;event.currentTarget.setPointerCapture(event.pointerId);setPreview(at(event.clientX));}}
  onPointerMove={event=>{if(dragging.current)setPreview(at(event.clientX));}}
  onPointerUp={event=>{if(!dragging.current)return;dragging.current=false;onChange?.(at(event.clientX));setPreview(null);}}

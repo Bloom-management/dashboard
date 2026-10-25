@@ -14,7 +14,7 @@ test('public role tiles offer cleaner or owner with accessible selected radios, 
 test('existing listing setup embeds without creating a nested native dialog',()=>{
  const props={open:true,listings:[],onClose:()=>{},onCreated:()=>{},onChanged:()=>{}};
  const embedded=renderToStaticMarkup(<OwnerCreateListing {...props} embedded/>);
- assert.doesNotMatch(embedded,/<dialog/);assert.match(embedded,/Do this later/);assert.match(embedded,/Listing name/);assert.match(embedded,/Address \/ unit/);assert.match(embedded,/Rooms/);assert.match(embedded,/Supplies/);assert.match(embedded,/Calendar links/);
+ assert.doesNotMatch(embedded,/<dialog/);assert.match(embedded,/Do this later/);assert.match(embedded,/Listing name/);assert.match(embedded,/Street address/);assert.match(embedded,/Rooms/);assert.match(embedded,/Supplies/);assert.match(embedded,/Calendar links/);
  const standalone=renderToStaticMarkup(<OwnerCreateListing {...props}/>);
  assert.equal((standalone.match(/<dialog/g)||[]).length,1);assert.doesNotMatch(standalone,/Do this later/);
 });

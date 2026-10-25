@@ -1,4 +1,5 @@
 'use client';
+import {CalendarSourceBrand} from './booking-source-card';
 import {PropertyThumbnailSettings} from './property-thumbnail';
 import {AccessInfo} from './access-info';
 import {CalendarTypeToggle} from './calendar-add-flow';
@@ -161,7 +162,7 @@ function SourceRow({source,reload,onOutcome}:{source:SourceHealth;reload:()=>voi
   });
   if(saved)reload();
  }
- return <article className="bloom-admin-card"><h3>{source.provider==='airbnb'?'Airbnb':'Vrbo'} calendar</h3><p>{source.enabled?'Enabled':'Disabled'} · Last successful sync: {source.lastSuccessAt?new Date(source.lastSuccessAt).toISOString():'Never'}</p><p>Last attempt: {source.lastAttemptAt?new Date(source.lastAttemptAt).toISOString():'Never'}</p>{source.errorMessage&&<p className="bloom-notice" role="alert">{source.errorMessage}</p>}<button className="bloom-button" disabled={mutation.busy||!source.enabled} onClick={sync}>{mutation.busy?'Syncing…':'Sync now'}</button><button type="button" className="bloom-button secondary" disabled={mutation.busy} onClick={reload}>Refresh sync status</button><Result mutation={mutation}/></article>;
+ return <article className="bloom-admin-card"><h3><CalendarSourceBrand provider={source.provider}/></h3><p>{source.enabled?'Enabled':'Disabled'} · Last successful sync: {source.lastSuccessAt?new Date(source.lastSuccessAt).toISOString():'Never'}</p><p>Last attempt: {source.lastAttemptAt?new Date(source.lastAttemptAt).toISOString():'Never'}</p>{source.errorMessage&&<p className="bloom-notice" role="alert">{source.errorMessage}</p>}<button className="bloom-button" disabled={mutation.busy||!source.enabled} onClick={sync}>{mutation.busy?'Syncing…':'Sync now'}</button><button type="button" className="bloom-button secondary" disabled={mutation.busy} onClick={reload}>Refresh sync status</button><Result mutation={mutation}/></article>;
 }
 function SourceForm({propertyId,reload}:{propertyId:string;reload:()=>void}) {
  const [provider,setProvider]=useState('airbnb');const [url,setUrl]=useState('');const mutation=useMutation();const [syncMessage,setSyncMessage]=useState('');

@@ -11,6 +11,20 @@ export function PushLifecycle(){
   update();document.addEventListener('visibilitychange',update);
   return()=>document.removeEventListener('visibilitychange',update);
  },[]);
- useEffect(()=>{if(isLoaded)void request('/push/device',{body:{}}).catch(()=>{});},[isLoaded,userId,sessionId]);
+ useEffect(()=>{
+  if(!isLoaded||!userId)return;
+  let busy=false;
+  const controller=new AbortController();
+  const reconcile=()=>{
+   if(busy||document.visibilityState!=='visible')return;
+   busy=true;
+   void request('/push/device',{body:{},signal:controller.signal}).catch(()=>{}).finally(()=>{busy=false;});
+  };
+  reconcile();
+  const interval=window.setInterval(reconcile,60000);
+  window.addEventListener('online',reconcile);
+  document.addEventListener('visibilitychange',reconcile);
+  return()=>{controller.abort();window.clearInterval(interval);window.removeEventListener('online',reconcile);document.removeEventListener('visibilitychange',reconcile);};
+ },[isLoaded,userId,sessionId]);
  return null;
 }

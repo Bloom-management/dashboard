@@ -7,7 +7,7 @@ function transportCode(error: unknown): string {
 export function installLocalRuntimeDiagnostics() {
   const target = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const local = target === 'http://127.0.0.1:55441';
-  console.info('[Bloom runtime]', JSON.stringify({pid:process.pid,localSupabase:local,appOrigin:process.env.NEXT_PUBLIC_APP_URL==='http://127.0.0.1:3000'}));
+  console.info('[Bloom runtime]', JSON.stringify({pid:process.pid,localSupabase:local,appOrigin:process.env.NEXT_PUBLIC_APP_URL==='http://localhost:3000'}));
   if (!local) return;
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async (input, init) => {

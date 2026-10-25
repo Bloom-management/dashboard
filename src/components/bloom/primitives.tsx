@@ -26,7 +26,7 @@ export function useResource<T>(loader: (signal: AbortSignal) => Promise<T>, pres
     const controller = new AbortController();
     setState(previous => preserveWhileChecking && previous.data !== undefined ? previous : { loading: true });
     loader(controller.signal).then(data => { if (!controller.signal.aborted) setState({ data, loading: false }); })
-      .catch(error => { if (!controller.signal.aborted) setState({ error, loading: false }); });
+      .catch(error => { if (!controller.signal.aborted) setState(previous => preserveWhileChecking && previous.data !== undefined && error instanceof ApiError && ['NETWORK_ERROR','SOURCE_UNAVAILABLE'].includes(error.code) ? { ...previous, error, loading: false } : { error, loading: false }); });
     return () => controller.abort();
   }, [loader, revision, preserveWhileChecking]);
   useStartupResource(state);
@@ -72,7 +72,7 @@ export function RoleGate({ role, children }: { role: Role; children: (user: Sess
   }, [session.reload]);
   if (session.loading) return <div className="main-inner"><Loading /></div>;
   if (session.error instanceof ApiError && session.error.code === 'UNAUTHENTICATED') return <BloomSessionRecovery requestId={session.error.requestId} retry={session.reload} />;
-  if (session.error) return <div className="main-inner"><ErrorNotice error={session.error} retry={session.reload} /></div>;
+  if (session.error && !session.data) return <div className="main-inner"><ErrorNotice error={session.error} retry={session.reload} /></div>;
   if (!session.data || (session.data.role !== role && !((role === 'cleaner' || role === 'owner') && session.data.role === 'admin'))) return <div className="main-inner"><RequestState kind="denied" />{session.data && <a className="bloom-button secondary" href={rolePath[session.data.role]}>Go to your hub</a>}</div>;
   return children(session.data, session.reload);
 }
@@ -101,7 +101,7 @@ export function MonthHead({ month, onMonth, owner = false, onDaySelect, beforeTo
 export function CalendarGrid({ month, today, children, onDaySelect }: { month: string; today?: string; owner?: boolean; onDaySelect?: (date:string)=>void; children: (date: string) => ReactNode }) {
   return <BookingCalendar month={month} today={today} onDaySelect={onDaySelect}>{children}</BookingCalendar>;
 }
-export function Modal({ title, onClose, children, style, showClose = true, className }: { style?: CSSProperties; showClose?: boolean; title: string; onClose: () => void; children: ReactNode; className?: string }) {
+export function Modal({ title, onClose, children, style, showClose = true, className, onBack, backLabel = 'Back' }: { onBack?: () => void; backLabel?: string; style?: CSSProperties; showClose?: boolean; title: string; onClose: () => void; children: ReactNode; className?: string }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const close = useRef(onClose); close.current = onClose;
   const id = useId();
@@ -112,7 +112,7 @@ export function Modal({ title, onClose, children, style, showClose = true, class
     element?.showModal();
     return () => { element?.close(); unlock(); previous?.focus({preventScroll:true}); };
   }, []);
-  return <dialog ref={dialog} style={style} className={`bloom-dialog ${className??modalStyles.dialog}`} aria-labelledby={id} onCancel={event => { event.preventDefault(); event.stopPropagation(); close.current(); }} onClick={event => { if (event.target === event.currentTarget) { const bounds = event.currentTarget.getBoundingClientRect(); if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) close.current(); } }}>{className!==undefined&&<h2 id={id} className="bloom-sr-only">{title}</h2>}{showClose&&<DialogClose autoFocus onClose={onClose}/>} <AnimatedContent>{className===undefined?<div className={modalStyles.content}><h2 id={id} className={modalStyles.title}>{title}</h2>{children}</div>:children}</AnimatedContent></dialog>;
+  return <dialog ref={dialog} style={style} className={`bloom-dialog ${modalStyles.surface} ${className??modalStyles.dialog}`} aria-labelledby={id} onCancel={event => { event.preventDefault(); event.stopPropagation(); close.current(); }} onClick={event => { if (event.target === event.currentTarget) { const bounds = event.currentTarget.getBoundingClientRect(); if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) close.current(); } }}>{className!==undefined&&<h2 id={id} className="bloom-sr-only">{title}</h2>}{onBack&&<button type="button" className={modalStyles.back} aria-label={backLabel} onClick={onBack}><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m12 5-7 7 7 7M5 12h14"/></svg><span>{backLabel}</span></button>}{showClose&&<DialogClose autoFocus onClose={onClose}/>} <AnimatedContent>{className===undefined?<div className={modalStyles.content} data-has-back={onBack?true:undefined}><h2 id={id} className={modalStyles.title}>{title}</h2>{children}</div>:children}</AnimatedContent></dialog>;
 }
 
 /** Navigation changes the view only; the server-provided account role is unchanged. */

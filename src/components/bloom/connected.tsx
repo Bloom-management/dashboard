@@ -44,7 +44,7 @@ export function ConnectedHub({role,initialPropertyId}:{role:Role;initialProperty
       // Insert-only retry may encounter an object already uploaded before a lost response.
       // Server finalization still verifies identity, size, decoded bytes and assignment.
       let duplicate=false;try{const body=JSON.parse(xhr.responseText);duplicate=body.error==='Duplicate'||body.code==='Duplicate';}catch{}
-      if(xhr.status===409&&duplicate){progress(100);finish();}else finish(new ApiError(xhr.status===401?'UNAUTHENTICATED':xhr.status===403?'FORBIDDEN':'INVALID_STATE','Photo upload failed. Retry or contact your admin.'));};
+      if((xhr.status===400||xhr.status===409)&&duplicate){progress(100);finish();}else finish(new ApiError(xhr.status===401?'UNAUTHENTICATED':xhr.status===403?'FORBIDDEN':'INVALID_STATE','Photo upload failed. Retry or contact your admin.'));};
      xhr.onerror=()=>finish(new ApiError('NETWORK_ERROR','Photo upload interrupted. Retry the upload.'));xhr.ontimeout=xhr.onerror;xhr.onabort=()=>finish(new DOMException('Aborted','AbortError'));
      if(abort.aborted){finish(new DOMException('Aborted','AbortError'));return;}abort.addEventListener('abort',cancel,{once:true});xhr.send(bytes);
     });

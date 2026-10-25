@@ -1,0 +1,37 @@
+begin;
+do $$
+declare a uuid;o uuid;c uuid;x uuid;p uuid;j uuid;city uuid;device text:=repeat('f',64);m uuid;result jsonb;n integer;
+begin
+ select id into city from public.cities limit 1;
+ insert into public.users(clerk_user_id,role) values('start-test-admin','admin') returning id into a;
+ insert into public.users(clerk_user_id,role) values('start-test-owner','owner') returning id into o;
+ insert into public.users(clerk_user_id,role) values('start-test-cleaner','cleaner') returning id into c;
+ insert into public.users(clerk_user_id,role) values('start-test-other','owner') returning id into x;
+ insert into public.properties(city_id,name,address) values(city,'Start push test','Test only') returning id into p;
+ insert into public.property_owners values(p,o);
+ perform public.bloom_push_device(device,a,'session','challenge',jsonb_build_object('subscription',gen_random_uuid(),'hash',repeat('a',64)));
+ perform public.bloom_push_device(device,a,'session','verify',jsonb_build_object('hash',repeat('a',64)));
+ perform public.bloom_push_device(device,o,'other-session','status');
+ perform public.bloom_push_device(device,c,'third-session','status');
+ perform public.bloom_push_device(device,x,'fourth-session','status');
+ perform public.bloom_push_device(device,null,null,'reconcile');
+ if (select count(*) from private.push_device_accounts where device_id=device and enabled)<>4 then raise exception 'Account switching lost links';end if;
+ update private.push_control set activated_at=now();
+ insert into public.jobs(property_id,checkout_date,start_at,end_at,timezone_snapshot,solo_rate_cents_snapshot) values(p,current_date,(current_date+time '11:00') at time zone 'America/Detroit',(current_date+time '15:00') at time zone 'America/Detroit','America/Detroit',7500) returning id into j;
+ update public.jobs set started_at=now() where id=j;
+ update public.jobs set started_at=started_at where id=j;
+ if (select count(*) from private.push_messages where kind='start' and job_ids=array[j] and user_id in (a,o,c,x))<>2 then raise exception 'Start scope/dedup incorrect';end if;
+ select id into m from private.push_messages where kind='start' and user_id=a and job_ids=array[j];
+ if private.push_content(m,now())->>'body'<>'Cleaning started at Start push test.' then raise exception 'Start copy incorrect';end if;
+ perform public.bloom_push_tick();
+ if (select count(*) from private.push_deliveries d join private.push_messages msg on msg.id=d.message_id where msg.job_ids=array[j] and msg.kind='start' and msg.user_id in (a,o,c,x))<>2 then raise exception 'Persistent multi-account delivery failed';end if;
+ result:=public.bloom_push_device(device,a,'session','preferences','{"newJobs":false,"reminders":false,"starts":false}');
+ if (result->>'starts')::boolean then raise exception 'Preference not saved';end if;
+ if private.push_content(m,now()) is not null then raise exception 'Disabled preference ignored';end if;
+ update public.jobs set status='completed',completed_at=now(),completed_by=c where id=j;
+ if not exists(select 1 from private.push_messages where kind='completion' and user_id=a and job_ids=array[j]) then raise exception 'Admin completion not queued';end if;
+ perform public.bloom_push_tick();
+ if not exists(select 1 from private.push_deliveries d join private.push_messages msg on msg.id=d.message_id where msg.job_ids=array[j] and msg.kind='completion' and msg.user_id=a) then raise exception 'Admin completion not delivered after account switches';end if;
+ if exists(select 1 from private.push_messages where kind='start' and job_ids=array[j] and private.push_content(id,now()) is not null) then raise exception 'Stale start after completion';end if;
+end $$;
+rollback;

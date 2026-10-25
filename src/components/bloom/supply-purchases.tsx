@@ -48,7 +48,7 @@ export function SupplyPurchases({listing,supply,onClose,onSaved}:{listing:OwnerL
  {imageUrl&&<ProductImage key={imageUrl} url={imageUrl}/>}
  <label>Product name<input required maxLength={200} value={productName} onChange={e=>setProductName(e.target.value)}/></label>
  <label>Cost paid (USD)<input required inputMode="decimal" placeholder="0.00" value={cost} onChange={e=>setCost(e.target.value)}/></label>
- <DatePicker label="Date purchased" value={purchaseDate} onChange={setPurchaseDate}/>
+ <DatePicker variant="popover" label="Date purchased" value={purchaseDate} onChange={setPurchaseDate}/>
  <details><summary>Product image</summary><label>Image link (optional)<input type="url" maxLength={2048} value={imageUrl} onChange={e=>setImageUrl(e.target.value)}/></label></details></>}
  {(restockId||status==='restocked')&&<DatePicker label="Date restocked at the property" value={restockedDate} onChange={setRestockedDate}/>}
  </fieldset>

@@ -5,6 +5,7 @@ import { ClerkIntegrationRequired } from '../../server/auth/token-configuration'
 import { BackendError } from '../../server/db/errors';
 import { identityConfigured } from '../../server/config';
 import { SetupUnavailable } from '../../components/setup-unavailable';
+import { ownerListings } from '../../server/owner/operations';
 import { Onboarding } from '../../components/bloom/onboarding';
 import '../../styles/bloom-cleaner.css';
 import '../../styles/bloom-owner.css';
@@ -24,6 +25,12 @@ export default async function Page() {
     }
     throw error;
   }
-  if (state.status === 'complete') redirect(state.destination);
+  if (state.status === 'complete') {
+    if(state.role==='owner'){
+      const listings=await ownerListings(new Request('http://localhost/api/owner/listings'));
+      if(!listings.items.length)return <Onboarding initialState={state} resumeListing />;
+    }
+    redirect(state.destination);
+  }
   return <Onboarding initialState={state} />;
 }

@@ -1,0 +1,4 @@
+.frame{display:flex;align-items:center;justify-content:center;width:100%;height:52px;flex-shrink:0}
+.frame img{display:block;object-fit:contain;max-width:100%}
+.frame .airbnb{width:48px;height:48px}
+.frame .vrbo{width:120px;height:auto;max-height:52px}

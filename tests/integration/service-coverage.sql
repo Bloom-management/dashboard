@@ -1,0 +1,32 @@
+begin;
+do $$
+declare a uuid;o uuid;c uuid;city uuid;city2 uuid;r jsonb;p uuid;
+begin
+ insert into public.users(clerk_user_id,role,display_name) values('coverage-admin','admin','Coverage admin') returning id into a;
+ insert into public.users(clerk_user_id,role,display_name) values('coverage-owner','owner','Coverage owner') returning id into o;
+ insert into public.users(clerk_user_id,role,display_name,initial_city_selected_at) values('coverage-cleaner','cleaner','Coverage cleaner',now()) returning id into c;
+ update public.users set onboarding_completed_at=now() where id in (a,o,c);
+ r:=public.bloom_city_register(o,'{"id":"test-place","name":"Coverage Test","region":"Michigan","country":"US","label":"Coverage Test, Michigan, United States"}','America/Detroit');city:=(r->>'id')::uuid;
+ if r->>'coverage'<>'unavailable' or not (r->>'active')::boolean then raise exception 'New city wrongly enables owner coverage or hides cleaner selection';end if;
+ r:=public.bloom_city_register(c,'{"id":"test-place","name":"Coverage Test","region":"Michigan","country":"US","label":"Coverage Test, Michigan, United States"}','America/Detroit');if (r->>'id')::uuid<>city then raise exception 'Duplicate city';end if;
+ r:=public.bloom_city_register(a,'{"id":"other-place","name":"Coverage Test","region":"Oregon","country":"US","label":"Coverage Test, Oregon, United States"}','America/Los_Angeles');city2:=(r->>'id')::uuid;if city2=city then raise exception 'Same-name places collapsed';end if;
+ perform set_config('request.jwt.claims','{"sub":"coverage-owner","role":"authenticated"}',true);
+ begin perform public.bloom_city_coverage(city,'available','owner-forbidden');raise exception 'Owner changed coverage';exception when others then if sqlerrm not like '%FORBIDDEN%' then raise;end if;end;
+ r:=public.bloom_owner_listing_create(jsonb_build_object('name','Local coverage listing','address','Test only','cityId',city,'timezone','America/Detroit','bedroomCount',1,'bathroomCount',1),'coverage-create');
+ p:=(r->'listing'->>'id')::uuid;
+ if p is null then raise exception 'Owner cannot create outside cleaning coverage';end if;
+ if public.bloom_property_team(p)->>'coverage'<>'unavailable' then raise exception 'Owner coverage missing';end if;
+ perform set_config('request.jwt.claims','{"sub":"coverage-cleaner","role":"authenticated"}',true);
+ perform public.bloom_city_request(city,'request-city');
+ if not exists(select 1 from public.city_change_requests where cleaner_id=c and requested_city_id=city and status='pending') then raise exception 'Cleaner city request missing';end if;
+ perform set_config('request.jwt.claims','{"sub":"coverage-admin","role":"authenticated"}',true);
+ perform public.bloom_city_resolve((select id from public.city_change_requests where cleaner_id=c),'approved','approve-city');
+ if (select cleaning_coverage from public.cities where id=city)<>'unavailable' then raise exception 'Cleaner approval opened coverage';end if;
+ begin perform public.bloom_property_team_action(p,'approve_bloom','{"approved":true}','unavailable-approve');raise exception 'Unavailable coverage accepted';exception when others then if sqlerrm not like '%CITY_MISMATCH%' then raise;end if;end;
+ perform public.bloom_city_coverage(city,'available','set-available');
+ perform public.bloom_property_team_action(p,'approve_bloom','{"approved":true}','available-approve');
+ if public.bloom_property_team(p)->>'management'<>'bloom' then raise exception 'Available coverage not accepted';end if;
+ perform public.bloom_city_coverage(city,'paused','set-paused');
+ if (select active from public.cities where id=city) is not true or (select approved_city_id from public.users where id=c)<>city then raise exception 'Coverage changed cleaner access';end if;
+end $$;
+rollback;

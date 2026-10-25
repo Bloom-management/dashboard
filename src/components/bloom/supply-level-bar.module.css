@@ -1,0 +1,6 @@
+.bar{width:100%;height:8px;flex-shrink:0;border-radius:99px;background:#eeebe4;overflow:hidden}
+.bar span{display:block;height:100%;border-radius:inherit}
+.bar[data-level=full] span{width:100%;background:#4f865c}
+.bar[data-level=moderate] span{width:60%;background:#d1aa32}
+.bar[data-level=low] span{width:25%;background:#d88935}
+.bar[data-level=empty],.bar[data-level=not_found]{background:#f5dddd;outline:1px solid #bd5656}

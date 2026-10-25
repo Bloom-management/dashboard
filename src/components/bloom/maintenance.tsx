@@ -1,4 +1,5 @@
 'use client';
+import {SupplyLevelBar} from './supply-level-bar';
 import {DialogLoading} from './dialog-loading';
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import type { GroupImperativeHandle } from 'react-resizable-panels';
@@ -99,7 +100,7 @@ export function MaintenanceCheck({answers,onChange,disabled}:{answers:Partial<Re
 }
 export function SupplyReferenceGrid({supplies,reports=[],compact=true}:{compact?:boolean;supplies:CleaningConfig['supplies'];reports?:{supplyId:string;level:SupplyLevel;reportedAt:string}[]}){
  const [expanded,setExpanded]=useState(false);
- const grid=(items:typeof supplies)=><div className="maintenance-grid owner-supply-grid">{items.map(s=>{const r=reports.find(x=>x.supplyId===s.id);return <article className="maintenance-card owner-supply-card" key={s.id} data-level={r?.level??'full'}><SupplyIcon/><strong>{s.name}</strong><span>{r?levels[r.level]:'Full'}</span>{r&&<small>Last reported {new Date(r.reportedAt).toLocaleString()}</small>}</article>;})}</div>;
+ const grid=(items:typeof supplies)=><div className="maintenance-grid owner-supply-grid">{items.map(s=>{const r=reports.find(x=>x.supplyId===s.id);return <article className="maintenance-card owner-supply-card" key={s.id} data-level={r?.level??'full'}><SupplyIcon/><strong>{s.name}</strong><span>{r?levels[r.level]:'Full'}</span><SupplyLevelBar level={r?.level??'full'}/>{r&&<small>Last reported {new Date(r.reportedAt).toLocaleString()}</small>}</article>;})}</div>;
  return supplies.length?<>{grid(compact?supplies.slice(0,4):supplies)}{compact&&supplies.length>4&&<button type="button" className="bloom-button secondary" aria-haspopup="dialog" onClick={()=>setExpanded(true)}>+{supplies.length-4} supplies</button>}{expanded&&<Modal title="All supplies" className="bloom-dialog-surface bloom-supplies-dialog" onClose={()=>setExpanded(false)}><h2>Supplies</h2>{grid(supplies)}</Modal>}</>:<p>No supplies are configured for this cleaning.</p>;
 }
 

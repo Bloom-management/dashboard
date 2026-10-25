@@ -1,0 +1,5 @@
+.field { display:grid; gap:8px; min-width:0; }
+.field button.trigger { display:flex; justify-content:flex-start; align-items:center; width:100%; min-height:44px; padding:12px; border:1px solid #cec8bd; border-radius:12px; background:#fff; color:#2d2a1f; font:inherit; font-weight:400; text-align:left; cursor:pointer; }
+.field button.trigger:focus-visible { outline:2px solid #b85563; outline-offset:2px; }
+.positioner { z-index:110; }
+.popup { width:max-content; max-width:calc(100vw - 24px); padding:0; border:1px solid #eae5dd; border-radius:16px; background:#fff; color:#2d2a1f; box-shadow:0 8px 28px #302f2620; }

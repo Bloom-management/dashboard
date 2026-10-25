@@ -1,4 +1,5 @@
 'use client';
+import {CityRegistration,type RegisteredCity} from './city-registration';
 import {AccessInfo} from './access-info';
 import {CleanerNetworkSettings} from './cleaner-network-settings';
 import {CleanerPayouts} from './cleaner-payouts';
@@ -36,11 +37,11 @@ function CityPicker({ user, refresh, integration }: { user: SessionUser; refresh
   const pendingLoad = useCallback((signal: AbortSignal) => integration.getMyCityRequest ? integration.getMyCityRequest(signal) : Promise.resolve(null), [integration]);
   const pending = useResource(pendingLoad);
   const [city, setCity] = useState('');
-  const [cityDialog,setCityDialog]=useState(false);
+  const [cityDialog,setCityDialog]=useState(false),[findingCity,setFindingCity]=useState(false),[addedCities,setAddedCities]=useState<RegisteredCity[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>();
   const [sent, setSent] = useState(false);
-  const alternatives=cities.data?.filter(item=>item.active&&item.id!==user.approvedCityId)??[];
+  const alternatives=[...(cities.data??[]),...addedCities.filter(city=>!cities.data?.some(item=>item.id===city.id))].filter(item=>item.active&&item.id!==user.approvedCityId);
   const operation = useRef<{ city: string; key: string } | null>(null);
   const locked = useRef(false);
 
@@ -57,7 +58,7 @@ function CityPicker({ user, refresh, integration }: { user: SessionUser; refresh
   }
   return <div className="city-tabs"><button type="button" className="bloom-button secondary cleaner-city-trigger" onClick={()=>setCityDialog(true)}><Icon name="pin"/>{user.approvedCityId?cities.data?.find(item=>item.id===user.approvedCityId)?.name??'Your city':'Choose city'}<Icon name="right"/></button>{cityDialog&&<Modal className="owner-create-dialog cleaner-city-dialog" title="Change city" onClose={()=>setCityDialog(false)}><div className="cleaner-city-body"><h2>{user.approvedCityId?'Request a city change':'Choose your first city'}</h2><p>Current city: <span>{user.approvedCityId ? cities.data?.find(city => city.id === user.approvedCityId)?.name ?? 'Your approved city' : 'Not selected'}</span></p>
     {cities.loading ? <Loading /> : cities.error ? <ErrorNotice error={cities.error} retry={cities.reload} /> : cities.data ? alternatives.length ? <><LocationDropdown label={user.approvedCityId ? 'Request a different city' : 'Initial city'} placeholder={user.approvedCityId ? 'Request city change' : 'Select city'} value={city} onValueChange={value => { setCity(value); setSent(false); }} disabled={busy || pending.data?.status === 'pending'} locations={alternatives} /><button className="city-tab active" disabled={!city || busy || sent || pending.data?.status === 'pending'} onClick={submit}>{busy ? 'Saving…' : user.approvedCityId ? 'Request change' : 'Save city'}</button></> : <p role="status">{user.approvedCityId?'No alternative locations available right now.':'No locations available right now.'}</p> : <span>City selection is unavailable. Contact your admin.</span>}
-    {(sent || pending.data?.status === 'pending') && <span role="status">City change awaiting admin approval. Your approved city stays active.</span>}{!!pending.error && <ErrorNotice error={pending.error} retry={pending.reload} />}{!!error && <ErrorNotice error={error} />}
+    <button type="button" className="bloom-button secondary" disabled={busy||pending.data?.status==='pending'} onClick={()=>setFindingCity(true)}>Find another city</button>{findingCity&&<CityRegistration onClose={()=>setFindingCity(false)} onSaved={item=>{setAddedCities(previous=>[...previous,item]);setCity(item.id);setSent(false);setFindingCity(false);}}/>}{(sent || pending.data?.status === 'pending') && <span role="status">City change awaiting admin approval. Your approved city stays active.</span>}{!!pending.error && <ErrorNotice error={pending.error} retry={pending.reload} />}{!!error && <ErrorNotice error={error} />}
   </div></Modal>}</div>;
 }
 

@@ -9,6 +9,6 @@ export async function POST(request:Request){return response(async()=>{
  await deviceAction('challenge',{subscription,hash:hash(secret)});
  const sent=await sendPush({subscription,key:randomUUID(),url:appUrl(`/notifications/verify#${secret}`),ttl:60,verification:true});
  // The proof is deliberately NOT returned to the requesting page. It must arrive on the target device.
- if(sent.state!=='accepted')throw new BackendError('SOURCE_UNAVAILABLE');
+ if(sent.state!=='accepted'){console.warn('[Bloom push verification]',{state:sent.state,error:sent.error??'UNKNOWN'});throw new BackendError('SOURCE_UNAVAILABLE');}
  return {pending:true,message:'Tap the Bloom verification notification on this device to finish.'};
 });}

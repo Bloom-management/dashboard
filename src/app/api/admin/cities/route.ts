@@ -1,10 +1,11 @@
 import {requireAdmin} from '../../../../server/auth/session';
 import {privilegedDatabase} from '../../../../server/db/privileged';
-import {response} from '../../../../server/db/http';
+import {userRpc} from '../../../../server/db/rpc';
+import {response,mutation,uuid,text} from '../../../../server/db/http';
 import {databaseError} from '../../../../server/db/errors';
 export async function GET(){return response(async()=>{
  await requireAdmin();const db=privilegedDatabase();
- const cities=await db.from('cities').select('id,name,active').order('name');if(cities.error)databaseError(cities.error);
+ const cities=await db.from('cities').select('id,name,active,cleaning_coverage,region,country_code,notification_timezone').order('name');if(cities.error)databaseError(cities.error);
  return Promise.all((cities.data??[]).map(async city=>{
   const [properties,cleaners]=await Promise.all([
    db.from('properties').select('id',{count:'exact',head:true}).eq('city_id',city.id),
@@ -14,3 +15,5 @@ export async function GET(){return response(async()=>{
   return {...city,properties:properties.count??0,cleaners:cleaners.count??0};
  }));
 });}
+
+export async function POST(request:Request){return response(async()=>{const {body,key}=await mutation(request,['cityId','coverage']);return userRpc('bloom_city_coverage',{p_city:uuid(body.cityId),p_status:text(body.coverage,30),p_key:key});});}

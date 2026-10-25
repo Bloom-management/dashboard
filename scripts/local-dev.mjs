@@ -8,7 +8,7 @@ import net from 'node:net';
 import { createInterface } from 'node:readline';
 
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
-const project='bloom-backend-local', origin='http://127.0.0.1:3000', base='http://127.0.0.1:55441';
+const project='bloom-backend-local', origin='http://localhost:3000', base='http://127.0.0.1:55441';
 const state=join(root,'.bloom-local','process.json');
 const action=process.argv[2]??'start';
 let child, worker, heartbeat, ownsLock=false, stopping=false;
@@ -62,7 +62,7 @@ async function checkDocker(launch){
 }
 async function assertPortFree(){
  await new Promise((resolve,reject)=>{
-  const server=net.createServer();server.once('error',()=>reject(new Error('127.0.0.1:3000 is occupied. Use npm run local:stop for the managed Bloom process; unrelated processes are never stopped automatically.')));
+  const server=net.createServer();server.once('error',()=>reject(new Error('localhost:3000 is occupied. Use npm run local:stop for the managed Bloom process; unrelated processes are never stopped automatically.')));
   server.listen({host:'127.0.0.1',port:3000,exclusive:true},()=>server.close(resolve));
  });
 }
@@ -112,7 +112,7 @@ async function main(){
   for(const [key,value] of Object.entries(parseEnv(readFileSync(path,'utf8'))))if(/^(NEXT_PUBLIC_|CLERK_|SUPABASE_|CALENDAR_|BLOOM_)/.test(key))process.env[key]=value;
  }
  process.env.NODE_ENV='development';
- if(process.env.NEXT_PUBLIC_APP_URL!==origin||process.env.NEXT_PUBLIC_SUPABASE_URL!==base)fail('Persistent app configuration must target http://127.0.0.1:3000 and local Supabase http://127.0.0.1:55441.');
+ if(process.env.NEXT_PUBLIC_APP_URL!==origin||process.env.NEXT_PUBLIC_SUPABASE_URL!==base)fail('Persistent app configuration must target http://localhost:3000 and local Supabase http://127.0.0.1:55441.');
  for(const name of ['NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY','CLERK_SECRET_KEY','NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY','SUPABASE_SERVICE_ROLE_KEY','CLERK_ISSUER_DOMAIN'])if(!process.env[name]||process.env[name].startsWith('replace_'))fail(`${name} needs configuration in .env.local.`);
  if(!process.env.CLERK_SECRET_KEY.startsWith('sk_test_')||!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.startsWith('pk_test_'))fail('This launcher accepts Clerk development keys only.');
  const issuer=Buffer.from(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.slice('pk_test_'.length),'base64').toString().replace(/\$$/,'');
