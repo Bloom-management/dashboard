@@ -17,7 +17,7 @@ import { completionInput, supplyLevels, uncertainCompletion, type JourneyDraft }
 import { mayWithdraw } from './job-policy';
 import styles from './cleaner-journey.module.css';
 
-export function CleanerJourney({ job, user, integration, onClose, onUpdate, initialStep }: {job: CleanerJob;user:SessionUser;integration:BloomIntegration;onClose:()=>void;onUpdate:(job:CleanerJob)=>void;initialStep?:JourneyDraft['step']}) {
+export function CleanerJourney({ job, user, integration, onClose, onUpdate }: {job: CleanerJob;user:SessionUser;integration:BloomIntegration;onClose:()=>void;onUpdate:(job:CleanerJob)=>void}) {
   const load=useCallback((signal:AbortSignal)=>request<JobJourney>(`/jobs/${job.id}/journey`,{signal}),[job.id]);
   const resource=useResource(load,true);
   const team=useJobTeam(job.id,job.version);
@@ -39,13 +39,11 @@ export function CleanerJourney({ job, user, integration, onClose, onUpdate, init
   const actionKey=useRef<{action:string;key:string}|undefined>(undefined);
   const [now,setNow]=useState(Date.now());
   useEffect(()=>{const timer=setInterval(()=>setNow(Date.now()),1000);return()=>clearInterval(timer);},[]);
-  const data=resource.data;
   const storageKey=`bloom-journey:${user.id}:${job.id}`;
-  const appliedInitialStep=useRef(false);
   useEffect(()=>{try{const raw=localStorage.getItem(storageKey);if(raw){const saved=JSON.parse(raw);if(saved && ['progress','photos','supplies','maintenance','guest'].includes(saved.step)&&typeof saved.notes==='string'&&saved.answers&&typeof saved.version==='number')setDraft(saved);}}catch{setStorageError(true);}setHydrated(true);},[storageKey]);
-  useEffect(()=>{if(!hydrated||!initialStep||!data?.startedAt||appliedInitialStep.current)return;appliedInitialStep.current=true;setDraft(value=>({...value,step:initialStep,version:data.config?.version??value.version}));},[data?.config?.version,data?.startedAt,hydrated,initialStep]);
   useEffect(()=>{if(hydrated&&!result)try{localStorage.setItem(storageKey,JSON.stringify(draft));}catch{setStorageError(true);}},[draft,hydrated,result,storageKey]);
   useEffect(()=>{const timer=setInterval(()=>{setNow(Date.now());resource.reload();},30000);return()=>clearInterval(timer);},[resource.reload]);
+  const data=resource.data;
   const config=data?.config;
   const current=data?.job ?? job;
   const pending=!!draft.pending;
