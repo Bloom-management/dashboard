@@ -1,5 +1,6 @@
 'use client';
 import {CalendarSourceBrand} from './booking-source-card';
+import {BookingSourceCard} from './booking-source-card';
 import {PropertyThumbnailSettings} from './property-thumbnail';
 import {AccessInfo} from './access-info';
 import {CalendarTypeToggle} from './calendar-add-flow';
@@ -46,6 +47,7 @@ import type { AdminPerson, BloomIntegration, CityRequest, Page, PropertyOption, 
 import { Account, Brand, HubSelector, Changes, Empty, ErrorNotice, Loading, Modal, MonthHead, RoleGate, useResource } from './primitives';
 import { Photos } from './photos';
 import { CalendarReviewList } from './calendar-review';
+import { OwnerMonth } from './owner-month';
 
 const noIntegration: BloomIntegration = {};
 const unavailable = <Empty title="This admin tool is not available yet">The management service must be connected before you can use this tool.</Empty>;
@@ -225,12 +227,22 @@ function AdminJob({ job, user, integration, close, reload }: { job: CleanerJob; 
       {integration.admin ? <><Paginated loader={integration.admin.users} render={users => <fieldset><legend>Cleaner</legend>{users.filter(item => item.role === 'admin' || (item.role === 'cleaner' && item.approvedCityId === job.cityId)).map(cleaner => <label className="bloom-check" key={cleaner.id}><input type="radio" name="assignment-cleaner" checked={cleanerId === cleaner.id} onChange={() => setCleanerId(cleaner.id)} /><span style={{width:36,height:36,display:'inline-flex',flexShrink:0,alignItems:'center',justifyContent:'center',borderRadius:'50%',background:'#efebe1'}}><CleanerAvatar name={cleaner.displayName} url={cleaner.avatarUrl}/></span>{cleaner.displayName}</label>)}</fieldset>} />{assignments.loading ? <Loading /> : assignments.error ? <ErrorNotice error={assignments.error} retry={assignments.reload} /> : <label>Assigned cleaner<Select value={removeAssignmentId} onChange={event => setRemoveAssignmentId(event.target.value)}><option value="">Choose assignment</option>{assignments.data?.map(item => <option key={item.id} value={item.id}>{item.cleanerName}</option>)}</Select></label>}<div className="bloom-actions"><button className="bloom-button" disabled={!integration.admin.assignJob || mutation.busy || !cleanerId || !reason.trim() || job.activeCleanerCount >= 2} onClick={() => change('assign')}>Assign open slot</button><button className="bloom-button" disabled={mutation.busy || !cleanerId || !reason.trim() || !removeAssignmentId} onClick={() => change('reassign')}>Reassign cleaner</button><button className="bloom-button secondary" disabled={mutation.busy || !reason.trim() || !removeAssignmentId} onClick={() => change('remove')}>Remove cleaner</button><p>Removal leaves the place open and records your reason. The cleaner withdrawal deadline does not apply.</p></div></> : <p>Assignment management is not available yet.</p>}
       <button className="bloom-button secondary" disabled={mutation.busy || !reason.trim()} onClick={() => change('cancel')}>Cancel job</button></div>}<Result mutation={mutation} /></div></article>;
 }
+function bookingLabel(block: OwnerCalendarBlock) {
+  if (block.label) return block.label;
+  return block.removed ? 'Removed booking block' : block.kind === 'reservation' ? 'Reservation' : block.kind === 'blocked' ? 'Blocked period' : 'Unconfirmed period';
+}
+function AdminBooking({ block, close }: { block: OwnerCalendarBlock; close: () => void }) {
+  const label = bookingLabel(block);
+  return <div className="bloom-owner"><Modal className="bk-card" title={`${block.propertyName} ${label}`} onClose={close}><div className="bk-body"><div className="bk-guest"><span className="bk-guest-label">{label}</span><h2 className="bk-guest-name">{block.propertyName}</h2></div><BookingSourceCard providers={block.providers}/><div className="bk-stay"><div className="bk-stay-end"><span className="bk-stay-cap">{block.kind === 'reservation' ? 'Arrival' : 'Start'}</span><span className="bk-stay-date">{formatDate(block.startDate)}</span></div><div className="bk-stay-line" /><div className="bk-stay-end"><span className="bk-stay-cap">{block.kind === 'reservation' ? 'Checkout' : 'End · exclusive'}</span><span className="bk-stay-date">{formatDate(block.endDate)}</span></div></div><p className="bk-foot-note">{block.timezone}</p>{block.removed && <p className="bloom-notice">{block.providers.includes('manual') ? 'This manual booking was canceled and remains visible for reference.' : 'This block was removed from its source calendar and remains visible for reference.'}</p>}<Changes changes={block.changes} /></div></Modal></div>;
+}
 function Jobs({ user, integration }: { user: SessionUser; integration: BloomIntegration }) {
   const [calendarType,setCalendarType]=useState<'cleanings'|'bookings'>('cleanings');
   const [month, setMonth] = useState(todayIn('America/Detroit').slice(0, 7));
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedBooking, setSelectedBooking] = useState<OwnerCalendarBlock | null>(null);
   const [selectedDay,setSelectedDay]=useState<string|null>(null);
   const [propertyFilter, setPropertyFilter] = useState('');
+  const [sourceFilter, setSourceFilter] = useState('all');
   const loadProperties = useCallback(async (signal: AbortSignal) => {
     if (!integration.admin) return null;
     const items: PropertyOption[] = [];
@@ -250,27 +262,27 @@ function Jobs({ user, integration }: { user: SessionUser; integration: BloomInte
   });
   const jobs = useCalendar<CleanerJob[]>(`${user.id}:${user.role}`, `/jobs?from=${range.from}&to=${range.to}`, adjacentMonths);
   const bookings=useCalendar<OwnerCalendarBlock[]>(`${user.id}:${user.role}:stays`, `/owner/calendar?from=${range.from}&to=${range.to}`);
-  const visibleBookings=(bookings.data??[]).filter(booking=>(!propertyFilter||booking.propertyId===propertyFilter)&&!booking.removed);
+  const visibleBookings=(bookings.data??[]).filter(booking=>!booking.removed&&(sourceFilter==='all'||(sourceFilter==='external'?!booking.providers.some(provider=>provider==='airbnb'||provider==='vrbo'):booking.providers.some(provider=>provider===sourceFilter))));
   const visibleJobs = jobs.data?.filter(job => !propertyFilter || job.propertyId === propertyFilter);
   const selected = visibleJobs?.find(job => job.id === selectedId);
-  return <><div className={styles.filters}>{properties.loading ? <Loading /> : properties.error ? <ErrorNotice error={properties.error} retry={properties.reload} /> : properties.data ? <LocationDropdown label="Filter jobs by property" placeholder="All properties" searchLabel="Search properties" locations={[{ id: '', name: 'All properties' }, ...properties.data]} value={propertyFilter} onValueChange={value => { setPropertyFilter(value); setSelectedId(null); setSelectedDay(null); }} /> : <p>Property filtering is unavailable.</p>}</div><div className="admin-calendar-layout">
+  return <><div className={styles.filters}>{calendarType==='bookings'?<LocationDropdown label="Calendar source" value={sourceFilter} onValueChange={value=>{setSourceFilter(value);setSelectedBooking(null);setSelectedDay(null);}} locations={[{id:'all',name:'All sources'},{id:'airbnb',name:'Airbnb'},{id:'vrbo',name:'VRBO'},{id:'external',name:'External'}]}/>:properties.loading ? <Loading /> : properties.error ? <ErrorNotice error={properties.error} retry={properties.reload} /> : properties.data ? <LocationDropdown label="Filter jobs by property" placeholder="All properties" searchLabel="Search properties" locations={[{ id: '', name: 'All properties' }, ...properties.data]} value={propertyFilter} onValueChange={value => { setPropertyFilter(value); setSelectedId(null); setSelectedBooking(null); setSelectedDay(null); }} /> : <p>Property filtering is unavailable.</p>}</div><div className={`admin-calendar-layout${calendarType==='bookings'?' bloom-owner':''}`}>
     <section className={styles.calendar} aria-label="Cleaning calendar">
-      <MonthHead beforeToday={<CalendarTypeToggle value={calendarType} onChange={value=>{setCalendarType(value);setSelectedDay(null);}}/>} month={month} onDaySelect={setSelectedDay} onMonth={value => { setSelectedId(null); setSelectedDay(null); setMonth(value); }} />
-      <p className={styles.hint}>Cleaning dates and windows are local to each property.</p>
-      {jobs.loading ? <Loading /> : jobs.error ? <ErrorNotice error={jobs.error} retry={jobs.reload} /> : <>
-        <BookingCalendar month={month} onDaySelect={setSelectedDay}>{date => <>{(calendarType==='bookings'?visibleBookings:[]).filter(booking=>booking.startDate<=date&&booking.endDate>date).map(booking=><button type="button" className="owner-month-cleaning" key={booking.id} onClick={()=>setSelectedDay(date)}>{booking.propertyName} · {booking.label??(booking.source==='manual'?'Direct booking':'Stay')}</button>)}{(calendarType==='cleanings'?visibleJobs:[])?.filter(job => job.checkoutDate === date).map(job => <button type="button" key={job.id} data-cleaning-job={job.id} className={styles.cleaning} data-selected={selectedId === job.id} aria-pressed={selectedId === job.id}
+      <MonthHead owner={calendarType==='bookings'} beforeToday={<CalendarTypeToggle value={calendarType} onChange={value=>{setCalendarType(value);setSelectedId(null);setSelectedBooking(null);setSelectedDay(null);}}/>} month={month} onDaySelect={setSelectedDay} onMonth={value => { setSelectedId(null); setSelectedBooking(null); setSelectedDay(null); setMonth(value); }} />
+      <p className={calendarType==='bookings'?'legend':styles.hint}>{calendarType==='bookings'?'Stays · Blocked · Unconfirmed · Dates are local to each property':'Cleaning dates and windows are local to each property.'}</p>
+      {calendarType === 'bookings' ? (bookings.loading ? <Loading /> : bookings.error ? <ErrorNotice error={bookings.error} retry={bookings.reload} /> : <OwnerMonth month={month} blocks={visibleBookings} onSelect={setSelectedBooking} day={selectedDay} onDayChange={setSelectedDay} initialPropertyId={propertyFilter || undefined} onCreated={()=>{jobs.reload();bookings.reload();}} onViewDate={date=>{setMonth(date.slice(0,7));setSelectedDay(date);}} />) : jobs.loading ? <Loading /> : jobs.error ? <ErrorNotice error={jobs.error} retry={jobs.reload} /> : <>
+        <BookingCalendar month={month} onDaySelect={setSelectedDay}>{date => <>{visibleJobs?.filter(job => job.checkoutDate === date).map(job => <button type="button" key={job.id} data-cleaning-job={job.id} className={styles.cleaning} data-selected={selectedId === job.id} aria-pressed={selectedId === job.id}
           aria-label={`${job.propertyName}, ${formatDate(job.checkoutDate)}, ${job.status}, ${job.activeCleanerCount} of 2 assigned${job.reviewRequired ? ', needs attention' : ''}`}
           title={`${job.propertyName} · ${formatTime(job.startAt, job.timezone)}–${formatTime(job.endAt, job.timezone)} · ${job.status}`}
           onClick={() => setSelectedDay(date)}>
           <span className={styles.property}>{job.propertyName}</span><span className={styles.status}>{job.reviewRequired ? 'Needs attention' : job.status === 'open' ? `${job.activeCleanerCount}/2 assigned` : job.status}</span>
         </button>)}</>}</BookingCalendar>
-        {!visibleJobs?.length&&!visibleBookings.length && <Empty title="No jobs in this month">Choose another month or property to browse cleanings.</Empty>}
+        {!visibleJobs?.length && <Empty title="No jobs in this month">Choose another month or property to browse cleanings.</Empty>}
       </>}
     </section>
   </div>
-    {!!bookings.error&&<ErrorNotice error={bookings.error} retry={bookings.reload}/>}
-    {selectedDay&&!selected&&!!jobs.data&&<CleanerDayDialog calendarType={calendarType} creation={{propertyId:propertyFilter,onCreated:()=>{jobs.reload();bookings.reload();},onViewDate:date=>{setMonth(date.slice(0,7));setSelectedDay(date);}}} date={selectedDay} bookings={visibleBookings.filter(booking=>booking.startDate<=selectedDay&&booking.endDate>selectedDay)} jobs={jobs.error?[]:(visibleJobs??[]).filter(job=>job.checkoutDate===selectedDay)} onSelect={job=>{setSelectedId(job.id);}} onClose={()=>{const date=selectedDay;setSelectedDay(null);requestAnimationFrame(()=>document.querySelector<HTMLButtonElement>(`button[data-calendar-date="${date}"]`)?.focus());}}/>}
+    {selectedDay&&!selected&&!!jobs.data&&calendarType==='cleanings'&&<CleanerDayDialog creation={{propertyId:propertyFilter,onCreated:()=>{jobs.reload();bookings.reload();},onViewDate:date=>{setMonth(date.slice(0,7));setSelectedDay(date);}}} date={selectedDay} jobs={jobs.error?[]:(visibleJobs??[]).filter(job=>job.checkoutDate===selectedDay)} onSelect={job=>{setSelectedId(job.id);}} onClose={()=>{const date=selectedDay;setSelectedDay(null);requestAnimationFrame(()=>document.querySelector<HTMLButtonElement>(`button[data-calendar-date="${date}"]`)?.focus());}}/>}
     {selected&&<Modal className="cleaner-day-dialog admin-job-dialog" title={`Manage cleaning · ${selected.propertyName}`} onClose={()=>setSelectedId(null)}><AdminJob key={selected.id} job={selected} user={user} integration={integration} close={()=>setSelectedId(null)} reload={jobs.reload}/></Modal>}
+    {selectedBooking&&<AdminBooking block={selectedBooking} close={()=>setSelectedBooking(null)}/>}
     </>;
 }
 function AdminContent({ user, integration, initialPropertyId }: { user: SessionUser; integration: BloomIntegration; initialPropertyId?:string }) {
