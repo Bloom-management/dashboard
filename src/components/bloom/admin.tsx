@@ -46,8 +46,10 @@ import type { AdminPerson, BloomIntegration, CityRequest, Page, PropertyOption, 
 import { Account, Brand, HubSelector, Changes, Empty, ErrorNotice, Loading, Modal, MonthHead, RoleGate, useResource } from './primitives';
 import { Photos } from './photos';
 import { CalendarReviewList } from './calendar-review';
+import { DevScenarios } from './dev-scenarios';
 
 const noIntegration: BloomIntegration = {};
+const devScenariosEnabled = process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_BLOOM_TEST_SCENARIOS === 'true';
 const unavailable = <Empty title="This admin tool is not available yet">The management service must be connected before you can use this tool.</Empty>;
 type Run = (input: unknown, operation: (key: string) => Promise<unknown>) => Promise<boolean>;
 function useMutation(): { busy: boolean; error: unknown; success: boolean; run: Run } {
@@ -279,8 +281,9 @@ function AdminContent({ user, integration, initialPropertyId }: { user: SessionU
   const search = useSearchParams();
   const requestedView = search.get('view')==='people'?'users':search.get('view');
   const normalizedView=requestedView==='city requests'?'requests':requestedView;
-  const view = initialPropertyId ? 'properties' : ['activity', 'properties', 'users', 'payouts', 'cities', 'requests'].includes(normalizedView ?? '') ? normalizedView! : 'jobs';
-  return <><header className="topbar bloom-compact-header bloom-admin-header"><Brand role="admin" /><div className="topbar-right"><HubSelector user={user} view="admin"/><AdminPricingInbox admin/><div className="bloom-header-account">{integration.accountControl?.(user) ?? <Account user={user} />}</div></div></header><main className={`main${view==='properties'?' admin-properties-main':''}`} id="bloom-main"><div className={`main-inner ${(view === 'jobs' || view === 'properties') ? styles.jobsPage : ''}`}><MobileViewMenu label="Admin tools" value={view} values={['jobs','activity','properties','users','payouts','cities','requests']} onChange={value=>router.push(`/admin?${new URLSearchParams({view:value})}`)}/><SelectorPill className="bloom-admin-tabs" aria-label="Admin tools">{['jobs', 'activity', 'properties', 'users', 'payouts', 'cities', 'requests'].map(item => <button key={item} className={`vt-btn${item === view ? ' active' : ''}`} aria-pressed={item === view} onClick={() => router.push(`/admin?${new URLSearchParams({view:item})}`)}>{navigationLabel(item)}</button>)}</SelectorPill><h1 className="loc-name">{navigationLabel(view)}</h1>
+  const views = ['jobs', 'activity', 'properties', 'users', 'payouts', 'cities', 'requests', ...(devScenariosEnabled ? ['scenarios'] : [])];
+  const view = initialPropertyId ? 'properties' : views.includes(normalizedView ?? '') ? normalizedView! : 'jobs';
+  return <><header className="topbar bloom-compact-header bloom-admin-header"><Brand role="admin" /><div className="topbar-right"><HubSelector user={user} view="admin"/><AdminPricingInbox admin/><div className="bloom-header-account">{integration.accountControl?.(user) ?? <Account user={user} />}</div></div></header><main className={`main${view==='properties'?' admin-properties-main':''}`} id="bloom-main"><div className={`main-inner ${(view === 'jobs' || view === 'properties') ? styles.jobsPage : ''}`}><MobileViewMenu label="Admin tools" value={view} values={views} onChange={value=>router.push(`/admin?${new URLSearchParams({view:value})}`)}/><SelectorPill className="bloom-admin-tabs" aria-label="Admin tools">{views.map(item => <button key={item} className={`vt-btn${item === view ? ' active' : ''}`} aria-pressed={item === view} onClick={() => router.push(`/admin?${new URLSearchParams({view:item})}`)}>{item === 'scenarios' ? 'Scenarios' : navigationLabel(item)}</button>)}</SelectorPill><h1 className="loc-name">{view === 'scenarios' ? 'Development scenarios' : navigationLabel(view)}</h1>
     {view === 'activity' && <CleaningActivity hub="admin"/>}
     {view === 'payouts' && <AdminPayouts key={search.get('cleaner')??'all'} initialCleanerId={search.get('cleaner')} onCloseLinkedCleaner={()=>router.replace('/admin?view=payouts')}/>}
     {view === 'jobs' && <Jobs user={user} integration={integration} />}
@@ -288,6 +291,7 @@ function AdminContent({ user, integration, initialPropertyId }: { user: SessionU
     {view === 'users' && (integration.admin ? <><InvitePerson onSent={()=>setInvitationRevision(v=>v+1)}/><PendingInvitations revision={invitationRevision}/><Paginated loader={integration.admin.users} render={(users, reload) => <div className="admin-people-table-scroll"><table className="admin-people-table"><thead><tr><th scope="col">Name</th><th scope="col">Email</th><th scope="col">Role</th><th scope="col">Location</th></tr></thead><tbody>{users.map(item => <UserRow key={item.id} user={item} currentUser={user} reload={reload} />)}</tbody></table>{!users.length&&<p>No people found.</p>}</div>} /></> : unavailable)}
     {view === 'cities' && <ServiceCities/>}
     {view === 'requests' && (integration.admin ? <Paginated loader={integration.admin.cityRequests} render={(items, reload) => <>{items.length ? items.map(item => <RequestRow key={item.id} item={item} reload={reload} integration={integration} />) : <Empty title="No requests" />}</>} /> : unavailable)}
+    {view === 'scenarios' && devScenariosEnabled && <DevScenarios />}
 
   </div></main></>;
 }
