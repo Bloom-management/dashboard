@@ -12,7 +12,7 @@ import styles from './cleaning-team.module.css';
 export function CleaningTeamPanel({propertyId,admin=false,onChanged,view='team'}:{propertyId:string;admin?:boolean;onChanged?:()=>void;view?:'team'|'coverage'}) {
  const load=useCallback((signal:AbortSignal)=>request<CleaningTeam>(`/properties/${propertyId}/cleaning-team`,{signal}),[propertyId]);
  const resource=useResource(load,true);
- return <section className={styles.panel} aria-label="Cleaning team"><h3>{view==='coverage'?'Upcoming cleaning coverage':'Cleaning team'}</h3>{resource.loading&&!resource.data?<Loading/>:resource.error?<ErrorNotice error={resource.error} retry={resource.reload}/>:resource.data&& (view==='coverage'?<PrivateTurnovers propertyId={propertyId} members={resource.data.members} admin={admin}/>:<TeamEditor key={propertyId} team={resource.data} admin={admin} reload={()=>{resource.reload();onChanged?.();}}/> )}</section>;
+ return <section className={styles.panel} aria-label="Cleaning team"><h3>{view==='coverage'?'Upcoming cleaning coverage':'Cleaning team'}</h3>{resource.loading&&!resource.data?<Loading/>:resource.error?<ErrorNotice error={resource.error} retry={resource.reload}/>:resource.data&& (view==='coverage'?<PrivateTurnovers propertyId={propertyId} members={resource.data.members} admin={admin} onChanged={onChanged}/>:<TeamEditor key={propertyId} team={resource.data} admin={admin} reload={()=>{resource.reload();onChanged?.();}}/> )}</section>;
 }
 function TeamEditor({team,admin,reload}:{team:CleaningTeam;admin:boolean;reload:()=>void}) {
  const [hostCharge,setHostCharge]=useState(()=>{const cents=(team as CleaningTeam & {hostChargeCents?:number|null}).hostChargeCents;return cents==null?'':(cents/100).toFixed(2);});
@@ -33,9 +33,9 @@ function TeamEditor({team,admin,reload}:{team:CleaningTeam;admin:boolean;reload:
  </>;
 }
 type StaffingJob=CleanerJob & {assignments?:{id:string;cleanerId:string;displayName?:string;name?:string;needsResolution?:boolean;agreedPayCents?:number|null}[]};
-function PrivateTurnovers({propertyId,members,admin}:{propertyId:string;members:CleaningTeam['members'];admin:boolean}) {
+function PrivateTurnovers({propertyId,members,admin,onChanged}:{onChanged?:()=>void;propertyId:string;members:CleaningTeam['members'];admin:boolean}) {
  const load=useCallback((signal:AbortSignal)=>request<StaffingJob[]>(`/properties/${propertyId}/cleaning-team/jobs`,{signal}),[propertyId]);const jobs=useResource(load);
- return <section>{jobs.loading?<Loading/>:jobs.error?<ErrorNotice error={jobs.error} retry={jobs.reload}/>:jobs.data?.length?jobs.data.map(job=><Turnover key={job.id} job={job} members={members} admin={admin} reload={jobs.reload}/>):<p>No upcoming cleanings.</p>}</section>;
+ return <section>{jobs.loading?<Loading/>:jobs.error?<ErrorNotice error={jobs.error} retry={jobs.reload}/>:jobs.data?.length?jobs.data.map(job=><Turnover key={job.id} job={job} members={members} admin={admin} reload={()=>{jobs.reload();onChanged?.();}}/>):<p>No upcoming cleanings.</p>}</section>;
 }
 function Turnover({job,members,admin,reload}:{job:StaffingJob;members:CleaningTeam['members'];admin:boolean;reload:()=>void}) {
  const [cleaner,setCleaner]=useState(''),[replace,setReplace]=useState(''),[individualAmount,setIndividualAmount]=useState(''),[adjustAssignment,setAdjustAssignment]=useState(''),[adjustAmount,setAdjustAmount]=useState(''),[reason,setReason]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState<unknown>();const lock=useRef(false),operation=useRef<{body:string;key:string}|undefined>(undefined);

@@ -116,7 +116,7 @@ class CalendarDatabaseTests(unittest.TestCase):
         cleaner,_=make_user();self.assertEqual(action(cleaner,job,'claim').returncode,0)
         sync(actor,sid,[event(end='2030-05-05')]);sync(actor,sid,[event(end='2030-05-05')])
         self.assertEqual(scalar(f"select count(*) from public.jobs where property_id='{prop}';"),'1')
-        self.assertEqual(scalar(f"select checkout_date||':'||review_required from public.jobs where id='{job}';"),'2030-05-03:true')
+        self.assertEqual(scalar(f"select checkout_date||':'||review_required from public.jobs where id='{job}';"),'2030-05-05:false')
     def test_two_feeds_same_turnover_and_append_only_links(self):
         actor,prop,s1,_=source();_,_,s2,_=source(actor,prop)
         leases=[begin(actor,s1),begin(actor,s2)]

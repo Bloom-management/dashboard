@@ -2,7 +2,7 @@ import { cleaningWindow, eventKey, hash } from './normalize';
 import type { Event, Snapshot } from './types';
 export type StoredEvent = Event & { sourceId: string; removed: boolean; missing: boolean };
 export type JobState = { id: string; checkoutDate: string; startAt: string; endAt: string;
-  status: 'open' | 'completed' | 'cancelled'; claimed: boolean; reviewRequired: boolean; eventKeys: string[] };
+  status: 'open' | 'completed' | 'cancelled'; startedAt?: string | null; claimed: boolean; reviewRequired: boolean; eventKeys: string[] };
 export type State = { events: StoredEvent[]; jobs: JobState[]; notices: Notice[] };
 export type Notice = { id: string; eventKey: string; type: 'changed' | 'removed' | 'conflict'; beforeDate: string | null; afterDate: string | null };
 export type Plan = { state: State; effects: { action: string; jobId: string; before: JobState | null; after: JobState | null }[] };
@@ -51,10 +51,20 @@ export function planReconciliation(before: State, sourceId: string, snapshot: Sn
     const affected = job.eventKeys.filter(k => changed.has(k));
     if (!affected.length) continue;
     const prior = structuredClone(job);
+    const extension = affected.length === 1 && job.eventKeys.length === 1 ? old.get(affected[0]) : undefined;
+    const priorStay = extension ? before.events.find(event => sourceEventKey(event) === affected[0]) : undefined;
+    if (job.status === 'open' && !job.startedAt && !job.reviewRequired && extension && priorStay && eligible(extension) && eligible(priorStay)
+      && !extension.removed && !extension.missing && priorStay.startDate === extension.startDate && priorStay.endDate === job.checkoutDate
+      && extension.endDate > job.checkoutDate && !state.jobs.some(other => other.id !== job.id && other.checkoutDate === extension.endDate)) {
+      job.checkoutDate = extension.endDate;
+      Object.assign(job, cleaningWindow(extension.endDate, zone));
+      effects.push({ action: 'extend_stay', jobId: job.id, before: prior, after: structuredClone(job) });
+      continue;
+    }
     if (job.status === 'completed') {
       affected.forEach(k => affectedProtected.add(k));
       effects.push({ action: 'append_completed_warning', jobId: job.id, before: prior, after: null });
-    } else if (job.claimed || job.reviewRequired || affected.some(k => { const e = old.get(k); return e && uncertain(e); })) {
+    } else if (job.startedAt || job.claimed || job.reviewRequired || affected.some(k => { const e = old.get(k); return e && uncertain(e); })) {
       job.reviewRequired = true;
       affected.forEach(k => affectedProtected.add(k));
       effects.push({ action: 'hold_for_admin', jobId: job.id, before: prior, after: structuredClone(job) });

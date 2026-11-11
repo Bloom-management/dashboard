@@ -27,11 +27,11 @@ test('repeated sync is a no-op; DTSTAMP changes are not booking changes', () => 
   assert.deepEqual(second.state, first.state); assert.deepEqual(second.effects, []);
   assert.deepEqual(plan(first.state, airbnb.replace('20260912T000000Z', '20260913T000000Z')).state, first.state);
 });
-test('unclaimed checkout changes cancel old turnover and create new with history effects', () => {
+test('confirmed stay extensions retain the turnover identity with history effects', () => {
   const changed = plan(plan().state, moved);
   assert.equal(changed.state.jobs.filter(j => j.status === 'open').length, 1);
   assert.equal(changed.state.jobs.find(j => j.status === 'open')!.checkoutDate, '2026-11-02');
-  assert.equal(changed.state.jobs[0].status, 'cancelled'); assert.equal(changed.state.notices[0].type, 'changed');
+  assert.equal(changed.state.jobs.length, 1); assert.equal(changed.state.jobs[0].id, plan().state.jobs[0].id); assert.equal(changed.state.notices[0].type, 'changed');
 });
 test('explicit cancellation cancels unclaimed job; repeated cancellation does nothing', () => {
   const changed = plan(plan().state, cancelled); assert.equal(changed.state.jobs[0].status, 'cancelled');
@@ -43,13 +43,24 @@ test('disappearance preserves turnover on hold and visible tombstone because cov
   assert.equal(changed.state.jobs[0].status, 'open'); assert.equal(changed.state.jobs[0].reviewRequired, true);
   assert.deepEqual(plan(changed.state, noEvents).state, changed.state);
 });
-test('claimed changes/cancellation preserve schedule and assignment; no speculative replacement', () => {
-  for (const text of [moved, cancelled, noEvents]) {
+test('claimed cancellations and disappearance preserve schedule for review; no speculative replacement', () => {
+  for (const text of [cancelled, noEvents]) {
     const state = plan().state; state.jobs[0].claimed = true;
     const next = plan(state, text); assert.equal(next.state.jobs.length, 1);
     assert.equal(next.state.jobs[0].checkoutDate, '2026-11-01'); assert.equal(next.state.jobs[0].claimed, true);
     assert.equal(next.state.jobs[0].reviewRequired, true);
   }
+});
+test('claimed guest extensions move the same unstarted job and keep assignments', () => {
+  const state = plan().state; state.jobs[0].claimed = true;
+  const next = plan(state, moved);
+  assert.equal(next.state.jobs.length, 1);assert.equal(next.state.jobs[0].id,state.jobs[0].id);
+  assert.equal(next.state.jobs[0].checkoutDate,'2026-11-02');assert.equal(next.state.jobs[0].claimed,true);
+  assert.equal(next.state.jobs[0].reviewRequired,false);assert.deepEqual(plan(next.state,moved).effects,[]);
+});
+test('started jobs remain on their original date for responsible review', () => {
+  const state = plan().state;state.jobs[0].claimed=true;state.jobs[0].startedAt=state.jobs[0].startAt;
+  const next=plan(state,moved);assert.equal(next.state.jobs[0].checkoutDate,state.jobs[0].checkoutDate);assert(next.state.jobs[0].reviewRequired);
 });
 test('completed rows immutable, including changed UID on same date', () => {
   for (const text of [moved, cancelled, noEvents, airbnb.replace('synthetic-reservation@', 'new-uid@')]) {
