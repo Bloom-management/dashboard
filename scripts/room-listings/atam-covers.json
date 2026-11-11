@@ -1,0 +1,36 @@
+[
+  {
+    "identifier": "DH2",
+    "url": "https://www.airbnb.com/rooms/1190187638631372725",
+    "title": "DH2 - Private Room - 30 Day+",
+    "image": null,
+    "status": "unavailable",
+    "checkedAt": "2026-11-08T19:38:47.242Z",
+    "candidateImage": "https://a0.muscache.com/im/pictures/miso/Hosting-1190172062840895435/original/b92ebf9f-9cff-48dc-ab88-13ee27d9ba07.jpeg?im_w=720"
+  },
+  {
+    "identifier": "DH3",
+    "url": "https://www.airbnb.com/rooms/1190189243127995944",
+    "title": "Spacious Queen - Safe - Homey (DH3)",
+    "image": null,
+    "status": "unavailable",
+    "checkedAt": "2026-11-08T19:38:48.108Z",
+    "candidateImage": "https://a0.muscache.com/im/pictures/miso/Hosting-1190172062840895435/original/b92ebf9f-9cff-48dc-ab88-13ee27d9ba07.jpeg?im_w=720"
+  },
+  {
+    "identifier": "DH4",
+    "url": "https://www.airbnb.com/rooms/1190172062840895435",
+    "title": "DH4 - Private Room - Long Stay - 30 Day+",
+    "image": "https://a0.muscache.com/im/pictures/hosting/Hosting-U3RheVN1cHBseUxpc3Rpbmc6MTE5MDE3MjA2Mjg0MDg5NTQzNQ%3D%3D/original/24a1a108-a62a-4fea-8efb-f68799b2036d.jpeg?im_w=720",
+    "status": "extracted",
+    "checkedAt": "2026-11-08T19:38:48.851Z"
+  },
+  {
+    "identifier": "DH1",
+    "url": "https://www.airbnb.com/rooms/1190191672497242825",
+    "title": "DH1 - Private Room (Shared bath) 30 day+",
+    "image": "https://a0.muscache.com/im/pictures/miso/Hosting-1190172062840895435/original/ecde4a07-5e8a-42a7-82cc-9684a81e367b.jpeg?im_w=720",
+    "status": "extracted",
+    "checkedAt": "2026-11-08T19:38:49.717Z"
+  }
+]

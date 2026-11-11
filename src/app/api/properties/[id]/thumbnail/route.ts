@@ -1,14 +1,12 @@
 import sharp from 'sharp';
 import {response,mutation,uuid} from '@/server/db/http';
 import {userRpc} from '@/server/db/rpc';
-import {authenticatedDatabase} from '@/server/auth/session';
-import {BackendError,databaseError} from '@/server/db/errors';
+import {BackendError} from '@/server/db/errors';
 export const runtime='nodejs';
 type Context={params:Promise<{id:string}>};
 export async function GET(_request:Request,context:Context){return response(async()=>{
- const id=uuid((await context.params).id);const {db}=await authenticatedDatabase();
- const {data,error}=await db.from('property_thumbnails').select('image').eq('property_id',id).maybeSingle();if(error)databaseError(error);
- return {image:data?.image??null};
+ const id=uuid((await context.params).id);
+ return userRpc('bloom_property_airbnb',{p_property:id});
 });}
 export async function POST(request:Request,context:Context){return response(async()=>{
  const id=uuid((await context.params).id);const {body,key}=await mutation(request,['image']);let image:string|null=null;
