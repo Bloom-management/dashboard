@@ -1,0 +1,6 @@
+/* Repeated class beats feature and global button styles (fills, borders, pill shapes). */
+button.back.back.back { display:inline-flex; align-items:center; gap:8px; width:fit-content; min-height:44px; padding:8px 0; border:0; border-radius:0; background:transparent; box-shadow:none; color:#b85563; font:inherit; font-weight:500; text-decoration:none; cursor:pointer; }
+button.back.back.back:hover { background:transparent; opacity:.85; }
+button.back.back.back:focus-visible { outline:2px solid currentColor; outline-offset:2px; }
+button.back.back.back:disabled { opacity:.5; cursor:default; }
+.back svg { flex-shrink:0; width:20px; height:20px; }

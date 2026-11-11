@@ -4,11 +4,12 @@ import type {OwnerListing,OwnerSupply} from '../../contracts/owner-hub';
 import type {SupplyPurchaseInput,SupplyPurchasePage} from '../../contracts/supply-purchases';
 import {Select} from '../ui/select';
 import {DatePicker} from './date-picker';
-import {Modal,Loading,ErrorNotice,useResource} from './primitives';
+import {Modal,Loading,ErrorNotice,useResource, Icon} from './primitives';
 import {ApiError,request} from './api';
 import {formatDate,money,todayIn} from './dates';
 import {SupplyIcon} from './supply-setup-grid';
 import styles from './supply-purchases.module.css';
+import {ButtonContent} from './button-content';
 
 function ProductImage({url}:{url:string|null}){const [failed,setFailed]=useState(false);return <span className={styles.image}>{url&&!failed?<img src={url} alt="" loading="lazy" referrerPolicy="no-referrer" onError={()=>setFailed(true)}/>:<SupplyIcon/>}</span>;}
 export function SupplyPurchases({listing,supply,onClose,onSaved}:{listing:OwnerListing;supply:OwnerSupply;onClose:()=>void;onSaved:()=>void}){
@@ -57,6 +58,6 @@ export function SupplyPurchases({listing,supply,onClose,onSaved}:{listing:OwnerL
  </form>:<button type="button" className={styles.ghost} onClick={()=>{setForm(true);setNotice('');setError(undefined);}}>Record a purchase</button>}
  {notice&&<p role="status">{notice}</p>}{!!error&&<ErrorNotice error={error}/>}
  <h3>Purchase and restock history</h3>
- {history.loading?<Loading/>:history.error?<ErrorNotice error={history.error} retry={history.reload}/>:!history.data?.items.length?<p>No purchases or restocks recorded yet.</p>:<><ul className={styles.history}>{history.data.items.map(item=><li className={styles.card} key={item.id}><div className={styles.product}><ProductImage key={item.imageUrl} url={item.imageUrl}/><div><strong>{item.productName}</strong><p>{money(item.costCents)} · Purchased {formatDate(item.purchaseDate)}</p><p>{item.restockedDate?`Restocked ${formatDate(item.restockedDate)}`:'Purchased · Not restocked yet'}</p><small>Recorded by {item.recordedBy}</small></div></div><div className={styles.actions}>{item.productUrl&&<a className={styles.ghost} href={item.productUrl} target="_blank" rel="noopener noreferrer">View product ↗</a>}{!item.restockedDate&&<button type="button" className={styles.ghost} disabled={frozen} onClick={()=>{setForm(false);setRestockId(item.id);setRestockedDate(todayIn(listing.timezone));}}>Mark restocked</button>}</div></li>)}</ul><nav className={styles.actions} aria-label="Purchase history pages"><button type="button" className={styles.ghost} disabled={offset===0||frozen} onClick={()=>setOffset(Math.max(0,offset-20))}>Previous</button><button type="button" className={styles.ghost} disabled={history.data.nextOffset===null||frozen} onClick={()=>setOffset(history.data!.nextOffset!)}>Next</button></nav></>}
+ {history.loading?<Loading/>:history.error?<ErrorNotice error={history.error} retry={history.reload}/>:!history.data?.items.length?<p>No purchases or restocks recorded yet.</p>:<><ul className={styles.history}>{history.data.items.map(item=><li className={styles.card} key={item.id}><div className={styles.product}><ProductImage key={item.imageUrl} url={item.imageUrl}/><div><strong>{item.productName}</strong><p>{money(item.costCents)} · Purchased {formatDate(item.purchaseDate)}</p><p>{item.restockedDate?`Restocked ${formatDate(item.restockedDate)}`:'Purchased · Not restocked yet'}</p><small>Recorded by {item.recordedBy}</small></div></div><div className={styles.actions}>{item.productUrl&&<a className={styles.ghost} href={item.productUrl} target="_blank" rel="noopener noreferrer"><ButtonContent icon={<Icon name="arrow-up-right"/>}>View product</ButtonContent></a>}{!item.restockedDate&&<button type="button" className={styles.ghost} disabled={frozen} onClick={()=>{setForm(false);setRestockId(item.id);setRestockedDate(todayIn(listing.timezone));}}>Mark restocked</button>}</div></li>)}</ul><nav className={styles.actions} aria-label="Purchase history pages"><button type="button" className={styles.ghost} disabled={offset===0||frozen} onClick={()=>setOffset(Math.max(0,offset-20))}>Previous</button><button type="button" className={styles.ghost} disabled={history.data.nextOffset===null||frozen} onClick={()=>setOffset(history.data!.nextOffset!)}>Next</button></nav></>}
  </Modal>;
 }

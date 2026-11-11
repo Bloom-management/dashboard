@@ -1,6 +1,7 @@
 'use client';
 import { useRef, useState, type ReactNode, type KeyboardEvent } from 'react';
 import styles from './sign-in.module.css';
+import {Icon} from './primitives';
 
 const panels = [
   { name: 'Cleaners', eyebrow: 'Your next cleaning', heading: <>Your day.<br />Beautifully organized.</>, description: 'Find available cleanings, keep track of your jobs, and share the finishing touches.', board: 'Cleaner Hub', steps: [['Find a cleaning', 'Browse jobs in your approved city'], ['Claim your place', 'Two available assignment slots per job'], ['Share the finish', 'Upload room photos and complete the job']] },
@@ -43,7 +44,7 @@ export function BloomSignInLayout({ children }: { children: ReactNode }) {
         </div>
         <div className={styles['carousel-nav']}>
           <div className={styles['product-tabs']} role="tablist" aria-label="Explore Bloom features">{panels.map((panel, index) => <button type="button" role="tab" key={panel.name} id={`bloom-tab-${index}`} ref={node => { tabs.current[index] = node; }} onClick={() => setActive(index)} onKeyDown={navigateTab} aria-controls={`bloom-tour-${index}`} aria-selected={active === index} tabIndex={active === index ? 0 : -1}>{panel.name}</button>)}</div>
-          <div className={styles['carousel-arrows']}><button type="button" aria-label="Previous feature" onClick={() => setActive((active + panels.length - 1) % panels.length)}>←</button><button type="button" aria-label="Next feature" onClick={() => setActive((active + 1) % panels.length)}>→</button></div>
+          <div className={styles['carousel-arrows']}><button type="button" aria-label="Previous feature" onClick={() => setActive((active + panels.length - 1) % panels.length)}><Icon name="arrow-left"/></button><button type="button" aria-label="Next feature" onClick={() => setActive((active + 1) % panels.length)}><Icon name="arrow-right"/></button></div>
         </div>
       </section>
       <section className={styles.login} aria-label="Sign in to Bloom"><div className={styles['login-content']}>

@@ -45,12 +45,19 @@ export function Loading() { return <p className="bloom-notice" role="status">Loa
 export function Changes({ changes }: { changes: InlineChange[] }) {
   return <>{changes.map(change => <p className="bloom-notice" key={change.id}><strong>{change.type === 'removed' ? 'Removed from source' : change.type === 'conflict' ? 'Booking conflict' : 'Booking changed'}</strong><br />{change.message}</p>)}</>;
 }
-export function Icon({ name, size = 18 }: { name: 'grid' | 'list' | 'left' | 'right' | 'close' | 'plus' | 'pin'; size?: number }) {
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{
+export type IconName = 'grid' | 'list' | 'left' | 'right' | 'close' | 'plus' | 'pin' | 'house' | 'arrow-left' | 'arrow-right' | 'arrow-up-right';
+/**
+ * Shared SVG icons. Never type a glyph (×, ‹, ›, ←, →, ↗) as an icon: font glyphs carry baseline and side
+ * bearings, so they never sit centred in a pill or circle. These paths are drawn centred in a 24×24 box and
+ * render as a block (no baseline gap), so a flex/grid-centred parent centres them exactly.
+ */
+export function Icon({ name, size = 18 }: { name: IconName; size?: number }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ display: 'block', flexShrink: 0 }}>{
     name === 'grid' ? <path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z" /> :
     name === 'list' ? <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" /> :
+    name === 'house' ? <path d="m3 10 9-7 9 7M5 9v12h14V9M9 21v-8h6v8" /> :
     name === 'pin' ? <><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z" /><circle cx="12" cy="10" r="2.5" /></> :
-    <path d={{ left: 'M15 6l-6 6 6 6', right: 'M9 6l6 6-6 6', close: 'M6 6l12 12M18 6L6 18', plus: 'M12 5v14M5 12h14' }[name]} />
+    <path d={{ left: 'M15 6l-6 6 6 6', right: 'M9 6l6 6-6 6', close: 'M6 6l12 12M18 6L6 18', plus: 'M12 5v14M5 12h14', 'arrow-left': 'M19 12H5M11 6l-6 6 6 6', 'arrow-right': 'M5 12h14M13 6l6 6-6 6', 'arrow-up-right': 'M7 17 17 7M8 7h9v9' }[name]} />
   }</svg>;
 }
 export function Brand({ role }: { role: Role }) {
@@ -101,10 +108,38 @@ export function MonthHead({ month, onMonth, owner = false, onDaySelect, beforeTo
 export function CalendarGrid({ month, today, children, onDaySelect }: { month: string; today?: string; owner?: boolean; onDaySelect?: (date:string)=>void; children: (date: string) => ReactNode }) {
   return <BookingCalendar month={month} today={today} onDaySelect={onDaySelect}>{children}</BookingCalendar>;
 }
-export function Modal({ title, onClose, children, style, showClose = true, className, onBack, backLabel = 'Back' }: { onBack?: () => void; backLabel?: string; style?: CSSProperties; showClose?: boolean; title: string; onClose: () => void; children: ReactNode; className?: string }) {
+/** `jobFrame` gives job dialogs the shared fixed job-dialog size while keeping the default surface. */
+export function Modal({ title, onClose, children, style, showClose = true, className, onBack, backLabel = 'Back', jobFrame = false }: { jobFrame?: boolean; onBack?: () => void; backLabel?: string; style?: CSSProperties; showClose?: boolean; title: string; onClose: () => void; children: ReactNode; className?: string }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const close = useRef(onClose); close.current = onClose;
   const id = useId();
+  useEffect(() => {
+    const element=dialog.current;
+    if(!element)return;
+    const scrolled=new Set<HTMLElement>();
+    const update=(event:Event)=>{
+      const target=event.target;
+      if(!(target instanceof HTMLElement)||target.closest('dialog')!==element)return;
+      if(target.scrollTop>8)scrolled.add(target);else scrolled.delete(target);
+      for(const node of scrolled)if(!element.contains(node))scrolled.delete(node);
+      element.toggleAttribute('data-content-scrolled',scrolled.size>0);
+    };
+    element.addEventListener('scroll',update,true);
+    return()=>element.removeEventListener('scroll',update,true);
+  },[]);
+  useEffect(() => {
+    const element=dialog.current;
+    if(!element)return;
+    const markHeader=()=>{
+      const candidates=Array.from(element.querySelectorAll<HTMLElement>('header,h2,[data-modal-header]')).filter(node=>node.closest('dialog')===element&&!node.classList.contains('bloom-sr-only')&&!node.closest('[hidden]'));
+      const header=candidates.find(node=>node.hasAttribute('data-modal-header'))??candidates[0];
+      header?.setAttribute('data-modal-header','');
+    };
+    markHeader();
+    const observer=new MutationObserver(markHeader);
+    observer.observe(element,{childList:true,subtree:true});
+    return()=>observer.disconnect();
+  },[]);
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
     const unlock = lockDialogScroll();
@@ -112,7 +147,7 @@ export function Modal({ title, onClose, children, style, showClose = true, class
     element?.showModal();
     return () => { element?.close(); unlock(); previous?.focus({preventScroll:true}); };
   }, []);
-  return <dialog ref={dialog} style={style} className={`bloom-dialog ${modalStyles.surface} ${className??modalStyles.dialog}`} aria-labelledby={id} onCancel={event => { event.preventDefault(); event.stopPropagation(); close.current(); }} onClick={event => { if (event.target === event.currentTarget) { const bounds = event.currentTarget.getBoundingClientRect(); if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) close.current(); } }}>{className!==undefined&&<h2 id={id} className="bloom-sr-only">{title}</h2>}{onBack&&<button type="button" className={modalStyles.back} aria-label={backLabel} onClick={onBack}><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m12 5-7 7 7 7M5 12h14"/></svg><span>{backLabel}</span></button>}{showClose&&<DialogClose autoFocus onClose={onClose}/>} <AnimatedContent>{className===undefined?<div className={modalStyles.content} data-has-back={onBack?true:undefined}><h2 id={id} className={modalStyles.title}>{title}</h2>{children}</div>:children}</AnimatedContent></dialog>;
+  return <dialog ref={dialog} style={style} className={`bloom-dialog ${modalStyles.surface} ${className??modalStyles.dialog}${jobFrame?' bloom-job-frame':''}`} aria-labelledby={id} onCancel={event => { event.preventDefault(); event.stopPropagation(); close.current(); }} onClick={event => { if (event.target === event.currentTarget) { const bounds = event.currentTarget.getBoundingClientRect(); if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) close.current(); } }}>{className!==undefined&&<h2 id={id} className="bloom-sr-only">{title}</h2>}{onBack&&<button type="button" className={modalStyles.back} aria-label={backLabel} onClick={onBack}><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m12 5-7 7 7 7M5 12h14"/></svg><span>{backLabel}</span></button>}{showClose&&<DialogClose autoFocus onClose={onClose}/>} <div className={modalStyles.scroll} data-bloom-dialog-scroll><AnimatedContent>{className===undefined?<div className={modalStyles.content} data-has-back={onBack?true:undefined}><h2 id={id} className={modalStyles.title}>{title}</h2>{children}</div>:children}</AnimatedContent></div></dialog>;
 }
 
 /** Navigation changes the view only; the server-provided account role is unchanged. */

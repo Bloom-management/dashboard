@@ -3,10 +3,12 @@ import {useCallback,useEffect,useState} from 'react';
 import {useRouter,useSearchParams} from 'next/navigation';
 import type {JobPhoto} from '../../contracts';
 import {request} from './api';
-import {ErrorNotice,Loading,useResource} from './primitives';
+import {ErrorNotice,Loading,useResource, Icon} from './primitives';
 import {SelectorPill} from './selector-pill';
 import {formatDate} from './dates';
 import styles from './activity.module.css';
+import {BackButton} from './back-button';
+import {ButtonContent} from './button-content';
 
 type ActivityPhoto=JobPhoto&{locationLabel:string};
 type ActivityJob={id:string;propertyId:string;propertyName:string;date:string;timezone:string;completedAt:string|null;photoCount:number;photos:ActivityPhoto[]|null};
@@ -23,7 +25,7 @@ function RoomGallery({photos}:{photos:ActivityPhoto[]}) {
  <div className={styles.galleryToolbar}><div aria-live="polite">{mode==='carousel'&&photos.length>0&&<strong>{roomLabel(visible[0].locationLabel)} · Room {current+1} of {rooms.length}</strong>}</div>
  <SelectorPill aria-label="Photo layout">{(['carousel','grid'] as const).map(view=><button key={view} className={`vt-btn${mode===view?' active':''}`} aria-pressed={mode===view} onClick={()=>setMode(view)}>{view==='carousel'?'Carousel':'Grid'}</button>)}</SelectorPill></div>
  {photos.length?<><div className={styles.grid} data-mode={mode}>{visible.map(photo=><SavedPhoto key={photo.id} photo={photo}/>)}</div>
- {mode==='carousel'&&<nav className={styles.roomNavigation} aria-label="Room navigation"><button className={styles.circle} aria-label="Previous room" disabled={current===0} onClick={()=>setIndex(current-1)}>‹</button><span>{current+1} / {rooms.length}</span><button className={styles.circle} aria-label="Next room" disabled={current===rooms.length-1} onClick={()=>setIndex(current+1)}>›</button></nav>}</>:<p>No saved completion photos are available for this cleaning.</p>}
+ {mode==='carousel'&&<nav className={styles.roomNavigation} aria-label="Room navigation"><button className={styles.circle} aria-label="Previous room" disabled={current===0} onClick={()=>setIndex(current-1)}><Icon name="left"/></button><span>{current+1} / {rooms.length}</span><button className={styles.circle} aria-label="Next room" disabled={current===rooms.length-1} onClick={()=>setIndex(current+1)}><Icon name="right"/></button></nav>}</>:<p>No saved completion photos are available for this cleaning.</p>}
  </section>;
 }
 function SavedPhoto({photo}:{photo:ActivityPhoto}) {
@@ -43,12 +45,12 @@ export function CleaningActivity({hub}:{hub:'owner'|'admin'}) {
  const resource=useResource(load);
  return <section aria-label="Completed cleaning activity" className={styles.activity}>
  <div className={styles.heading}><div><h2>{job?'Completion photos':'Activity'}</h2><p>Completed cleanings and saved photos, labeled by the cleaning’s assigned rooms.</p></div><button className={styles.circle} aria-label="Refresh activity" title="Refresh activity" onClick={resource.reload}><RefreshIcon/></button></div>
- {job&&<button className="bloom-button secondary" onClick={()=>router.push(`/${hub}?view=activity`)}>Back to activity</button>}
+ {job&&<BackButton onClick={()=>router.push(`/${hub}?view=activity`)}>Back to activity</BackButton>}
  {resource.loading?<Loading/>:resource.error?<ErrorNotice error={resource.error} retry={resource.reload}/>:<>
  {!resource.data?.items.length&&<p>No completed cleanings yet.</p>}
  {resource.data?.items.map(item=><article key={item.id} className={`${styles.card} ${job?'':styles.summary}`}>
  <div className={styles.summaryText}><h3>{item.propertyName}</h3><p>{formatDate(item.date)} · {item.timezone} · Completed{!job&&` · ${item.photoCount} saved ${item.photoCount===1?'photo':'photos'}`}</p></div>
- {job?<RoomGallery key={item.id} photos={item.photos??[]}/>:<button className="bloom-button" onClick={()=>router.push(`/${hub}?view=activity&job=${item.id}`)}>View completion photos →</button>}
+ {job?<RoomGallery key={item.id} photos={item.photos??[]}/>:<button className="bloom-button" onClick={()=>router.push(`/${hub}?view=activity&job=${item.id}`)}><ButtonContent icon={<Icon name="arrow-right"/>}>View completion photos</ButtonContent></button>}
  </article>)}
  {!job&&!!resource.data?.total&&<nav className={styles.heading} aria-label="Activity pages"><button className="bloom-button secondary" disabled={!offset} onClick={()=>setOffset(n=>Math.max(0,n-10))}>Previous</button><span>{offset+1}–{Math.min(offset+10,resource.data.total)} of {resource.data.total}</span><button className="bloom-button secondary" disabled={offset+10>=resource.data.total} onClick={()=>setOffset(n=>n+10)}>Next</button></nav>}
  </>}

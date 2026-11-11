@@ -1,3 +1,4 @@
 .content { display:inline-flex; align-items:center; justify-content:center; gap:10px; max-width:100%; min-width:0; line-height:1.4; text-align:center; }
 .label { min-width:0; overflow-wrap:anywhere; }
-.icon { display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; line-height:1; }
+.icon { display:inline-grid; place-items:center; flex-shrink:0; line-height:0; }
+.icon svg { width:1.15em; height:1.15em; }

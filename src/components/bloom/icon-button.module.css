@@ -1,0 +1,11 @@
+/* Repeated class beats feature/global button styles (padding, min-height, line-height). */
+.button.button.button { display:inline-grid; place-items:center; flex-shrink:0; aspect-ratio:1; padding:0; margin:0; border:0; border-radius:50%; line-height:0; font-size:0; color:#2d2a1f; cursor:pointer; box-sizing:border-box; }
+.button.button.button[data-size=sm] { width:24px; min-width:24px; height:24px; min-height:24px; }
+.button.button.button[data-size=md] { width:36px; min-width:36px; height:36px; min-height:36px; }
+.button.button.button[data-size=lg] { width:44px; min-width:44px; height:44px; min-height:44px; }
+.button.button.button[data-variant=soft] { background:#f6f3ec; }
+.button.button.button[data-variant=soft]:hover { background:#ece8df; }
+.button.button.button[data-variant=plain] { background:transparent; }
+.button.button.button[data-variant=outline] { background:#fff; border:1px solid #ddd7cd; }
+.button.button.button:focus-visible { outline:2px solid #b85563; outline-offset:2px; }
+.button.button.button:disabled { opacity:.4; cursor:default; }

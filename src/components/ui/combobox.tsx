@@ -3,10 +3,11 @@ import { Combobox as Base } from '@base-ui/react/combobox';
 import type { ComponentProps } from 'react';
 import styles from './combobox.module.css';
 import choice from './choice-card.module.css';
+import {Icon} from '../bloom/primitives';
 export const Combobox=Base.Root;
 export const ComboboxValue=Base.Value;
 export function ComboboxChips(props:ComponentProps<typeof Base.Chips>) {return <Base.Chips {...props} className={styles.chips}/>;}
-export function ComboboxChip({children,...props}:ComponentProps<typeof Base.Chip>) {return <Base.Chip {...props} className={styles.chip}><span className={styles.chipLabel}>{children}</span><Base.ChipRemove aria-label={`Remove ${children}`} className={styles.remove}>×</Base.ChipRemove></Base.Chip>;}
+export function ComboboxChip({children,...props}:ComponentProps<typeof Base.Chip>) {return <Base.Chip {...props} className={styles.chip}><span className={styles.chipLabel}>{children}</span><Base.ChipRemove aria-label={`Remove ${children}`} className={styles.remove}><Icon name="close" size={14}/></Base.ChipRemove></Base.Chip>;}
 export const ComboboxCollection=Base.Collection;
 export const ComboboxGroup=Base.Group;
 export const ComboboxList=Base.List;
