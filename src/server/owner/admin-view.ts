@@ -13,7 +13,7 @@ type Property={id:string;name:string;timezone:string;active:boolean};
 /** Actual admin identity, existing admin/user-token RPCs only. Never impersonates an owner. */
 async function propertyPage(cursor:string|null,limit=101) {
  await requireAdmin();const {db}=await authenticatedDatabase();
- let query=db.from('properties').select('id,name,timezone,active').order('id').limit(limit);
+ let query=db.from('properties').select('id,name,timezone,active').is('draft_data',null).order('id').limit(limit);
  if(cursor)query=query.gt('id',cursor);
  const {data,error}=await query;if(error)databaseError(error);return (data??[]) as Property[];
 }
@@ -30,7 +30,7 @@ export async function adminOwnerListings(cursor:string|null):Promise<OwnerListin
 }
 async function allProperties(ids:string[]|null) {
  await requireAdmin();const {db}=await authenticatedDatabase();
- if(ids){const {data,error}=await db.from('properties').select('id,name,timezone,active').in('id',ids).order('id');if(error)databaseError(error);if(data?.length!==ids.length)throw new BackendError('NOT_FOUND');return data as Property[];}
+ if(ids){const {data,error}=await db.from('properties').select('id,name,timezone,active').is('draft_data',null).in('id',ids).order('id');if(error)databaseError(error);if(data?.length!==ids.length)throw new BackendError('NOT_FOUND');return data as Property[];}
  const rows:Property[]=[];let cursor:string|null=null;
  do{const page=await propertyPage(cursor);rows.push(...page.slice(0,100));cursor=page.length>100?page[99].id:null;if(rows.length>100)throw new BackendError('VALIDATION_ERROR');}while(cursor);
  return rows;

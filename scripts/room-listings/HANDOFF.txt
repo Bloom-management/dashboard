@@ -1,0 +1,250 @@
+Bloom grouped room visits — local handoff, 2026-11-08
+
+Implemented
+The existing job is the claimable house visit. Individual room turnovers retain
+separate stable IDs linked to the existing calendar event or manual booking.
+A house/day unique index and house transaction lock prevent separate bedroom
+jobs and concurrent duplicate visits. Existing entire-home paths delegate to
+their previous functions; private-team assignment, compensation and decline
+paths remain available.
+
+Accepted rooms determine the title, bedroom requirements, shared requirements,
+cleaner pool and host charge snapshots. Shared bathroom, kitchen and living-room
+spaces occur once. Both assigned cleaners share space completion and photos;
+either can submit completion. Backup stock and maintenance reports have their
+own author/time/revision history and never mark a space cleaned. Shared reports
+and recipient notices are deduplicated.
+
+An added room after claiming creates a versioned proposal. Original accepted
+requirements and compensation stay unchanged until every active assignment
+accepts. Decline leaves original assignments/pay intact and flags coverage for
+owner/admin review. Assignment, date, membership, pricing and visit-version
+changes invalidate stale responses. Additions after starting require owner/admin
+coordination. Claims and proposal mutations are receipt-protected on retry.
+
+Extensions keep the turnover identity. Unclaimed turns can move to the correct
+local date and join another eligible visit. Changes to accepted/started work
+hold it for review, retaining its accepted date, assignments and payout; they do
+not move it or publish another solo cleaning. Pending cancellations do not
+reprice accepted work. Completed jobs/payments stay frozen; late rooms become
+coverage exceptions. Owner/admin cancellation is explicit and recorded.
+
+Physical space setup uses the canonical house spaces, rather than making four
+copies of the shared spaces. Supplies/maintenance are available in Properties
+and the cleaner visit through Room/Shared controls. Owners/admins can create,
+rename, remove and report shared or room-only items. Prices are configurable
+through Visit pricing; updates are audited, never rewrite accepted snapshots,
+and invalidate pending offers. Legacy per-listing/job pricing overrides are
+blocked for room visits so they cannot bypass consent.
+
+Active grouped-visit photos remain limited to assigned cleaners and authorized
+owners/admins. Completed summaries and photos are also read-only for other eligible
+cleaners, following entire-home city/private-team eligibility. Completed cleaner
+views do not expose current access codes. Pending bedroom codes remain hidden.
+
+Atam preserved
+House: 4903 Lincoln Blvd, Dearborn Heights, MI 48125; America/Detroit.
+Four drafts: DH2 / 1190187638631372725; DH3 / 1190189243127995944;
+DH4 / 1190172062840895435; DH1 / 1190191672497242825.
+All four remain inactive drafts. Calendar sources, codes, custom room labels,
+bookings and cleaning jobs remain empty. The known entry type is Keypad, with
+empty codes. Existing entered access information is not overwritten by seeding.
+22 shared supply definitions and 55 maintenance definitions remain in one house,
+with zero reports. No invented levels, counts, thresholds, conditions or alerts.
+House pricing remains host $65 + $25/additional room and cleaner pool
+$45 + $20/additional room. Two cleaners split that pool equally.
+
+DH1 and DH4 retain their own extracted covers. DH2/DH3 stay unset. Rechecking
+both respective public pages and the existing importer returned the same primary
+metadata candidate for both:
+a0.muscache.com/im/pictures/miso/Hosting-1190172062840895435/original/b92ebf9f-9cff-48dc-ab88-13ee27d9ba07.jpeg
+Its private-room attribution is ambiguous; no other bedroom photo was selected.
+The public DH3 title has changed since initial preparation; confirmed saved
+values were not silently overwritten. See atam-covers.json for source evidence.
+
+Room activation is now allowed only after operational setup validates. Missing
+feeds and coordinates remain allowed; no calendar connection is claimed and no
+imported jobs can be created without a source. Atam still lacks access information
+and cleaning instructions, so its drafts remain blocked from activation. Review
+and save Spaces and provide the actual access/instructions before activating.
+Unknown codes and labels should stay empty until confirmed.
+
+Invitation: pending LOCAL ownership association, NOT SENT. No Atam account or
+invitation was created. The existing verified-email pending-owner onboarding
+flow was exercised with four separate synthetic drafts and real development
+Clerk sessions. Atam's exact pending email associations remain intact. Sending
+requires usable hosted onboarding and an approved deployment/migration later;
+localhost delivery is not part of this work.
+
+One house pin
+The existing admin-confirmed property-pin API now reads/writes the house's one
+pin for room listings. All four listing controls use it, and the day-map API
+returns authorized grouped visits at that pin. No routine geocoding was added.
+Atam has no coordinates; the list works without them. No geocoding was requested.
+The existing lookup code requests permanent=true, but no geocoding result or
+Mapbox billing/retention entitlement was tested. Synthetic manual pin coordinates
+were verified through real APIs; they are not Atam coordinates.
+
+Local preview — integrated application, no API fixtures
+The app is running at http://localhost:3000. Run these from the dashboard root
+in separate terminals to open real test sessions:
+  node scripts/room-listings/open-preview.mjs admin
+  node scripts/room-listings/open-preview.mjs owner
+  node scripts/room-listings/open-preview.mjs cleaner
+The launcher accepts only development Clerk + local Supabase, uses short-lived
+sign-in tickets, and revokes its session when its browser closes.
+
+Owner/admin: the prepared synthetic property has a Cleaning visits section.
+Open the visit on the date in .bloom-local/private/room-visits-live.json. It has
+DH1 & DH2 accepted and DH3 pending initially. The preview uses live controls:
+if DH3 has already been accepted during review, that accepted scope is preserved.
+Review any remaining proposed compensation or request
+fresh cleaner acceptance. Properties' Supplies, Maintenance and Settings show
+shared stock, physical spaces and pricing. Admins can manage assignments.
+Cleaner: the launcher opens that same visit directly. Accept/decline the added
+room, switch between bedrooms and shared spaces, and inspect supplies/maintenance.
+This retained preview is scheduled in the future, so Start correctly waits for
+its real window. The completed synthetic visit from today is also retained as
+upload, shared completion and payout evidence. These are synthetic reservations
+and generated test photos, never Atam stays or cleanliness claims.
+
+Screenshots: .bloom-local/private/room-visits-{owner,admin,cleaner}-{390,1280}.png
+The earlier http://127.0.0.1:3117 preview is API fixtures only, not this integrated
+workflow. No hosted database or production application data were used for local verification.
+
+Verification and repeat commands
+  npm test
+  npm run typecheck
+  bash supabase/tests/run-local.sh --room-visits
+  node tests/integration/room-visits-live.mjs
+  node tests/integration/room-visits-review.mjs
+  python3 scripts/room-listings/inspect-local.py
+The DB harness starts a disposable real PostgreSQL cluster with all migrations.
+Its identity claims and imported calendar snapshots are simulated. It covers
+entire-home calendar/manual workflows, private teams/payouts, pins, pending owners,
+drafts, concurrent whole-visit claims, one-to-four prices, scope consent, stale
+responses, shared completion, stock history, privacy and cancellation/extensions.
+The live suite uses real development Clerk verification, Next APIs, PostgREST,
+local Storage upload and byte validation; no route mocks. It creates and retains
+isolated synthetic records for review. Sessions are revoked after testing.
+Browser checks cover the shared dialog surface and overflow at 390/1280 for all
+three roles. The npm suite passes 208 tests; the focused DB regression passes 89 tests.
+Targeted type/lint checks pass. A Not applicable maintenance report was also
+verified in a real local transaction and rolled back.
+
+The full default DB suite still has the pre-existing photo-access expectation
+failure described in the earlier handoff (test_photo_access_and_uploader_spoof,
+which reproduces without the room migration). The focused regression command
+above is green; do not describe the full default DB suite as green.
+External Airbnb calendar polling, Mapbox geocoding entitlement, and notification
+provider delivery were not tested or activated. Calendar ingestion itself is
+verified against real PostgreSQL with synthetic validated source snapshots.
+
+Migrations
+088_grouped_room_visits follows the existing 087_room_listing_drafts migration.
+The already-present 086 notification-copy migration was also applied locally
+to close a migration-history gap; it does not enable notification delivery.
+Only the existing local Docker database bloom-backend-local was changed; all
+migrations also ran from scratch in disposable PostgreSQL. No hosted migrations,
+deployment, production notification activation, broadcasts or invitations were
+performed. Existing uncommitted application work was retained; no commit made.
+
+Room completion summaries — latest behavior
+090_room_completion_summaries supersedes 089's assignment-only completed-report
+restriction. The completed audience now matches entire-home operations: other
+eligible Bloom city cleaners can read the summary; private-team cleaners require
+membership across the included rooms. Owners/admins retain authorized access.
+Completed receipts, notes and photos use that same read audience. Live access
+codes, active room-visit controls, reporting, uploads and completion stay restricted.
+
+Room visits now finish through the existing four steps plus Done: Room photos,
+Supplies check, Maintenance, Condition after checkout, Done. The final screen
+reuses Cleaning complete, guest condition, cleaning notes and the three report
+folders. Supplies and Maintenance contain Room/Shared choices and a bedroom
+picker. Photos have a picker for each accepted bedroom and shared spaces.
+A saved completion snapshots item names, locations and reported values so later
+restocking, renaming or removal cannot rewrite that summary. Older receipts use
+their actual visit reports with the existing definitions; no levels are invented.
+Draft finishing notes, rating, comment and retry key survive ordinary reloads.
+
+Review the completed synthetic November 8 summary:
+  node scripts/room-listings/open-preview.mjs cleaner --completed
+Repeat integrated checks:
+  node tests/integration/room-visits-completed.mjs
+  node tests/integration/room-finish-live.mjs
+The first checks assigned and other eligible cleaners against real APIs, summary
+folders and room-filtered local Storage photos, including rejected edits. The
+second creates separate synthetic room bookings and walks the actual UI from
+Start cleaning to the final summary with real uploads and saved stock reports.
+It leaves .bloom-local/private/room-finish-live.json as review evidence. It never
+changes Atam's drafts or creates reservations for Atam.
+
+Cleaner Test walkthrough — November 8
+Prepared one unclaimed manual visit for DH1/DH2/DH3/DH4 using isolated copies of
+Atam's definitions, owned by ownertest. Atam's four original drafts remain inactive,
+with no calendars, bookings or jobs. The test house name starts LOCAL TEST and its
+address is prefixed LOCAL TEST; codes and public calendar identities were not copied.
+The test visit has 22 shared supply definitions, 55 maintenance definitions, zero
+reports, seven photo spaces, host $140, solo pool $105 / $52.50 each for two cleaners.
+The local Detroit test window is November 8, 00:00–23:59. No booking was invented.
+Visit: 7be49d4a-b38a-45bf-ac7c-f6f69a2bda5e
+  node scripts/room-listings/open-preview.mjs cleaner --walkthrough
+This opens the existing cleanertest development account, leaving Claim to the user.
+Setup uses real admin APIs. Claim eligibility was checked in a rolled-back local DB
+transaction using the test identity's claims; zero assignments remained afterward.
+The prepared record is .bloom-local/private/atam-cleaner-walkthrough.json. Do not
+reset its reports or assignment after the user begins their walkthrough.
+
+Pre-claim inventory reference
+091_room_inventory_reference connects the existing job supply preview and details
+to the accepted rooms' real house inventory. The earlier preview incorrectly read
+cleaning_config.supplies, which is intentionally empty for shared room stock.
+Supplies now shows all 22 shared items before claiming, with Not reported levels
+and no invented timestamps. Maintenance opens the actual room/shared definitions.
+Shared is selected initially when there is no room-only stock. Reference access
+is read-only and follows job eligibility; codes, unrelated bedrooms and reporting
+remain protected. Completed references use the frozen completion summary.
+  node tests/integration/room-inventory-preview.mjs
+  node scripts/room-listings/open-preview.mjs cleaner --walkthrough --supplies
+The browser check uses the exact named Cleaner Test account and the user's manual
+walkthrough, without claiming, starting or updating reports. Stock and claim state
+were preserved. Migration 091 was applied locally only.
+
+Browser reuse and room navigation
+Closed the seven older preview Chrome instances, retaining one existing browser.
+The launcher now attaches to that browser, reusing authenticated tabs without
+launching Chrome. It preserves an existing job tab and its state. Different roles
+requested explicitly can use isolated contexts within the same Chrome instance.
+Do not run the older browser-launching integration scripts until their browser
+setup is adapted to existing-preview.mjs; use the existing page for verification.
+  node tests/integration/room-picker-existing.mjs
+Room navigation now uses Bloom's shared dropdown-menu primitives. The menu is
+anchored to the trigger, matches its width, and stays inside its dialog. Operational
+form dropdowns still use Select. Verified selection, keyboard navigation, Escape
+and menu bounds at 390/1280 in the existing Cleaner Test tab, without job mutations.
+No new browser was launched for these checks.
+
+Preview viewport fit
+The retained preview had fixed viewport emulation at 1280x950 while the visible
+browser content area was 1282x811 after the user resized its window. This made a
+correctly bounded dialog look cropped on the physical display. Removed the fixed
+emulation from the existing page; new role contexts use viewport:null. The preview
+launcher now follows the actual browser window. Existing-browser responsive checks
+must clear viewport emulation and restore window bounds when finished.
+  node tests/integration/dialog-viewport-existing.mjs
+Verified the current job dialog at native size, a short desktop window, 390x640
+and 1280x720. The whole dialog frame stayed inside the viewport, all original text
+remained unchanged, and the final action was reachable through internal scrolling.
+No application content, stock reports, bookings or claims were changed.
+
+Finite job overview scaling
+The unclaimed cleaning overview keeps its existing dialog width and height and
+now scales its contents to fit through FitDialogContent. The Claim action, rate,
+room title, slots, comments, window and reference folders all remain present and
+visible without scrolling the overview. The close control stays unscaled.
+Supplies/maintenance reference screens retain ordinary scrolling; no definitions,
+prices, claims or reports were changed. Existing Modal animation is reused.
+  node tests/integration/dialog-fit-existing.mjs
+Verified native 460x667 frame, return from Supplies, 390x640 and 1280x720 in the
+same already-open browser. All text remained unchanged, every overview element
+and the Claim button fit, and native browser sizing was restored after the check.

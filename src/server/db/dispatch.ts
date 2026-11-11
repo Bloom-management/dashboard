@@ -22,7 +22,7 @@ export async function dispatch(operation: string, request: Request, params: Reco
     }
     const allowed: Record<string, string[]> = {
       propertyRename: ['name'], onboard: ['cityId'], cityRequest: ['cityId'], cityResolve: ['decision'], claim: [], withdraw: ['comment'], complete: ['configVersion', 'answers', 'notes', 'maintenance', 'guestReview', 'handoffRevision'],
-      upload: ['category', 'mime', 'bytes', 'roomId'], finalize: [], readUrl: [],
+      upload: ['category', 'mime', 'bytes', 'roomId', 'noteContext'], finalize: [], readUrl: [],
       propertyCreate: ['cityId', 'name', 'timezone', 'address', 'isBloomOwned', 'soloRateCents', 'ownerIds', 'instructions', 'pendingOwnerEmail'],
       role: ['role'], cancel: ['reason', 'expectedVersion'], reassign: ['reason', 'expectedVersion', 'removeAssignmentId', 'cleanerId'],
       resolveChange: ['action', 'checkoutDate', 'reason', 'expectedVersion'],
@@ -45,6 +45,9 @@ export async function dispatch(operation: string, request: Request, params: Reco
     }
     const jobId = uuid(params.id);
     if (operation === 'claim' || operation === 'withdraw' || operation === 'complete') return jobAction(jobId, operation, key, b.comment === undefined ? undefined : text(b.comment,1000));
+    // A maintenance note photo for one room item carries the item id as roomId.
+    if (operation === 'upload' && b.noteContext === 'maintenance' && b.roomId) return userRpc('bloom_item_photo_prepare',{p_job:jobId,p_item:uuid(b.roomId),p_mime:choice(b.mime,['image/jpeg','image/png','image/webp']),p_bytes:integer(b.bytes,1,10485760),p_key:key});
+    if (operation === 'upload' && b.noteContext) return userRpc('bloom_note_photo_prepare',{p_job:jobId,p_section:choice(b.noteContext,['supplies','maintenance','guest']),p_mime:choice(b.mime,['image/jpeg','image/png','image/webp']),p_bytes:integer(b.bytes,1,10485760),p_key:key});
     if (operation === 'upload' && b.roomId) return userRpc('bloom_room_photo_prepare', {p_job:uuid(params.id),p_room:uuid(b.roomId),p_mime:choice(b.mime,['image/jpeg','image/png','image/webp'] as const),p_bytes:integer(b.bytes,1,10485760),p_key:key});
     if (operation === 'upload') return prepareUpload(jobId, choice(b.category, ['bedrooms', 'bathrooms', 'kitchen', 'living_room']), choice(b.mime, ['image/jpeg', 'image/png', 'image/webp']), integer(b.bytes, 1, 10_485_760), key);
     if (operation === 'finalize') return finalizePhoto(jobId, uuid(params.photoId), key);

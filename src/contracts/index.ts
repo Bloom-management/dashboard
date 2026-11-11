@@ -7,7 +7,7 @@ export type LocalDate = string; // YYYY-MM-DD; validate at runtime
 export type Instant = string; // ISO8601 UTC; validate at runtime
 export type SessionUser = { id: string; role: Role; displayName: string; approvedCityId: string | null; bloomPoolStatus?: 'none' | 'pending' | 'approved' | 'rejected'; bloomNetworkEnabled?: boolean };
 export type InlineChange = { id: string; type: 'changed' | 'removed' | 'conflict'; message: string; acknowledged: boolean };
-export type CleanerJob = {
+export type CleanerJob = { houseId?:string|null;scopeRevision?:number;roomIdentifiers?:string[];propertyIds?:string[];
   id: string; propertyId: string; propertyName: string; cityId: string;
   checkoutDate: LocalDate; startAt: Instant; endAt: Instant; timezone: string;
   status: 'open' | 'completed' | 'cancelled'; reviewRequired: boolean; version: number;
@@ -17,6 +17,7 @@ export type CleanerJob = {
   capacity?: number; compensationMode?: 'equal' | 'individual'; myAgreedPayCents?: number | null;
   staffingNeedsResolution?: boolean; bloomCoverageRequested?: boolean;
   withdrawalDeadlineExempt?: boolean;
+  canDecline?: boolean;
   jobInstructions?: string;
   changes: InlineChange[];
 };
@@ -27,7 +28,7 @@ export type OwnerCalendarBlock = {
   startDate: LocalDate; endDate: LocalDate; providers: (Provider | 'manual')[]; bookingId?: string; source?: 'manual';
   kind: 'reservation' | 'blocked' | 'unknown'; removed: boolean; changes: InlineChange[];
 };
-export type JobPhoto = { roomId?: string | null; uploaderName?: string; id: string; jobId: string; uploaderId: string; category: PhotoCategory; createdAt: Instant; state: 'pending' | 'ready' };
+export type JobPhoto = { noteContext?: 'supplies'|'maintenance'|'guest'|null; roomId?: string | null; uploaderName?: string; id: string; jobId: string; uploaderId: string; category: PhotoCategory; createdAt: Instant; state: 'pending' | 'ready' };
 export type NormalizedCalendarEvent = {
   uid: string; recurrenceKey: string; startDate: LocalDate; endDate: LocalDate;
   kind: 'reservation' | 'blocked' | 'unknown'; contentHash: string;
