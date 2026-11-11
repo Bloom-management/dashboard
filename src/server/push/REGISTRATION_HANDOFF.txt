@@ -1,0 +1,152 @@
+Bloom account push preferences and registration handoff — 2026-11-07
+
+IMPLEMENTED 2026-11-08: native Web Push enrollment and dual delivery are now
+implemented locally. NATIVE_DELIVERY_RUNBOOK.txt is the current operational
+record. Historical OneSignal-only blockers and proposals below are superseded.
+
+SUPERSEDING REGISTRATION DECISION
+See DELIVERY_DECISION.txt for the completed research, bounded native Web Push
+replacement proposal, current configuration audit, physical acceptance gates,
+and exact scheduler activation/rollback. No transport has been changed.
+The generic REST subscription proposal and further key-comparison investigation
+below are historical, not an available enrollment solution. Official OneSignal
+documentation explicitly excludes REST creation of Web Push subscriptions:
+https://documentation.onesignal.com/docs/en/subscriptions
+The supported Web SDK still lacks signed enrollment. A secret/key comparison
+without an immutable provider attestation is not adopted as ownership proof.
+
+Implemented independently of transport
+
+Migration 202611070078 adds an account master and an initialization marker.
+Existing preference rows retain every saved category value; existing enabled,
+proven device links determine their initial account master. Existing rows are
+marked initialized so later enables cannot overwrite saved choices. New rows
+initialize all applicable categories on first explicit enable. Private cleaners
+remain outside Bloom opportunities. The network opt-in is never written here.
+
+Device/account links now require an explicit authenticated action plus the
+existing HttpOnly proven device capability. Merely viewing settings, switching
+hubs, refreshing sessions, or signing in does not add links. Disconnect affects
+one account/device pair. Logout preserves existing links. UI mutations carry an
+expected account ID; it is checked against the authenticated actor and cannot
+be used to choose the actor. In-flight UI work is guarded by Clerk identity and
+session changes. New device IDs supplied by a browser are never accepted as
+ownership proof.
+
+Dispatch rechecks account master through bloom_push_delivery immediately before
+the provider call, in addition to the existing category, property authorization,
+and account/device connection checks. Disabling permanently skips currently
+queued/retry deliveries, across devices. Already handed-off or displayed pushes
+cannot be retracted. Existing provider idempotency keys remain unchanged.
+Inbox generation, history and unread counts do not consult the new master.
+
+Dialog uses the shared Modal and identifies the viewed account. Errors are
+scoped to settings, enrollment, or optional test actions and render only inside
+the dialog. Browser permission and account preference are separate. Expired
+challenge hashes are cleared on status access. Failed legacy challenge sends
+clear only their matching challenge; they cannot clear a newer challenge.
+The legacy routes remain available until a secure replacement is deployed.
+
+Registration finding and current limitation
+
+The new settings UI has no verification-push or resend interaction. Existing
+proven device registrations can be explicitly linked using authenticated
+consent, with the current SDK subscription matched to the proven subscription.
+BRAND-NEW DEVICE ENROLLMENT IS NOT COMPLETE: the UI fails safely rather than
+accepting an unproven subscription ID. This change is not ready to be described
+as a completed automatic enable flow.
+
+Official OneSignal documentation inspected on 2026-11-07:
+https://documentation.onesignal.com/docs/en/identity-verification
+The Web SDK cannot pass a signed identity JWT. Enforcing Identity Verification
+for an app containing Web clients breaks their subscription registration.
+https://documentation.onesignal.com/docs/en/webhooks
+Display/click callbacks are browser callbacks and Safari is unsupported. They
+cannot replace ownership proof across desktop, Android and iPhone Home Screen.
+https://documentation.onesignal.com/reference/create-subscription
+The REST API can create subscriptions with token/web_auth/web_p256, but that
+API does not prove ownership of an arbitrary browser-supplied subscription ID.
+An external_id or alias readable/writable by an unauthenticated Web SDK is not
+a secure account/device binding either.
+
+No transport replacement or production delivery activation has been performed.
+
+Concrete proposed migration before any transport change
+
+1. Prefer a provider-supported, unforgeable Web enrollment capability if
+   OneSignal can supply one. Require documentation and integration proof on
+   Safari as well as Chromium. Do not enable its native-only JWT enforcement
+   toggle on the current Web app.
+2. If unavailable, implement native Web Push enrollment using PushManager and
+   a Bloom-owned VAPID key. Authenticated enrollment submits the browser's
+   complete subscription capability (endpoint and secret encryption keys),
+   rather than a public OneSignal subscription ID. Keep HttpOnly device
+   capabilities, strict same-origin mutations, expected-account validation,
+   and server-derived account identity. Validate endpoint/provider allowlists,
+   keys, redirects and request limits before storing or sending; avoid SSRF.
+3. Add transport and generation metadata to the existing physical device row,
+   keeping the existing account/device links and logical delivery IDs. Prepare
+   a separate Bloom worker scope so installing it cannot silently overwrite
+   the existing OneSignal worker. Existing browser permission can be reused;
+   enrolling the new subscription requires an explicit authenticated action.
+4. Atomically switch a device's active transport after successful enrollment.
+   Permit exactly one active transport per physical device. Under the dispatch
+   lease, reconcile pending generations and terminal deliveries so a retry or
+   migration cannot send the same logical message over both providers. Never
+   replay historical alerts. Rollback must use the same single-active-transport
+   gate and preserve terminal delivery records.
+5. Keep existing proven OneSignal subscriptions active during opt-in migration.
+   Do not assume OneSignal's private VAPID key is exportable. Offer re-enrollment
+   for devices that have not migrated, preserving their account preferences.
+6. Exercise real Clerk accounts and two physical devices; verify permission,
+   enrollment, logout, delayed responses, authorized alert opens and expiry on
+   desktop, Android, and installed iPhone Home Screen. Use only explicitly
+   allowed test accounts and individual test sends. Retire the old challenge
+   routes, columns and verification page only after replacement enrollment and
+   rollback are proven. Change production activation only in a separate release.
+
+Verification scope
+
+Disposable PostgreSQL uses synthetic identities and simulated JWT claims.
+The Chrome UI harness runs production React components at 375px and 1280px in
+admin, owner and cleaner wrappers, with mocked Clerk/API/permission/SDK states.
+Provider and service-worker tests mock network delivery. None establishes real
+OS delivery or real Clerk multi-account/session behavior. Physical Android and
+iPhone Home Screen behavior remains unverified. No broadcasts were sent.
+
+Actual final local results
+
+- 20 targeted PostgreSQL tests passed (6 account preferences/inbox, 7 push,
+  4 device/account isolation, 3 completion dispatch), plus legacy migration
+  assertions preserving category choices and enabled consent.
+- 13 provider/navigation/service-worker unit tests passed.
+- 7 Chrome scenarios passed: all three role wrappers at mobile and desktop
+  widths, plus delayed enrollment across a mocked account switch/session
+  renewal. APIs, SDK, permission and Clerk identities were mocked. Enrollment
+  fails closed for a new unproven subscription; a test failure preserves the
+  account master and valid registration. Layout checks assert rounded corners,
+  content inset, width containment and keyboard dismissal.
+- TypeScript typecheck, focused ESLint and git diff whitespace checks passed.
+- The broader inbox test test_owner_isolation_sync_resolution_and_critical_not_
+  dismissible failed (expected 1 item, got 2). Reproduced against the same
+  disposable database with migration 078 excluded; it is a baseline failure.
+  The new master-off inbox/unread preservation test passes.
+- The full repository suite was not run. No hosted migration, provider send,
+  broadcast, production activation change or physical-device test occurred.
+
+Further registration research
+
+The View User REST response documents web_auth and web_p256 fields:
+https://documentation.onesignal.com/reference/view-user
+Comparing a browser's PushSubscription capability against provider-side values
+may merit investigation before replacing transport. Do not treat this as a
+ready solution: establish that secret fields remain confidential across the
+public SDK APIs, cannot be changed using only a subscription/user ID, and are
+returned consistently for all supported Web platforms. This security property
+has not been established in this change. An undocumented comparison or a
+provider lookup that checks only ID/existence is not ownership proof.
+
+Preview UI clarification: category switches now show off and are inactive when
+the account master is off. Stored category choices are retained and restored on
+re-enable. This supersedes the earlier editable-while-off UI behavior; dispatch
+and inbox rules are unchanged. Device setup errors are cleared on master-off.

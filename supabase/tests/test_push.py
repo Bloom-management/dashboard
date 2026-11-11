@@ -23,7 +23,7 @@ class PushTests(unittest.TestCase):
     def device_action(self,action,body=None,user=None,session='session_one'):
         return call('device',f"'{self.device}','{user or self.user}','{session}','{action}','{json.dumps(body or {})}'")
     def prefs(self,new,reminders):
-        self.device_action('preferences',{'newJobs':new,'reminders':reminders})
+        self.device_action('preferences',{'newJobs':new,'reminders':reminders,'pushEnabled':True})
     def activate(self):
         sql('select public.bloom_push_activate();')
     def tick(self,at=None):

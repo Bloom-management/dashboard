@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
+if [[ "$#" -gt 1 || ( "$#" -eq 1 && "${1:-}" != "--push-acceptance" && "${1:-}" != "--room-visits" ) ]]; then
+  echo 'Use no arguments, --room-visits or --push-acceptance.' >&2
+  exit 2
+fi
 # Isolated local cluster only. Never reads a project DATABASE_URL or environment secrets.
 BLOOM_PG_BIN="${BLOOM_PG_BIN:-/opt/homebrew/opt/postgresql@17/bin}"
 BLOOM_TEST_PORT="${BLOOM_TEST_PORT:-55440}"
@@ -19,8 +23,32 @@ for migration in "$BLOOM_REPO"/supabase/migrations/*.sql; do
   if [[ "$migration" == *202609200027_onboarding.sql ]]; then
     "$BLOOM_PSQL" -h 127.0.0.1 -p "$BLOOM_TEST_PORT" -d postgres -X -q -v ON_ERROR_STOP=1 -f "$BLOOM_REPO/supabase/tests/onboarding_legacy.sql"
   fi
+  if [[ "$migration" == *202611070078_account_push_preferences.sql ]]; then
+    "$BLOOM_PSQL" -h 127.0.0.1 -p "$BLOOM_TEST_PORT" -d postgres -X -q -v ON_ERROR_STOP=1 -f "$BLOOM_REPO/supabase/tests/account_push_legacy.sql"
+  fi
   "$BLOOM_PSQL" -h 127.0.0.1 -p "$BLOOM_TEST_PORT" -d postgres -X -q -v ON_ERROR_STOP=1 -f "$migration"
+  if [[ "$migration" == *202611070078_account_push_preferences.sql ]]; then
+    "$BLOOM_PSQL" -h 127.0.0.1 -p "$BLOOM_TEST_PORT" -d postgres -X -q -v ON_ERROR_STOP=1 -f "$BLOOM_REPO/supabase/tests/account_push_migration.sql"
+  fi
 done
+if [[ "${1:-}" == "--room-visits" ]]; then
+  python3 -B "$BLOOM_REPO/supabase/tests/test_calendar_database.py"
+  python3 -B "$BLOOM_REPO/supabase/tests/test_manual_calendar.py"
+  python3 -B "$BLOOM_REPO/supabase/tests/test_private_teams.py"
+  python3 -B "$BLOOM_REPO/supabase/tests/test_private_payouts.py"
+  python3 -B "$BLOOM_REPO/supabase/tests/test_property_pins.py"
+  python3 -B "$BLOOM_REPO/supabase/tests/test_pending_owners.py"
+  python3 -B "$BLOOM_REPO/supabase/tests/test_room_drafts.py"
+  python3 -B "$BLOOM_REPO/supabase/tests/test_room_visits.py"
+  exit 0
+fi
+if [[ "${1:-}" == "--push-acceptance" ]]; then
+  python3 -B "$BLOOM_REPO/supabase/tests/test_push_scheduler_acceptance.py"
+  python3 -B "$BLOOM_REPO/supabase/tests/test_native_push.py"
+  exit 0
+fi
+"$BLOOM_PSQL" -h 127.0.0.1 -p "$BLOOM_TEST_PORT" -d postgres -X -q -v ON_ERROR_STOP=1 -f "$BLOOM_REPO/supabase/tests/property_airbnb.sql"
+python3 -B "$BLOOM_REPO/supabase/tests/test_room_drafts.py"
 python3 -B "$BLOOM_REPO/supabase/tests/test_database.py"
 
 python3 -B "$BLOOM_REPO/supabase/tests/test_calendar_database.py"
@@ -76,3 +104,8 @@ python3 -B "$BLOOM_REPO/supabase/tests/test_manual_calendar.py"
 python3 -B "$BLOOM_REPO/supabase/tests/test_calendar_export.py"
 
 python3 -B "$BLOOM_REPO/supabase/tests/test_remove_assignment.py"
+
+python3 -B "$BLOOM_REPO/supabase/tests/test_account_push_preferences.py"
+
+python3 -B "$BLOOM_REPO/supabase/tests/test_operational_notifications.py"
+python3 -B "$BLOOM_REPO/supabase/tests/test_native_push.py"

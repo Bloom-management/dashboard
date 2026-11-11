@@ -10,6 +10,7 @@ class CompletionPush(unittest.TestCase):
   device=uuid.uuid4().hex*2
   call('device',f"'{device}','{uid}','session','challenge','{json.dumps({'subscription':str(uuid.uuid4()),'hash':'a'*64})}'")
   call('device',f"'{device}','{uid}','session','verify','{{\"hash\":\"{'a'*64}\"}}'")
+  call('device',f"'{device}','{uid}','session','preferences','{{\"pushEnabled\":true}}'")
   return device
  def fixture(self):
   self.owner,self.oid=make_user('owner');self.admin,self.aid=make_user('admin');self.cleaner,self.cid=make_user();self.other,self.xid=make_user('owner')
@@ -22,10 +23,11 @@ class CompletionPush(unittest.TestCase):
  def test_completion_queues_once_without_open_browser_and_scope_rechecked(self):
   self.fixture();call('activate','');self.complete();self.complete();call('tick','');call('tick','')
   self.assertEqual(scalar(f"select count(*) from private.push_messages where kind='completion' and job_ids=array['{self.job}'::uuid];"),'3')
-  self.assertEqual(scalar("select count(*) from private.push_deliveries;"),'3')
-  for uid,role in [(self.oid,'owner'),(self.aid,'admin'),(self.cid,'cleaner')]:
+  self.assertEqual(scalar(f"select count(*) from private.push_deliveries d join private.push_messages m on m.id=d.message_id where m.kind='completion' and m.job_ids=array['{self.job}'::uuid];"),'2')
+  for uid,role in [(self.oid,'owner'),(self.aid,'admin')]:
    content=json.loads(scalar(f"select private.push_content(id,now()) from private.push_messages where user_id='{uid}' and kind='completion';"))
    self.assertIn('/'+role+'?',content['url']);self.assertIn('Cleaning completed',content['body'])
+  self.assertEqual(scalar(f"select private.push_content(id,now()) is null from private.push_messages where user_id='{self.cid}' and kind='completion';"),'t')
   self.assertEqual(scalar(f"select count(*) from private.push_messages where user_id='{self.xid}';"),'0')
   sql(f"delete from property_owners where property_id='{self.prop}' and owner_id='{self.oid}';")
   self.assertEqual(scalar(f"select private.push_content(id,now()) is null from private.push_messages where user_id='{self.oid}';"),'t')

@@ -1,0 +1,170 @@
+Bloom operational notifications — local implementation, 2026-11-07
+
+2026-11-08: native enrollment and dual delivery are implemented locally through
+migration 084. See NATIVE_DELIVERY_RUNBOOK.txt for actual service evidence,
+remaining physical acceptance, HTTPS configuration and scheduler release steps.
+
+Existing services retained
+
+OneSignal transport, physical-device/account links, Clerk auth, account master,
+category preservation, dispatch leases/idempotency keys, authorized alert-open
+routing, report storage, confirmed external-payment ledger, manual calendar,
+calendar sync leases/provenance and the existing evening/morning summaries.
+No hosted migration, broadcast, transport replacement or production activation.
+New-device ownership-proof registration remains an outstanding dependency.
+
+Migrations
+
+079: decline-safe private default assignment; comment-required decline endpoint;
+assignment schedule revision; confirmed imported/manual guest stay extensions
+move the same unstarted job, retaining assignment and reservation identity.
+Only selected defaults are assigned, within snapshotted capacity. A withdrawal
+history record prevents any later automatic replacement/default retry for that
+job. Explicit owner staffing remains available. No on-call replacement.
+
+A confirmed imported extension requires the same source event, confirmed
+reservation evidence, unchanged check-in, later checkout, a single provenance
+link, no manual-return ambiguity, no competing checkout and an unstarted,
+uncompleted, unheld job. Other changes stay on review. Manual reservation edits
+carry explicit extension intent; arbitrary manual cleaning moves do not count.
+The decline exception applies only to private assignments or an assignment
+predating the job's current guest-extension revision. Started work is rejected.
+
+080: grouped account categories plus a private event ledger shared by inbox and
+push. Assignment, teammate, withdrawal, changed-job, payment, compensation,
+coverage, invitation, request and calendar-error triggers use current scope.
+Dispatch recomputes authorization, assignments, live job state and category
+preference. The existing account master suppresses queued work across devices.
+Inbox generation is independent of account push preferences.
+
+Expected compensation uses the job snapshot: Bloom total divided by actual
+participants; private equal split with deterministic penny allocation; explicit
+private amounts remain unchanged. Adjustments have separate copy. Only the
+committed external-payment entry emits "sent you"; earning/completion alone
+never claims money was sent. Voided entries stop producing payment content.
+
+Assignment-event recipient uniqueness covers an admin who also participates;
+hub switching is not another account. Own claim/completion confirmations are
+suppressed. Existing scope currently gives Bloom admins global property access;
+routing reuses people_access rather than inventing an assigned administrator.
+Private staffing goes to authorized owners, including an admin explicitly
+listed as a property owner, not every globally authorized admin.
+
+New-job import batching stays in the existing publisher. Unclaimed opportunity
+reminders require zero current assignments and a currently claimable, unstarted
+Bloom-managed job; pool opt-in, approval and approved city are rechecked. A
+recipient/job/property-local-day ledger deduplicates overlapping opportunities.
+Same-day creation, release from hold/setup, and zero-staff withdrawal emit an
+immediate coverage event; the pool never receives private work. Coverage events
+share a revision/day key, so a scheduled check does not duplicate an opening,
+while a later zero-staff withdrawal creates a new coverage episode.
+
+Supply/maintenance report provenance is retained. Issue episodes suppress
+unchanged findings on later completions. Resolution and a later recurrence can
+start a new episode. Current restock/report state is checked at dispatch.
+
+Scheduling and actual activation
+
+Existing upcoming-cleaning summaries: 18:00 evening before, 08:00 morning of,
+using the configured city notification timezone and current assignments.
+New unclaimed/coverage checks: 08:00 property-local, for cleaning dates +3 and
++1 (plus same-day manager coverage). Reminder retry windows last one hour;
+there is no late catch-up blast. Payer summaries default to Monday 09:00 in the
+payer's configured city timezone (Detroit fallback). No per-completion payout
+reminder push is emitted. These defaults are code-side scheduling policy.
+
+Operational delivery requires an authenticated caller of POST /api/push/tick,
+a valid BLOOM_PUSH_SCHEDULER_SECRET, explicitly configured delivery mode and
+provider credentials, activation, and proven device registration. None is
+implicitly enabled by a migration or by the preference switch. The local
+preview inspected before migrations had push mode off, no scheduler secret,
+no OneSignal configuration, activated=false, lastTickAt=null, and zero verified
+devices. No automatic push scheduler process or repository deployment cron was
+found. Timed delivery is NOT operational in this environment.
+
+A coverage event is recorded immediately in the same transaction. Physical
+push still depends on the configured sender's next dispatch and registration;
+there is no promise of immediate OS receipt while those dependencies are off.
+
+Frontend
+
+Settings remain in the bell dropdown. The standalone prompt disappears when
+account push is on. A divider separates the master from categories. Off shows
+all categories off/inactive while preserving choices for re-enable. Device
+settings stay collapsed; errors/retry are action-local there. No verification
+push/resend UI is restored. Private or moved assignments offer "Decline job"
+with a required comment, keeping completion controls separate from decline.
+
+Verification provenance
+
+Disposable PostgreSQL uses synthetic users and simulated JWT claims. Calendar
+unit tests are pure/model tests; provider/worker tests use mocked networking.
+Browser layout tests mock API/Clerk/permission and do not establish enrollment
+or physical delivery. Actual Clerk/local-API evidence is recorded separately
+in .bloom-local/private/notification-implementation. No provider acceptance or
+physical desktop/Android/iPhone receipt is claimed for this work.
+
+Follow-up correctness migrations
+
+081 removes private outbox/report property foreign keys whose implicit key
+locks reversed the existing calendar property→job order. Claim eligibility
+uses NO KEY UPDATE for non-key user changes, preserving serialization without
+blocking recipient foreign-key checks. Calendar claim/cancellation races are
+included in the regression suite.
+082 filters superseded queued job changes and withdrawals after explicit
+reassignment, retains existing assignment dismissal keys, and preserves live
+assignment inbox entries beyond the push lifetime. Job notifications include
+validated job/date hints. Cleaner navigation opens a job only if it occurs in
+the server-authorized month response; a URL cannot grant access. Completion
+links open the shared job/report rather than an empty upcoming list.
+
+Real authenticated local check
+
+Existing Clerk development profiles for ownertest, cleanertest and the admin
+account exercised real GET/POST /api/push/settings and persisted grouped
+category edits, restoring their original values. Rounded/no-overflow dialogs
+were checked at 1440px and 390px. A newly labeled local private fixture assigned
+its selected cleaner through the actual trigger. The actual Cleaner UI offered
+Decline job; empty comments were rejected, a comment-bearing decline succeeded,
+and the real owner inbox contained the comment and replacement responsibility.
+An identical request retry was idempotent and did not refill the vacancy.
+The fixture was soft-archived with immutable audit history retained. The
+existing preview server and account sessions remain available; no mocks or
+provider sends were used for these authenticated checks.
+
+083: account re-enable records a consent timestamp atomically on the preference
+row. Legacy inbox publishers may still create records while push is off; records
+from that period cannot later become a push backlog when the account is enabled.
+This timestamp is checked only for dispatch, so previously accepted alert opens
+keep their existing authorization path. A dedicated test checks both suppressed
+older work and eligible fresh work after re-enable.
+
+Final verification results
+
+- 91 PostgreSQL checks passed across the operations/private-team, calendar race,
+  manual calendar, account preference, push, device/account, completion, private
+  payout and team-inbox suites. These are disposable-cluster tests with synthetic
+  identities/simulated JWTs, including all five new migrations.
+- 90 calendar unit tests and 13 provider/worker/navigation tests passed.
+- Seven production-component Chrome scenarios passed with mocked Clerk/API/SDK
+  responses. Those establish layout/control behavior, not registration/delivery.
+- Real authenticated local flows passed for all three roles: grouped preference
+  persistence and mobile/desktop dialog checks, private default assignment,
+  authorized job deep link, required-comment Cleaner UI decline, owner inbox
+  comment/remaining coverage and idempotent retry. Original category choices
+  were restored. Labeled fixtures were soft-archived, retaining audit history.
+- TypeScript typecheck, focused ESLint and whitespace checks passed.
+- No provider acceptance or physical-device receipt was tested. The local sender
+  remains disabled/unconfigured and no scheduler activation was changed.
+
+One real-browser rerun encountered a transient connection close during Next
+hot reload; the stable rerun passed against actual local endpoints. Fixture
+cleanup initially attempted to remove immutable audit rows and was refused;
+that transaction rolled back. Cleanup was changed to soft archival without
+altering audit protections, and the complete authenticated check then passed.
+The full repository test command was not run; the targeted suites above are
+listed explicitly rather than claiming unrelated tests were exercised.
+Current registration and scheduler decision: DELIVERY_DECISION.txt (2026-11-07).
+It supersedes open registration questions and historical scheduler snapshots.
+No sender activation or transport replacement was performed for that decision.
+

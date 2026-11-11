@@ -8,7 +8,7 @@ export function loadPush(appId:string){
   window.OneSignalDeferred.push(async sdk=>{try{await sdk.init({appId,serviceWorkerPath:'push/OneSignalSDKWorker.js',serviceWorkerParam:{scope:'/push/'},autoResubscribe:false,notifyButton:{enable:false},welcomeNotification:{disable:true},promptOptions:{slidedown:{prompts:[{type:'push',autoPrompt:false}]}}});clearTimeout(timer);resolve(sdk);}catch(error){clearTimeout(timer);reject(error);}});
   const script=document.createElement('script');script.src='https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js';script.defer=true;script.onerror=()=>{clearTimeout(timer);reject(new Error('Notification service could not load.'));};document.head.appendChild(script);
  });
- return loading;
+ return loading.catch(error=>{loading=undefined;throw error;});
 }
 export function deviceSupport(){
  const ios=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);

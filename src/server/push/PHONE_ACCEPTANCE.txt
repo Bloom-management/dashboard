@@ -1,0 +1,133 @@
+Physical-phone acceptance preparation — 2026-11-08
+
+CURRENT TEST ENVIRONMENT
+
+https://car-likewise-gaming-spelling.trycloudflare.com/phone-test
+Accounts: cleanertest first, ownertest second, using existing development Clerk.
+Credentials remain in private local storage; never paste them into chat/logs.
+
+Inventory found no suitable Bloom preview or isolated hosted Bloom database.
+The project named Staging belongs to Fleety; it was not reused. The linked Bloom
+Admin Supabase project is production and was not migrated or used for test data.
+A separate empty Hobby Vercel test project was prepared, but is not deployed.
+
+The running alternative is a free temporary HTTPS tunnel to a separate local
+Next app on 3002 and fresh Supabase project bloom-push-phone-acceptance, API 55451,
+database 55452. It contains only the two designated test profiles, no jobs or
+properties. Migrations through 085 were applied to that fresh LOCAL database.
+The original preview at localhost:3000 and its database remain available.
+Keep this Mac awake, connected, and the app/tunnel/database running. The temporary
+origin is tied to this tunnel session; replacing it requires a new Home Screen
+installation. The first tunnel ended with its tool session and was replaced on
+2026-11-08; its old URL is no longer valid.
+
+VAPID/encryption secrets were generated privately. Native transport, test-only
+subjects, application origin, local Supabase/Clerk integration are configured.
+BLOOM_PUSH_TEST_DEVICE_IDS is empty until explicit physical-phone approval.
+No pg_cron job exists, activation is false, and no scheduler heartbeat exists.
+No production delivery, production settings, or hosted migrations were changed.
+
+SECURE PHONE APPROVAL
+
+1. Open the URL in Safari. Share -> Add to Home Screen -> name it Bloom Test.
+   Install BEFORE signing in; use this separate icon, not the production icon.
+2. Open Bloom Test, sign in as cleanertest, and tap Request test approval.
+3. Tell the operator when Waiting for approval appears. Do not share a cookie,
+   endpoint, subscription identifier, password, or device capability.
+4. The local operator approves the authenticated request bound to that exact
+   installation's HttpOnly cookie. A request supplied with a stale account or
+   session is rejected. No arbitrary endpoint/ID is accepted by this page.
+   Approval changes only the test send gate; it does not enroll, link accounts,
+   enable preferences, grant native permission, or send a notification.
+5. Once approved, tap Open notifications. Bell -> settings gear remains available.
+
+The approval page/API exist ONLY in the private development runtime snapshot,
+guarded by development/test mode and the isolated local database configuration.
+They must not be included in a hosted or production release. Operator records
+and scripts are ignored under .bloom-local/private/phone-acceptance, mode 0600.
+They do not display device capabilities. Unlinked rows from concurrent initial
+settings requests are not treated as phone proof or automatically approved.
+
+PHYSICAL TEST — RECORD USER CONFIRMATIONS INDIVIDUALLY
+
+1. Enable push notifications in the real settings. Tap Allow on the actual iOS
+   permission prompt. Registration should finish without a verification push.
+2. Expand Device settings -> Send test notification while Bloom is open. Confirm
+   the actual OS notification, independently of the test button's result.
+3. Go Home and lock the phone. Stop Mirroring for this independent check. Tell
+   the operator it is locked; the operator sends one test to this approved phone
+   only. Observe its lock-screen arrival. Normal device test rate limits apply.
+4. Tap that actual OS notification. Confirm the intended Cleaner account and
+   destination; with another account active, require sign-in/account switching.
+5. In the SAME Bloom Test installation sign out and sign in as ownertest.
+   Explicitly enable/connect Owner. Do not delete the icon or clear site data.
+6. Switch to Cleaner, turn its master off, and confirm its inbox remains usable.
+   Owner must remain enabled and receive its own individual test on this phone.
+7. Close/reopen Bloom Test and verify Cleaner off, Owner on, and saved categories.
+
+Run Android Chrome as a separate acceptance session when a device is designated.
+Mirroring/USB pairing alone is not evidence of notification delivery. User Trust,
+unlock, Apple-account, or permission prompts must be handled on the user's device;
+passcodes never enter chat or scripts.
+
+ACTUAL EVIDENCE / OUTSTANDING ACTIONS
+
+Passed: public HTTPS/worker/manifest; real Clerk sign-ins and account APIs for
+both roles; isolated DB account mapping; Secure/HttpOnly/SameSite=Strict device
+cookie; authenticated approval request/cookie binding; stale-session rejection.
+These checks used no API mocks and did not grant notification permission,
+enroll a phone, send a notification, or establish physical acceptance.
+Focused ESLint and TypeScript passed for the HTTPS device-cookie change.
+
+All seven physical checks are pending user confirmation. Mirroring currently has
+no accessible control window. The remaining user action is to install this test
+origin, sign in, request approval, and handle native permission/device prompts.
+No new paid service, hosted database secret, or global Clerk-origin change is
+needed for this running test; real sign-in on this exact origin already passed.
+The private acceptance.json records each confirmation separately from provider
+acceptance. Never infer receipt from provider success or programmatic navigation.
+
+NEXT RELEASE — PREPARE AFTER PHYSICAL ACCEPTANCE, DO NOT EXECUTE YET
+
+Review the notification changes separately from unrelated dirty checkout work.
+Inspect the production migration ledger, backup, current app configuration and
+existing scheduler read-only. Plan the missing migrations in order: prerequisites
+through 078, then 079-083, then native transport 084. Migration 085 is a separate
+application dependency if that newer application change is included. Do not
+blindly deploy every uncommitted change or assume the production schema version.
+
+Prepare a release with matching NEXT_PUBLIC_PUSH_VAPID_PUBLIC_KEY,
+BLOOM_PUSH_VAPID_PRIVATE_KEY, BLOOM_PUSH_VAPID_SUBJECT,
+BLOOM_PUSH_SUBSCRIPTION_ENCRYPTION_KEY and BLOOM_PUSH_SCHEDULER_SECRET.
+Keep ONESIGNAL_APP_ID and ONESIGNAL_REST_API_KEY while legacy devices remain.
+Retain the encryption key, OneSignal worker/configuration and proven legacy
+registrations. Existing devices need a one-time Update this device action for
+Bloom-owned subscriptions; account/category preferences and explicit links stay.
+Only one active transport per device is allowed; never replay attempted sends.
+
+For the separately approved production release: pause/drain the existing sender
+with supabase/push/pause-delivery.sql and BLOOM_PUSH_MODE=off; apply reviewed
+missing migrations; deploy the dual sender/worker and matching configuration;
+run a designated-account/device canary before broader sending.
+
+Scheduler activation is a SEPARATE action after release approval. Configure Vault
+bloom_push_url and bloom_push_scheduler_secret privately for the production
+origin and server secret. Keep BLOOM_PUSH_MODE=test and both allowlists for the
+canary; only the separately approved broader rollout changes mode to live in the
+production runtime. Run supabase/push/enable-schedule.sql against the
+explicitly verified production target. It validates the production origin,
+activates the baseline and schedules bloom-push-delivery once per minute.
+Verify bloom_push_health, cron.job_run_details AND pg_net HTTP responses; then
+observe synthetic/canary outcomes, expiry, eligibility and deduplication.
+Do not run enable-test-schedule.sql against production or relax its guards.
+
+Rollback: set mode off, run pause-delivery.sql on the selected target, drain all
+in-flight dispatch. Preserve all preference, outbox, endpoint-encryption and
+accepted history. For a migrated device with a retained proven legacy binding,
+use the service-only bloom_push_rollback_device operation. Native-only devices
+have no legacy fallback; keep dual-capable code and repair/pause them. Do not
+revert the schema blindly or discard new native registrations. Already displayed
+or provider-accepted alerts cannot be retracted.
+
+See NATIVE_DELIVERY_RUNBOOK.txt for transport guarantees, existing evidence,
+synthetic scheduler tests and the stable hosted-environment alternative.

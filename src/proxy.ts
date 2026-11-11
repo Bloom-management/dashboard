@@ -5,7 +5,7 @@ import { clerkMiddleware } from '@clerk/nextjs/server';
 const clerk = clerkMiddleware();
 export default async function proxy(request: NextRequest, event: NextFetchEvent) {
  if (/^\/api\/calendar\/export\/[a-f0-9]{64}\.ics$/.test(request.nextUrl.pathname) && ['GET', 'HEAD'].includes(request.method)) return NextResponse.next();
- // Display is authenticated by a verified HttpOnly device capability in the route.
+ // Display requires a device capability and, for native push, the received delivery secret.
  // A sleeping PWA must not depend on a refreshable Clerk browser session.
  if (request.nextUrl.pathname === '/api/push/display' && request.method === 'POST') return NextResponse.next();
  const configured = [process.env.CLERK_SECRET_KEY, process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY].every(value => value && !value.startsWith('replace_'));

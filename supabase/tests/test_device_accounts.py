@@ -18,19 +18,19 @@ class DeviceAccounts(unittest.TestCase):
   id=scalar(f"insert into private.push_deliveries(message_id,device_id,generation,state) select '{m}',id,generation,'accepted' from private.push_devices where id='{self.device}' returning id;")
   return id
  def read(self,id,device=None):return json.loads(call('delivery',f"'{id}',null,'{device or self.device}'"))
- def test_multiple_accounts_survive_switch_and_logout_with_role_labels(self):
-  status=self.action('status',user=self.owner,session='owner-session');self.assertTrue(status['verified']);self.assertTrue(status['linked'])
+ def test_multiple_accounts_survive_switch_and_logout_with_correct_identity(self):
+  status=self.action('status',user=self.owner,session='owner-session');self.assertTrue(status['verified']);self.assertFalse(status['linked']);self.action('link',user=self.owner)
   cleaner=self.delivery(self.user);owner=self.delivery(self.owner)
   for session in ['null',"'different-session'"]:
    call('device',f"'{self.device}',null,{session},'reconcile'")
-   self.assertTrue(self.read(cleaner)['content']['body'].startswith('[Cleaner]'))
-   self.assertTrue(self.read(owner)['content']['body'].startswith('[Owner]'))
+   self.assertEqual(self.read(cleaner)['userId'],self.user)
+   self.assertEqual(self.read(owner)['userId'],self.owner)
   self.assertIsNone(self.read(owner,uuid.uuid4().hex*2))
   self.assertEqual(scalar('select count(*) from private.push_device_accounts;'),'2')
   self.assertNotEqual(sql('select * from private.push_device_accounts;',self.subject,ok=False).returncode,0)
   self.assertNotEqual(sql(f"select public.bloom_push_device('{self.device}','{self.owner}','forged','status');",self.subject,ok=False).returncode,0)
  def test_stop_one_account_persists_and_device_disable_stops_every_account(self):
-  self.action('status',user=self.owner);cleaner=self.delivery(self.user);owner=self.delivery(self.owner)
+  self.action('link',user=self.owner);cleaner=self.delivery(self.user);owner=self.delivery(self.owner)
   self.action('unlink');self.action('status');self.assertFalse(self.action('status')['linked'])
   self.assertIsNone(self.read(cleaner));self.assertIsNotNone(self.read(owner))
   self.action('link');self.assertTrue(self.action('status')['linked']);self.assertIsNone(self.read(cleaner)) # no replay of old alerts
@@ -39,8 +39,8 @@ class DeviceAccounts(unittest.TestCase):
   self.assertIsNone(self.read(owner));self.assertFalse(self.action('status')['verified'])
  def test_one_device_can_receive_both_accounts_once_per_tick(self):
   # New-job notifications for two distinct eligible cleaners on one physical device.
-  _,other=make_user('cleaner');self.action('status',user=other)
-  for u in [self.user,other]:self.action('preferences',user=u,body={'newJobs':True,'reminders':True})
+  _,other=make_user('cleaner');self.action('link',user=other)
+  for u in [self.user,other]:self.action('preferences',user=u,body={'newJobs':True,'reminders':True,'pushEnabled':True})
   call('activate','');make_job();call('tick','');call('tick','')
   self.assertEqual(scalar('select count(*) from private.push_deliveries;'),'2')
   self.assertEqual(scalar('select count(distinct device_id) from private.push_deliveries;'),'1')

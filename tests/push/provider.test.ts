@@ -14,6 +14,7 @@ test('rate limit/server/network bounded retry classification and dead subscripti
 });
 test('click destinations accept local views/dates only, without authority',()=>{
  assert.equal(cleanerDestination({view:'upcoming',date:'2026-11-01',redirect:'https://evil.example',role:'admin'}),'/cleaner?view=upcoming&date=2026-11-01');
+ const job='00000000-0000-4000-8000-000000000001';assert.equal(cleanerDestination({view:'calendar',date:'2026-11-01',job}),`/cleaner?view=calendar&date=2026-11-01&job=${job}`);assert.equal(cleanerDestination({job:'../private'}),'/cleaner');
  assert.equal(notificationDate('2026-02-30'),null);assert.equal(cleanerDestination({view:'//evil',date:'bad'}),'/cleaner');
 });
 

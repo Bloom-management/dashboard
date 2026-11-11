@@ -1,0 +1,324 @@
+Bloom registration decision and controlled delivery release — 2026-11-07
+
+IMPLEMENTED 2026-11-08: the user authorized native Web Push. See
+NATIVE_DELIVERY_RUNBOOK.txt for migration 084, actual provider/browser evidence,
+security guarantees, phone deployment and rollback. The proposal below is
+historical; it no longer represents the local implementation status.
+
+DECISION
+
+New-device registration remains BLOCKED on the present OneSignal Web transport.
+Recommend standards-based Web Push using Bloom-owned VAPID keys, preserving the
+existing account preferences, device/account links, outbox and authorized opens.
+This is a concrete replacement proposal, not a provider change. No sender, SDK,
+worker, hosted database, production activation or credentials were changed here.
+
+Why the supported OneSignal paths do not meet the requirements:
+
+1. Official Identity Verification documentation says Web SDK signed identity
+   verification is unsupported. Enabling app-wide enforcement causes Web user
+   and subscription creation/update to fail. A signed Bloom account JWT cannot
+   currently secure the supported Web enrollment flow.
+   https://documentation.onesignal.com/docs/en/identity-verification
+2. The subscription guide explicitly excludes creating Web Push subscriptions
+   through REST. The generic create-subscription schema is NOT a supported
+   server-enrollment solution for Web, even though it lists web key fields.
+   https://documentation.onesignal.com/docs/en/subscriptions
+3. Existence/alias lookup is not ownership proof. Comparing provider-returned
+   endpoint/key fields has no established immutable ownership attestation:
+   the SDK updates and transfers subscriptions using public application and
+   subscription identifiers. Do not adopt an undocumented equality check as
+   a security boundary. Display webhooks are browser callbacks and exclude
+   Safari, so they do not supply a universal authenticated enrollment proof.
+   https://documentation.onesignal.com/docs/en/webhooks
+4. Inspected official Web SDK commit:
+   fef4d4ea4a5178bf89ebbf0883deaf7ee75858ba
+   https://github.com/OneSignal/OneSignal-Website-SDK/tree/fef4d4ea4a5178bf89ebbf0883deaf7ee75858ba
+   OneSignal.ts exposes an optional login JWT, but LoginManager only persists
+   it. RefreshUserOperationExecutor and SubscriptionOperationExecutor do not
+   pass it to the relevant user/subscription requests. An optional argument
+   alone does not establish supported enforcement. Recheck official support
+   before revisiting this decision; do not turn on native-only enforcement.
+
+The existing receive-and-click challenge is excluded by the product decision.
+An arbitrary client-provided subscription ID, external_id or alias is excluded
+by the security requirement. Adding an API secret cannot resolve these gaps.
+
+CURRENT LOCAL STATE AND REPRODUCIBLE CHECKS
+
+Checkout: main, /Users/pierr/Desktop/Github_Projects/Bloom/dashboard.
+Existing uncommitted work is preserved. No commits or branch changes made.
+Actual Next preview remains on http://localhost:3000 with development Clerk.
+Visible Chrome profiles authenticate cleanertest (/cleaner), ownertest (/owner)
+and pierreharbin (/admin). Bell -> inbox gear opens Notifications. These three
+profiles are independent browser devices; they do not prove multi-account
+delivery on one device. They use real authenticated local APIs, not API mocks.
+
+Read-only audit (prints variable names and safe status, never their values):
+  node scripts/push-readiness.mjs
+It refuses a non-local API/database, non-development Clerk key or unexpected
+Docker connection/container. Current result: migrations 078–083 applied locally;
+activation false; last tick null; zero proven devices and pending deliveries;
+no local cron catalog, pg_cron or pg_net. No local timer is operational.
+
+Actual scheduler acceptance against an isolated temporary PostgreSQL cluster:
+  BLOOM_TEST_PORT=55445 supabase/tests/run-local.sh --push-acceptance
+All eight tests passed. The runner applies the real migrations, uses synthetic
+users/jobs and device fixtures, executes real tick/take/delivery SQL, then removes
+the cluster. It never reads hosted configuration or changes preview job dates.
+Coverage: three/one-day batching and deduplication; expiry; fresh assignment,
+cancellation, category and opportunity opt-in checks; no late catch-up; inactive
+sending; two account links on one synthetic device with master-off isolation
+and the inbox still available. Synthetic proven-device fixtures bypass enrollment
+ONLY inside the disposable tests. They are not browser registration evidence.
+
+No provider request was sent. Provider acceptance, OS receipt, physical Android,
+iPhone Home Screen receipt and real same-profile two-account delivery remain
+UNVERIFIED. Earlier mocked browser/worker/provider checks are not receipt proof.
+
+BOUNDED REPLACEMENT IMPLEMENTATION
+
+1. Add a separately reviewed schema migration after 083 (proposed 084; not
+   implemented/applied). Extend physical device transport state with active
+   transport/generation, encrypted native subscription, endpoint digest unique
+   constraint and encryption key version. Keep account links and preference rows.
+   RPCs remain service-only. Endpoint/key material never enters logs or ordinary
+   diagnostics. Do not falsely label migrated rows as proven OneSignal devices.
+2. Use a maintained Web Push implementation for encryption/VAPID, not homemade
+   cryptography. Register /bloom-push/worker.js at /bloom-push/ scope; use that
+   registration directly for PushManager, leaving the OneSignal scope untouched.
+   A PushSubscription contains an endpoint plus secret auth and public p256dh
+   material. Treat the complete subscription as a confidential capability, not
+   a public provider ID. Validate key sizes/encoding and HTTPS endpoints against
+   exact supported push-service hosts; prohibit redirects, local/private address
+   targets, embedded credentials and arbitrary URL fetching. Limit request sizes
+   and rates. An endpoint alone never authorizes linking or changing any device.
+   https://developer.mozilla.org/en-US/docs/Web/API/PushManager/subscribe
+3. Prepare the worker before the action. Request native permission synchronously
+   from the user's enable gesture when needed, then subscribe and authenticate
+   registration automatically. No verification notification or resend UI.
+   Use a short-lived, one-use enrollment nonce tied to the HttpOnly server-created
+   device capability, authenticated Clerk subject/session, expected account and
+   registration generation. Enforce same-origin mutation/CSRF protections.
+   Derive the recipient from authentication, never the submitted account ID.
+   Reject reused nonces, stale sessions, mismatched accounts and attempts to
+   replace another device's endpoint. Never transfer an existing endpoint to a
+   different cookie/device on the strength of an ID. Enrollment security relies
+   on the secret capability and authenticated origin, not a delivery assertion.
+4. Bind the complete subscription to that device and explicitly connect the
+   authenticated account in one transaction. Existing devices connect a second
+   account only after that account authenticates and explicitly enables/connects.
+   Session renewal, logout and hub switching neither add links nor erase links.
+   Validate UI results against the starting account/session before applying them.
+   Do not require second native permission for the same browser subscription.
+5. Preserve the distinction between account push preference and device readiness.
+   Master-off suppresses queued account sends across devices and leaves inboxes
+   and other account links alone. Registration success means device registered;
+   it does not establish delivery. Keep short action-local errors and optional
+   test controls. A generic optional test failure must not invalidate the device.
+6. Reuse fresh SQL eligibility immediately before sending and before personalized
+   display. Preserve /notifications/open intended-account authorization; signing
+   into a different account cannot expose the destination. Recheck job/property
+   permissions after sign-in, including revoked assignments and property access.
+7. Switch exactly one active transport per device under the device/dispatch lock.
+   Wait for any existing send lease to resolve before switching generations.
+   Retain logical delivery IDs and terminal records. Reconcile pending attempts;
+   never replay accepted/expired/skipped history into a new transport. Keep proven
+   OneSignal devices usable until explicit native enrollment. Do not assume the
+   OneSignal VAPID private key is exportable; permission may be reused, but a new
+   Bloom-owned subscription requires explicit enrollment.
+8. Direct Web Push has no universal provider idempotency API. Use stable delivery
+   UUIDs, leases, bounded retries, notification tags and a persistent worker receipt
+   ledger to suppress repeats. Test ambiguous send/commit failures explicitly;
+   exactly-once external delivery cannot be promised. Rollback uses the same
+   single-active-transport gate, never parallel fan-out or historical replay.
+   HTTP 404/410 disables the native subscription, not account preferences;
+   429/temporary failures retry with bounds and concise action-local feedback.
+9. Before ANY acceptance send, implement a second test restriction by device:
+   BLOOM_PUSH_TEST_DEVICE_IDS AND BLOOM_PUSH_TEST_SUBJECTS must both match.
+   Current code checks only subjects. The device guard is proposed, not working
+   configuration today. Test endpoint must dispatch only its specific delivery;
+   scheduler acceptance must run against an isolated database with synthetic data.
+10. Retire challenge routes/state and verification page only after real enrollment,
+    migration/rollback, expired-state cleanup and all acceptance checks pass.
+    Do not revive the obsolete interaction while this work is pending.
+
+CONFIGURATION — NAMES ONLY
+
+Already present locally:
+  NEXT_PUBLIC_APP_URL
+  NEXT_PUBLIC_SUPABASE_URL
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+  SUPABASE_SERVICE_ROLE_KEY
+  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+  CLERK_SECRET_KEY
+  CLERK_ISSUER_DOMAIN
+  ONESIGNAL_APP_ID
+
+Absent from the current local environment:
+  ONESIGNAL_REST_API_KEY
+  BLOOM_PUSH_MODE
+  BLOOM_PUSH_TEST_SUBJECTS
+  BLOOM_PUSH_SCHEDULER_SECRET
+
+Can be generated/configured locally after choosing the replacement:
+  NEXT_PUBLIC_PUSH_VAPID_PUBLIC_KEY
+  BLOOM_PUSH_VAPID_PRIVATE_KEY
+  BLOOM_PUSH_VAPID_SUBJECT
+  BLOOM_PUSH_SUBSCRIPTION_ENCRYPTION_KEY
+  BLOOM_PUSH_SCHEDULER_SECRET
+  BLOOM_PUSH_MODE
+  BLOOM_PUSH_TEST_SUBJECTS
+  BLOOM_PUSH_TEST_DEVICE_IDS
+The VAPID/encryption/device-guard names are proposals and are not consumed by the
+current sender. Generate the VAPID pair, encryption key and scheduler secret with
+a secure local generator into an ignored file with mode 0600; never stdout or git.
+The subject is an operator-supplied contact. Resolve allowlists from designated
+authenticated test identities and the actual registered test device, not names
+entered into settings. Keep mode off until those guards and enrollment exist.
+
+Requires user/provider access: ONESIGNAL_REST_API_KEY for any retained OneSignal
+send; adding it does not unblock secure new Web enrollment. Hosted environments
+need their own SUPABASE_SERVICE_ROLE_KEY and authorized Clerk configuration.
+
+Requires an HTTPS test deployment for phone acceptance: NEXT_PUBLIC_APP_URL and
+the corresponding authorized Clerk origin, dedicated nonproduction database
+configuration and the proposed transport secrets. Localhost permits desktop
+secure APIs; a phone's localhost is not this Mac. A plain LAN HTTP address is
+insufficient. Android browser and installed iPhone Home Screen must be tested
+physically; mobile viewport emulation proves layout only. No native Apple app
+or Apple Developer secret is required for standards-based Home Screen Web Push.
+https://developer.mozilla.org/en-US/docs/Web/Security/Defenses/Secure_Contexts
+https://webkit.org/blog/13878/web-push-for-web-apps-on-ios-and-ipados/
+
+CONTROLLED ACCEPTANCE — NO BROADCASTS
+
+Use only the designated development accounts cleanertest and ownertest. The
+pierreharbin admin window is a requested UI preview, not implicit permission
+to make it a push recipient. The operator must designate the physical device.
+Record platform/version, event/delivery ID, registration generation, provider
+response, actual OS receipt time and authorized click result separately. Do not
+include credentials, endpoints, auth keys or account-private content in evidence.
+
+1. In ONE dedicated persistent profile on the chosen test origin, authenticate
+   cleanertest through real Clerk. Capture initial account preferences and device
+   readiness from real APIs. No SQL-created proven device in this environment.
+2. Enable push -> native permission if needed -> automatic registration. Confirm
+   exactly one subscription and one explicit account link; report registered,
+   not delivered. Reload and verify category choices. BLOCKED pending replacement.
+3. Optional Send test targets only that account/device delivery. Inspect the
+   provider response, then independently observe an actual OS notification.
+   Background/lock the device for another individual test. No segments/broadcasts.
+4. Open the notification with the correct account, signed out, then with the
+   wrong account active. Require sign-in/switch; revoke destination access and
+   confirm denial. An alert URL is never an access credential. BLOCKED for receipt.
+5. Authenticate ownertest in that SAME browser profile and explicitly connect it.
+   Confirm both links persist across switching/logout/session renewal; deliver
+   one authorized synthetic event per account. Test delayed enrollment response
+   during switching. Do not count two separate Chrome profiles as this test.
+6. Disable cleanertest's account master. Its queued event must skip on every
+   connected test device, while ownertest still receives its individual event.
+   Inbox/history/unread remain available. Repeat with a second explicitly
+   designated device to demonstrate account-wide suppression. Restore preferences.
+7. Run the disposable scheduler command above for synthetic due reminders,
+   repeat tick, expired messages and fresh eligibility. It is ready and passes.
+   For sender integration, provision an isolated HTTPS test database containing
+   only synthetic jobs/recipients, enable the two allowlists, send a due reminder
+   to the designated device and record actual receipt. Never edit real job dates,
+   accept a client-controlled production clock or activate the preview database
+   just to fabricate a scheduled reminder. Do not claim the SQL tests prove OS
+   delivery, provider acceptance or real multi-account enrollment.
+
+SCHEDULER INSPECTION, ACTIVATION AND ROLLBACK
+
+Actual endpoint: authenticated POST /api/push/tick, maxDuration 60 seconds,
+Bearer BLOOM_PUSH_SCHEDULER_SECRET (at least 32 characters). GET is not a tick.
+It calls bloom_push_tick then dispatches at most five leased deliveries per
+request. Missing/off BLOOM_PUSH_MODE prevents sending. Current local mode is
+absent/off and there is no local cron installation or heartbeat.
+
+Existing release mechanism: supabase/push/enable-schedule.sql installs pg_cron
+and pg_net, calls bloom_push_activate and schedules bloom-push-delivery every
+minute using net.http_post with a 55-second timeout and Vault lookups. It is
+hard-coded to the production origin. DO NOT execute it for local/staging tests.
+Older supabase/push/HANDOFF.txt contains contradictory historical production
+snapshots; none establishes today's hosted state. No hosted query was made here.
+
+Current timing from SQL: assignment summaries at 18:00/08:00 in configured city
+timezone; zero-cleaner three/one-day opportunities at 08:00 property-local;
+payer summaries Monday 09:00 configured payer timezone (Detroit fallback).
+Timers tolerate a one-hour window, not arbitrary late catch-up. Same-day coverage
+events are emitted by job/withdrawal triggers, with sender latency up to a tick.
+
+Exact release sequence, only AFTER replacement and device restrictions pass:
+1. In the intended isolated test database inspect migration ledger, activation,
+   health, cron.job existence/status and recent HTTP responses without displaying
+   Vault decrypted values or cron credentials. Set mode test with BOTH allowlists.
+   Stop if the database includes real recipients/jobs, registration is unavailable
+   or a required key is absent. Save activation/schedule metadata privately.
+2. Configure Vault names bloom_push_url and bloom_push_scheduler_secret; the latter
+   must match BLOOM_PUSH_SCHEDULER_SECRET. Use a reviewed STAGING copy of the SQL
+   with an exact staging-origin guard, retaining its secret/count checks. Never
+   weaken or retarget the committed production guard for convenience.
+3. Within that explicit release run, in order:
+     create extension if not exists pg_cron;
+     create extension if not exists pg_net;
+     select public.bloom_push_activate();
+     select cron.schedule('bloom-push-delivery','* * * * *',$job$
+       select net.http_post(
+         url:=(select decrypted_secret from vault.decrypted_secrets where name='bloom_push_url'),
+         headers:=jsonb_build_object('Content-Type','application/json','Authorization','Bearer '||(select decrypted_secret from vault.decrypted_secrets where name='bloom_push_scheduler_secret')),
+         body:='{}'::jsonb,timeout_milliseconds:=55000);
+     $job$);
+   Activation baselines historical publications; it is not a schema prerequisite.
+4. Confirm a recent health heartbeat and HTTP 200 through both cron run details
+   and pg_net response status. A successful cron SQL job alone does not prove
+   the HTTP request authenticated. Then run only designated synthetic acceptance.
+   Never dump Vault, request headers or response bodies containing private data.
+5. Production requires a separate explicit release after physical acceptance;
+   it is not implied by applying migrations or completing this local task.
+
+Exact rollback/pause on the deliberately activated target:
+  select cron.unschedule(jobid) from cron.job
+    where jobname='bloom-push-delivery';
+  begin;
+  select pg_advisory_xact_lock(hashtextextended('bloom-push-tick',0));
+  update private.push_control set activated_at=null where singleton=true;
+  commit;
+Set BLOOM_PUSH_MODE off and restart/redeploy that sender environment. Stop any
+manual tick callers, and drain in-flight requests before changing transport.
+Already handed-off notifications cannot be retracted. Keep preferences, links,
+outbox and terminal records; do not truncate or automatically replay pending
+messages. Check expiry and current eligibility before any intentional resume.
+For transport rollback, restore only an existing proven OneSignal subscription
+under the same device lock/generation gate; a newly native-only device cannot
+be fabricated into a proven OneSignal subscription. Keep it safely unavailable
+until native delivery is repaired. Do not run old session-bound code on new data.
+
+MIGRATIONS 079–083 AND DEPLOYMENT PREREQUISITES
+
+Locally applied in order, with 078 prerequisite:
+  078 account_push_preferences
+  079 private_declines_and_stay_extensions
+  080 operational_notifications
+  081 notification_lock_order
+  082 notification_event_freshness
+  083 push_consent_dispatch_boundary
+Use npm run db:check then npm run db:apply for local schema changes; those guarded
+commands are NOT a hosted migration process. No migration was needed this turn.
+
+Hosted state is uninspected. First review/integrate the current dirty checkout,
+take a backup and compare the intended target's actual migration ledger. Apply
+all missing prerequisites in order, including 078 before 079–083. Do not skip
+missing earlier migrations or mark them applied without schema reconciliation.
+Pause any existing hosted sender explicitly as a release step BEFORE migrating
+or deploying overlapping old/new worker code. New notification triggers can
+queue events if that database was already activated; migrations do not safely
+substitute for pausing the timer. This pause was not performed in this task.
+
+Apply schema, deploy matching app/worker with delivery off, verify service-only
+RPC permissions and existing choice preservation. The proposed native transport
+migration after 083 is an additional implementation/review prerequisite; 079–083
+alone cannot fix registration. Run isolated HTTPS acceptance, then separately
+release production scheduling. Keep legacy challenge state/routes until the
+replacement/rollback is proven; then retire them in a follow-up migration.
