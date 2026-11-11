@@ -227,6 +227,7 @@
 
 .bloom-owner .icon-btn {
     width: 38px; height: 38px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+    padding: 0; line-height: 0; /* icons are SVG (Icon); no glyph baseline to offset */
     background: var(--card); box-shadow: var(--shadow-sm); color: var(--ink-2); transition: all 140ms ease;
   }
 
@@ -844,3 +845,50 @@
 /* Navigation arrows stay together, including embedded onboarding dialogs. */
 .bloom-owner .owner-detail-navigation > .bloom-actions { display:flex; flex-direction:row; flex-wrap:nowrap; align-items:center; gap:10px; margin-top:0; flex-shrink:0; }
 .bloom-owner .owner-detail-navigation > .bloom-actions > button { flex:0 0 auto; }
+.bloom-owner .owner-property-cover-heading { display:flex; align-items:center; gap:12px; min-width:0; }
+.bloom-owner .owner-property-cover-heading .owner-property-title-ending { display:inline; }
+/* Dashed "Drafts" cell at the end of the listing list (same look as "Add supply"); opens the drafts page. */
+.bloom-owner .owner-drafts-card { position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; width:100%; min-height:122px; padding:20px 48px; border:1px dashed var(--pink, #cf8492); border-radius:24px; background:#fff; color:var(--pink, #b85b70); font:inherit; font-size:16px; cursor:pointer; box-shadow:none; }
+.bloom-owner .owner-drafts-card:hover { background:#fbf4f5; }
+.bloom-owner .owner-drafts-card small { color:#817b70; font-size:13px; }
+.bloom-owner .owner-drafts-only { max-width:360px; }
+.bloom-owner .owner-drafts-page { gap:12px; }
+
+.bloom-owner .owner-drafts-card strong { font-weight:500; }
+.bloom-owner .owner-drafts-chevron { position:absolute; right:22px; top:50%; transform:translateY(-50%); }
+.bloom-owner .owner-drafts-page > h2 { margin:0; }
+/* While the Drafts page is open, hide the page chrome above it (admin tabs and heading, owner filters). */
+main:has(.owner-drafts-page) .main-inner > :not(:has(.owner-drafts-page)):not(.owner-drafts-page) { display:none !important; }
+
+/* Phone calendar for owners: same full-page layout as cleaners (pinned header + toolbar, stacked months, floating pill, Filters drawer). */
+@media (max-width: 600px) {
+  .bloom-owner .topbar.bloom-compact-header:has(.phone-toolbar) { position:sticky; top:0; z-index:30; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; background:var(--bg, #f5f2ec); }
+  .bloom-owner .topbar.bloom-compact-header:has(.phone-toolbar) > .brand { order:0; }
+  .bloom-owner .topbar.bloom-compact-header > .topbar-right { order:1; display:flex; align-items:center; justify-content:flex-end; gap:10px; width:auto; margin-left:auto; }
+  .bloom-owner .topbar.bloom-compact-header > .topbar-right > * { flex:0 0 auto; width:auto; margin:0; }
+  .bloom-owner .phone-toolbar { order:2; display:flex; align-items:center; gap:8px; width:100%; min-width:0; }
+  .bloom-owner .phone-toolbar > .calendar-type-toggle { flex:0 1 auto; min-width:0; }
+  .bloom-owner .phone-toolbar > .calendar-type-toggle .vt-btn { min-height:40px; padding:6px 12px; font-size:14px; }
+  .bloom-owner .phone-cal-actions { display:flex; gap:8px; margin-left:auto; flex-shrink:0; }
+  .bloom-owner .phone-cal-actions .bloom-button { min-height:44px; padding:8px 14px; white-space:nowrap; }
+  .bloom-owner .phone-cal-actions .bloom-button.secondary { background:#fff; box-shadow:0 1px 3px #302f2612; }
+  .bloom-owner .phone-filters-button[data-active] { border:1px solid #b85563; }
+  .bloom-owner .main-inner { padding-bottom:120px; }
+  .bloom-owner .phone-month { scroll-margin-top:var(--phone-header-height, 132px); }
+  .bloom-owner .phone-month-title { margin:20px 4px 12px; font-size:24px; font-weight:700; letter-spacing:-.02em; }
+  .bloom-owner .phone-months-edge { height:1px; }
+  .bloom-owner .phone-month td[data-outside] > * { visibility:hidden; }
+  .bloom-owner .phone-month tbody tr:not(:has(td:not([data-outside]))) { display:none; }
+  .bloom-owner .phone-view-nav { position:fixed; left:50%; bottom:max(16px, env(safe-area-inset-bottom)); z-index:40; transform:translateX(-50%); width:min(calc(100vw - 32px), 440px); }
+  .bloom-owner .phone-view-nav > * { display:flex; width:100%; gap:2px; padding:4px; box-sizing:border-box; box-shadow:0 10px 30px #302f262e, 0 2px 6px #302f2614; }
+  .bloom-owner .phone-view-nav .vt-btn { flex:1 1 0; min-width:0; flex-direction:column; justify-content:center; gap:2px; min-height:52px; padding:6px 2px; font-size:12px; white-space:nowrap; overflow:hidden; }
+  .bloom-owner .phone-view-nav .vt-btn span { display:inline; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
+}
+@media (max-width: 359px) {
+  .bloom-owner .phone-filters-button [class*=label] { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+  .bloom-owner .phone-filters-button { padding:8px 12px; }
+}
+/* Calendar source choices inside the owner Filters drawer. */
+.calendar-filter-sources { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 20px; }
+.calendar-filter-sources button { min-height:40px; padding:8px 14px; border:1px solid #e5e0d6; border-radius:999px; background:#fff; color:#2d2a1f; font:inherit; font-size:14px; cursor:pointer; }
+.calendar-filter-sources button[aria-checked=true] { border-color:#2d2a1f; background:#2d2a1f; color:#fff; }

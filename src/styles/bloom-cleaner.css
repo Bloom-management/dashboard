@@ -193,6 +193,7 @@
 .bloom-cleaner .icon-btn {
     width: 38px; height: 38px; border-radius: 50%;
     display: inline-flex; align-items: center; justify-content: center;
+    padding: 0; line-height: 0; /* icons are SVG (Icon); no glyph baseline to offset */
     background: var(--card); box-shadow: var(--shadow-sm); color: var(--ink-2);
     transition: all 140ms ease;
   }
@@ -437,6 +438,8 @@
 
 .bloom-cleaner .payout-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
+.bloom-cleaner .payout-tiles.payout-tiles-single { grid-template-columns: 1fr; }
+
 .bloom-cleaner .payout-tile { background: rgba(255,255,255,0.07); border-radius: var(--r-sm); padding: 14px; text-align: center; transition: all 150ms ease; border: 1.5px solid transparent; }
 
 .bloom-cleaner .payout-tile.active { background: var(--bloom-soft); border-color: var(--bloom); }
@@ -558,6 +561,10 @@
 .bloom-cleaner .job-detail-compact .payout-tile { padding: 6px; }
 .bloom-cleaner .job-detail-compact .pt-amount { font-size: 22px; }
 .bloom-cleaner .job-detail-compact .payout-note { margin-top: 6px; }
+/* Long property names wrap at a smaller size; three lines max keeps the fixed frame from over-shrinking. */
+.bloom-cleaner.bloom-cleaner .job-detail-compact:not(.bloom-job-detail-screen) .detail-headline { font-size: 17px; line-height: 1.25; text-wrap: balance; overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+/* Zoom re-rounds border widths; `transition: all` would animate them and re-trigger fitting forever. */
+.bloom-cleaner .job-detail-compact [data-bloom-content-scale] * { transition-property: color, background-color, border-color, box-shadow, opacity, transform; }
 @media (max-height: 740px) and (min-width: 540px) {
   .bloom-cleaner .job-detail-compact .detail-hero { position: relative; padding: 12px 130px 12px 20px; text-align: left; min-height: 110px; }
   .bloom-cleaner .job-detail-compact .assign-row { position: absolute; right: 20px; bottom: 10px; gap: 12px; }
@@ -566,7 +573,7 @@
 
 /* Phone layout, including compact Safari browser and keyboard viewports. */
 @media (max-width: 600px) {
-  .bloom-cleaner.cleaner-hub { --booking-cell-min-height: 104px; width: 100%; min-width: 0; }
+  .bloom-cleaner.cleaner-hub { --booking-cell-min-height: 128px; width: 100%; min-width: 0; }
   .cleaner-hub .topbar { position: relative; gap: 10px; padding: max(10px, env(safe-area-inset-top)) 12px 10px; }
   .cleaner-hub .topbar-right { width: 100%; margin-left: 0; justify-content: space-between; gap: 8px; }
   .cleaner-hub .bloom-hub-selector { width: 100%; }
@@ -607,4 +614,106 @@
 @media (max-height: 500px) and (orientation: landscape) {
   .cleaner-hub .topbar { position: relative; }
   .cleaner-hub .job-detail-compact { max-height: calc(100dvh - 16px); }
+}
+
+/* Phone calendar: Google-Calendar-style full page (header actions, stacked months, floating view pill, Filters drawer). */
+@media (max-width: 600px) {
+  .cleaner-hub .phone-cal-actions .bloom-button { min-height:44px; padding:8px 16px; }
+  .cleaner-hub .phone-filters-button[data-active] { border:1px solid #b85563; }
+  .cleaner-hub .main-inner { padding-bottom:120px; }
+  .cleaner-hub .phone-month { scroll-margin-top:8px; }
+  .cleaner-hub .phone-month + .phone-month { margin-top:12px; }
+  .cleaner-hub .phone-month-title { margin:20px 4px 12px; font-size:24px; font-weight:700; letter-spacing:-.02em; }
+  .cleaner-hub .phone-months-edge { height:1px; }
+  /* Give each phone month the taller, readable row rhythm used by the calendar view. */
+  .cleaner-hub .phone-month .bookingCell { min-height:var(--booking-cell-min-height); aspect-ratio:auto; }
+  .cleaner-hub .day-pill .dp-label { font-size:11px; }
+  .phone-view-nav { position:fixed; left:50%; bottom:max(16px, env(safe-area-inset-bottom)); z-index:40; transform:translateX(-50%); width:min(calc(100vw - 32px), 420px); }
+  .phone-view-nav > * { width:100%; box-shadow:0 10px 30px #302f262e, 0 2px 6px #302f2614; }
+  .phone-view-nav .vt-btn { flex:1; justify-content:center; min-height:48px; }
+}
+/* Filters drawer contents. */
+.calendar-filter-network { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:0 0 20px; padding:16px; border:1px solid #d8a4ae; border-radius:20px; }
+.calendar-filter-network > div { display:grid; gap:2px; min-width:0; }
+.calendar-filter-network strong { font-size:16px; }
+.calendar-filter-network small { color:#6f6a60; font-size:13px; }
+.calendar-filter-network .bloom-network-trigger { font-size:0; gap:0; padding:0; border:0; background:none; box-shadow:none; min-height:0; }
+.calendar-filter-heading { margin:0 0 10px; color:#6f6a60; font-size:13px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+.calendar-filter-search { width:100%; box-sizing:border-box; min-height:48px; margin:0 0 8px; padding:10px 16px; border:1px solid #e5e0d6; border-radius:14px; background:#faf8f4; font:inherit; font-size:16px; }
+.calendar-filter-list { margin:0; padding:0; list-style:none; }
+.calendar-filter-list li + li { border-top:1px solid #efebe1; }
+.calendar-filter-list label { display:flex; align-items:center; gap:14px; min-height:56px; cursor:pointer; }
+.calendar-filter-list input[type=checkbox] { flex-shrink:0; width:24px; height:24px; margin:0; accent-color:#b85563; }
+.calendar-filter-list .calendar-filter-name { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:16px; }
+.calendar-filter-list label > :last-child { margin-left:auto; color:#6f6a60; font-size:14px; white-space:nowrap; }
+.calendar-filter-all strong { flex:1; font-size:16px; }
+.calendar-filter-empty { padding:16px 0; color:#6f6a60; }
+.calendar-filter-reset { padding:8px 0; border:0; background:none; color:#2d2a1f; font:inherit; font-weight:600; text-decoration:underline; text-underline-offset:3px; cursor:pointer; }
+.calendar-filter-apply.bloom-button { flex:1; min-height:52px; }
+.calendar-filter-network .bloom-network-trigger { cursor:pointer; }
+.calendar-filter-network .bloom-network-indicator { width:52px; height:30px; background:#c8c3b8; }
+.calendar-filter-network .bloom-network-indicator:after { width:24px; height:24px; top:3px; left:3px; }
+.calendar-filter-network .bloom-network-indicator[data-enabled=true] { background:#a85466; }
+.calendar-filter-network .bloom-network-indicator[data-enabled=true]:after { transform:translateX(22px); }
+@media (max-width: 600px) {
+  /* Bottom pill keeps its labels (the compact header rule hides them). */
+  .bloom-cleaner .phone-view-nav .vt-btn span { display:inline; }
+  /* Each month shows only its own days; weeks wholly in another month are dropped. */
+  .cleaner-hub .phone-month td[data-outside] > * { visibility:hidden; }
+  .cleaner-hub .phone-month tbody tr:not(:has(td:not([data-outside]))) { display:none; }
+  /* Header stays pinned (Today / Filters always reachable); months land just below it. */
+  .cleaner-hub:has(.phone-months) .topbar { position:sticky; top:0; z-index:30; background:var(--bg, #f5f2ec); }
+  .cleaner-hub .phone-month { scroll-margin-top:var(--phone-header-height, 132px); }
+}
+/* Explicit grid (checkbox · name · count) so global label styles can't reorder the row. */
+.calendar-filter-list li > label { display:grid; grid-template-columns:24px minmax(0,1fr) auto; align-items:center; gap:14px; }
+.calendar-filter-list li > label > input[type=checkbox] { grid-column:1; order:0; }
+@media (max-width: 359px) {
+  .cleaner-hub .phone-filters-button [class*=label] { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+  .cleaner-hub .phone-filters-button { padding:8px 12px; }
+}
+@media (max-width: 600px) {
+  /* Row 1: brand … bell/account. Row 2 (toolbar): city (shrinks) … Today + Filters (never wrap). */
+  .cleaner-hub .topbar:has(.phone-toolbar) { display:flex; flex-wrap:wrap; align-items:center; }
+  .cleaner-hub .topbar:has(.phone-toolbar) > .brand { order:0; }
+  .cleaner-hub .topbar:has(.phone-toolbar) > .topbar-right { order:1; width:auto; margin-left:auto; }
+  .cleaner-hub .phone-toolbar { order:2; display:flex; align-items:center; gap:8px; width:100%; min-width:0; }
+  .cleaner-hub .phone-toolbar > .city-tabs, .cleaner-hub .phone-toolbar > .bloom-city { flex:0 1 auto; min-width:0; overflow:hidden; }
+  .cleaner-hub .phone-toolbar .cleaner-city-trigger { max-width:100%; min-width:0; min-height:44px; padding:8px 12px; gap:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cleaner-hub .phone-toolbar .cleaner-city-trigger > svg:last-child { display:none; }
+  .cleaner-hub .phone-cal-actions { display:flex; gap:8px; margin-left:auto; flex-shrink:0; }
+  .cleaner-hub .phone-cal-actions .bloom-button { min-height:44px; padding:8px 14px; white-space:nowrap; }
+}
+@media (max-width: 359px) {
+  .cleaner-hub .phone-filters-button [class*=label] { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+  .cleaner-hub .phone-filters-button { padding:8px 12px; }
+}
+@media (max-width: 600px) {
+  /* Beat the compact-header grid and the city tab's legacy order/width/pill so the toolbar reads: city … Today Filters. */
+  .bloom-cleaner .topbar.bloom-compact-header:has(.phone-toolbar) { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; }
+  .bloom-cleaner .topbar.bloom-compact-header:has(.phone-toolbar) > .topbar-right { margin-left:auto; width:auto; }
+  .bloom-cleaner .phone-toolbar > .city-tabs, .bloom-cleaner .phone-toolbar > .bloom-city { order:0; width:auto; max-width:none; flex:0 1 auto; min-width:0; margin:0; padding:0; background:transparent; border-radius:0; overflow:hidden; }
+}
+@media (max-width: 600px) {
+  .bloom-cleaner .topbar.bloom-compact-header:has(.phone-toolbar) > .topbar-right { justify-content:flex-end; gap:10px; }
+}
+@media (max-width: 600px) {
+  .bloom-cleaner .topbar.bloom-compact-header:has(.phone-toolbar) > .topbar-right > * { flex:0 0 auto; width:auto; margin:0; }
+}
+@media (max-width: 600px) {
+  .bloom-cleaner .topbar.bloom-compact-header:has(.phone-toolbar) > .topbar-right { display:flex; align-items:center; }
+}
+@media (max-width: 600px) {
+  /* Bottom pill: three equal tabs that always fit (icons + labels shrink before anything overflows). */
+  .phone-view-nav > * { display:flex; gap:2px; padding:4px; box-sizing:border-box; }
+  .bloom-cleaner .phone-view-nav .vt-btn { flex:1 1 0; min-width:0; gap:6px; padding:8px 6px; font-size:14px; white-space:nowrap; overflow:hidden; }
+  .bloom-cleaner .phone-view-nav .vt-btn span { overflow:hidden; text-overflow:ellipsis; }
+  .bloom-cleaner .phone-view-nav .vt-btn svg { flex-shrink:0; }
+  /* Today / Filters: white fill. */
+  .bloom-cleaner .phone-cal-actions .bloom-button.secondary { background:#fff; box-shadow:0 1px 3px #302f2612; }
+  /* Bloom opportunities switch label stays on one line. */
+  .bloom-cleaner .bloom-network-trigger { white-space:nowrap; }
+}
+@media (max-width: 359px) {
+  .bloom-cleaner .phone-view-nav .vt-btn { font-size:13px; gap:4px; padding:8px 4px; }
 }
