@@ -1,4 +1,6 @@
 'use client';
+import {RoomSpaces} from './room-listings/spaces';
+import {RoomVisitDialog} from './room-listings/visit';
 import {CalendarSourceBrand} from './booking-source-card';
 import {BookingSourceCard} from './booking-source-card';
 import {PropertyThumbnailSettings} from './property-thumbnail';
@@ -48,6 +50,7 @@ import { Account, Brand, HubSelector, Changes, Empty, ErrorNotice, Loading, Moda
 import { Photos } from './photos';
 import { CalendarReviewList } from './calendar-review';
 import { OwnerMonth } from './owner-month';
+import {BackButton} from './back-button';
 
 const noIntegration: BloomIntegration = {};
 const unavailable = <Empty title="This admin tool is not available yet">The management service must be connected before you can use this tool.</Empty>;
@@ -99,7 +102,11 @@ function RequestRow({ item, reload, integration }: { item: CityRequest; reload: 
   }
   return <article className="bloom-admin-card"><h3>{item.cleanerName}</h3><p>{item.type==='bloom_pool'?'Join Bloom':'City change'}</p><p>Requested city: {item.requestedCityName} · {item.status==='rejected'?'Declined':item.status}</p>{item.status === 'pending' && <div className="bloom-actions"><button className="bloom-button" disabled={mutation.busy} onClick={() => decide('approved')}>Approve</button><button className="bloom-button secondary" disabled={mutation.busy} onClick={() => decide('rejected')}>Decline</button></div>}<Result mutation={mutation} /></article>;
 }
-function PropertyForm({ integration, created }: { integration: BloomIntegration; created: (id:string) => void }) {
+function PropertyForm({ integration, created, houses=[], draftSaved }: { integration: BloomIntegration; created: (id:string) => void; houses?:{id:string;name:string}[]; draftSaved?:()=>void }) {
+  // Listing type, house and room identifier come from the draft form: room listings are saved as drafts and set up from Drafts.
+  const [listingType,setListingType]=useState<'entire_home'|'room'>('entire_home');
+  const [house,setHouse]=useState('');const [identifier,setIdentifier]=useState('');
+  const draftMutation=useMutation();
   const [draft, setDraft] = useState<Omit<PropertyOption, 'id'>>({ name:'',cityId:'',timezone:'America/Detroit',address:'',instructions:'',isBloomOwned:true,active:true,ownerIds:[],soloRateCents:7500 });
   const [addressPin,setAddressPin]=useState<AddressPin|null>(null);const [pinConfirmed,setPinConfirmed]=useState(false);
   const [rate,setRate]=useState('75.00');
@@ -116,8 +123,21 @@ function PropertyForm({ integration, created }: { integration: BloomIntegration;
   const mutation=useMutation();
   const citiesLoad=useCallback((signal:AbortSignal)=>integration.listCities!(signal),[integration]);
   const cities=useResource(citiesLoad);
+  async function saveDraft(){
+    const cityId=draft.cityId||cities.data?.find(c=>c.active&&c.name.toLowerCase()==='detroit')?.id||'';
+    if(!cityId){setValidation('Choose a city before saving a draft.');return;}
+    if(listingType==='room'&&!identifier.trim()){setValidation('Enter the room identifier, such as DH1.');return;}
+    setValidation('');
+    const body={action:'create',cityId,listingType,houseId:listingType==='room'&&house?house:null,data:{name:draft.name.trim(),...(listingType==='room'&&house?{}:{address:draft.address}),timezone:draft.timezone,...(listingType==='room'?{identifier:identifier.trim()}:{}),...(draft.instructions.trim()?{instructions:draft.instructions}:{})}};
+    if(await draftMutation.run(body,key=>request('/listing-drafts',{body,key}))){
+      draftSaved?.();
+      const url=new URL(window.location.href);url.searchParams.delete('new');url.searchParams.set('listings','drafts');window.history.pushState(null,'',url);window.dispatchEvent(new PopStateEvent('popstate'));
+    }
+  }
   async function save(event:FormEvent){
-    event.preventDefault(); const soloRateCents = parseSoloRate(rate);
+    event.preventDefault();
+    if(listingType==='room'){await saveDraft();return;}
+    const soloRateCents = parseSoloRate(rate);
     if (soloRateCents === null) { setValidation('Enter a positive USD rate in two-cent increments so it can be split evenly.'); return; }
     const ownership=propertyOwnership(draft.isBloomOwned,ownerMode,draft.ownerIds,ownerEmail);
     if (!ownership) { setValidation("Select an owner account or enter the pending owner’s email."); return; }
@@ -135,22 +155,25 @@ function PropertyForm({ integration, created }: { integration: BloomIntegration;
       }
       if(!calendarFailed.current)created(savedId.current);});
   }
-  return <form className="bloom-form admin-create-property" onSubmit={save} aria-busy={mutation.busy}><h2>Add Property</h2><fieldset className="property-create-fields" disabled={mutation.busy||!!savedProperty}>
-    <label>Name<input required maxLength={200} value={draft.name} onChange={e=>setDraft({...draft,name:e.target.value})}/></label>
-    <label>Ownership<Select value={draft.isBloomOwned?'bloom':'owner'} onChange={e=>setDraft({...draft,isBloomOwned:e.target.value==='bloom',ownerIds:[],pendingOwnerEmail:null})}><option value="bloom">Bloom-owned</option><option value="owner">Owner-owned</option></Select></label>
+  return <form className="bloom-form admin-create-property" onSubmit={save} aria-busy={mutation.busy}><h2>Add Property</h2><fieldset className="property-create-fields" disabled={mutation.busy||draftMutation.busy||!!savedProperty}>
+    <label>Listing type<Select value={listingType} onChange={e=>{setListingType(e.target.value as 'entire_home'|'room');setHouse('');}}><option value="entire_home">Entire home</option><option value="room">Room</option></Select></label>
+    {listingType==='room'&&<><label>House<Select value={house} onChange={e=>setHouse(e.target.value)}><option value="">New house</option>{houses.map(h=><option key={h.id} value={h.id}>{h.name}</option>)}</Select></label>
+    <label>Room identifier<input required maxLength={100} value={identifier} onChange={e=>setIdentifier(e.target.value)}/></label></>}
+    <label>{listingType==='room'?'Listing title':'Name'}<input required maxLength={200} value={draft.name} onChange={e=>setDraft({...draft,name:e.target.value})}/></label>
+    {listingType==='entire_home'&&<><label>Ownership<Select value={draft.isBloomOwned?'bloom':'owner'} onChange={e=>setDraft({...draft,isBloomOwned:e.target.value==='bloom',ownerIds:[],pendingOwnerEmail:null})}><option value="bloom">Bloom-owned</option><option value="owner">Owner-owned</option></Select></label>
     {draft.isBloomOwned?<p>Bloom owns this property. No owner account is required.</p>:<fieldset><legend>Property owner</legend>
       <label>Owner setup<Select value={ownerMode} onChange={event=>setOwnerMode(event.target.value as 'existing'|'pending')}><option value="existing">Select an existing owner</option><option value="pending">Owner signs up later</option></Select></label>
       {ownerMode==='existing'?<><Paginated loader={integration.admin!.users} render={users=><>{users.filter(u=>u.role==='owner').map(owner=><label className="bloom-check" key={owner.id}><input type="checkbox" checked={draft.ownerIds.includes(owner.id)} onChange={e=>setDraft({...draft,ownerIds:e.target.checked?[...draft.ownerIds,owner.id]:draft.ownerIds.filter(id=>id!==owner.id)})}/>{owner.displayName}</label>)}{!users.some(u=>u.role==='owner')&&<p>No owner accounts on this page. Check other pages, or choose Owner signs up later to associate the property with the email they will verify.</p>}</>}/><p>Select at least one owner. Your admin account is not assigned as the owner.</p></>:<><label>Owner email<input type="email" required maxLength={254} autoComplete="off" value={ownerEmail} onChange={event=>setOwnerEmail(event.target.value)}/></label><p>The property stays pending until the owner signs in with this verified primary email. Share Bloom's sign-in address with them yourself; no invitation is sent. An existing cleaner or admin account may need admin help before it can become an owner.</p></>}
-    </fieldset>}
+    </fieldset>}</>}
     <label>City<Select required value={draft.cityId||cities.data?.find(c=>c.active&&c.name.toLowerCase()==='detroit')?.id||''} onChange={e=>setDraft({...draft,cityId:e.target.value})}><option value="">Choose city</option>{cities.data?.filter(c=>c.active).map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</Select></label>
     {cities.loading&&<Loading/>}{!!cities.error&&<ErrorNotice error={cities.error} retry={cities.reload}/>}
     <label>Property timezone<input required maxLength={100} value={draft.timezone} onChange={e=>setDraft({...draft,timezone:e.target.value})}/><small>Use an IANA timezone, such as America/Detroit.</small></label>
-    <label>Address<textarea required maxLength={500} value={draft.address} onChange={e=>{setDraft({...draft,address:e.target.value});setAddressPin(null);setPinConfirmed(false);}}/></label><AddressPinPicker key={draft.address} address={draft.address} value={addressPin} onChange={pin=>{setAddressPin(pin);setPinConfirmed(false);}}/>{addressPin?.address===draft.address&&<label><input type="checkbox" checked={pinConfirmed} onChange={e=>setPinConfirmed(e.target.checked)}/>I confirm this pin marks the property. Save it with this property.</label>}
-    <label>Cleaning instructions<textarea required maxLength={5000} value={draft.instructions} onChange={e=>setDraft({...draft,instructions:e.target.value})}/></label>
-    <p>Cleaning window: 11 AM–3 PM on checkout day, in the property's timezone.</p>
-    <label>Initial solo rate (USD)<input type="number" required min="0.02" step="0.02" value={rate} onChange={e=>setRate(e.target.value)}/><small>Shared rate: {rateCents === null ? 'Enter a valid solo rate' : money(rateCents/2)} per cleaner. Admins can update cleaner pricing in unit Settings.</small></label>
-    </fieldset><CalendarSetupSection calendars={calendars} onChange={setCalendars} disabled={mutation.busy}/>{savedProperty&&<p role="status">Your property is saved. Review calendar results below; saving again will not create another property.</p>}
-    {calendarMessages.map((message,index)=><p role="status" key={index}>{message}</p>)}{savedProperty&&<button type="button" className="bloom-button secondary" onClick={()=>created(savedProperty)}>Open saved property</button>}{validation && <p className="bloom-notice" role="alert">{validation}</p>}<button className="bloom-button" disabled={mutation.busy||cities.loading||!!cities.error||!cities.data?.some(c=>c.active)||!propertyOwnership(draft.isBloomOwned,ownerMode,draft.ownerIds,ownerEmail)}>{mutation.busy?'Saving…':savedProperty?'Retry calendar links':'Save property'}</button><Result mutation={mutation}/>
+    {!(listingType==='room'&&house)&&<><label>Address<textarea required maxLength={500} value={draft.address} onChange={e=>{setDraft({...draft,address:e.target.value});setAddressPin(null);setPinConfirmed(false);}}/></label><AddressPinPicker key={draft.address} address={draft.address} value={addressPin} onChange={pin=>{setAddressPin(pin);setPinConfirmed(false);}}/>{addressPin?.address===draft.address&&<label><input type="checkbox" checked={pinConfirmed} onChange={e=>setPinConfirmed(e.target.checked)}/>I confirm this pin marks the property. Save it with this property.</label>}</>}
+    <label>Cleaning instructions<textarea required={listingType==='entire_home'} maxLength={5000} value={draft.instructions} onChange={e=>setDraft({...draft,instructions:e.target.value})}/></label>
+    {listingType==='entire_home'&&<><p>Cleaning window: 11 AM–3 PM on checkout day, in the property's timezone.</p>
+    <label>Initial solo rate (USD)<input type="number" required min="0.02" step="0.02" value={rate} onChange={e=>setRate(e.target.value)}/><small>Shared rate: {rateCents === null ? 'Enter a valid solo rate' : money(rateCents/2)} per cleaner. Admins can update cleaner pricing in unit Settings.</small></label></>}
+    </fieldset>{listingType==='entire_home'&&<CalendarSetupSection calendars={calendars} onChange={setCalendars} disabled={mutation.busy}/>}{savedProperty&&<p role="status">Your property is saved. Review calendar results below; saving again will not create another property.</p>}
+    {calendarMessages.map((message,index)=><p role="status" key={index}>{message}</p>)}{savedProperty&&<button type="button" className="bloom-button secondary" onClick={()=>created(savedProperty)}>Open saved property</button>}{validation && <p className="bloom-notice" role="alert">{validation}</p>}{listingType==='room'?<button className="bloom-button" disabled={draftMutation.busy||cities.loading||!!cities.error}>{draftMutation.busy?'Saving…':'Save draft'}</button>:<div className="bloom-actions"><button className="bloom-button" disabled={mutation.busy||draftMutation.busy||cities.loading||!!cities.error||!cities.data?.some(c=>c.active)||!propertyOwnership(draft.isBloomOwned,ownerMode,draft.ownerIds,ownerEmail)}>{mutation.busy?'Saving…':savedProperty?'Retry calendar links':'Save property'}</button>{!savedProperty&&<button type="button" className="bloom-button secondary" disabled={mutation.busy||draftMutation.busy} onClick={()=>void saveDraft()}>{draftMutation.busy?'Saving…':'Save draft'}</button>}</div>}<Result mutation={mutation}/><Result mutation={draftMutation}/>
   </form>;
 }
 function SourceRow({source,reload,onOutcome}:{source:SourceHealth;reload:()=>void;onOutcome:(message:string)=>void}) {
@@ -170,16 +193,16 @@ function SourceForm({propertyId,reload}:{propertyId:string;reload:()=>void}) {
  const [provider,setProvider]=useState('airbnb');const [url,setUrl]=useState('');const mutation=useMutation();const [syncMessage,setSyncMessage]=useState('');
  return <form className="bloom-admin-card bloom-form" onSubmit={async e=>{e.preventDefault();if(await mutation.run({propertyId,provider,url},async key=>{const saved=await request<CalendarSaveResult>(`/admin/properties/${encodeURIComponent(propertyId)}/calendar-sources`,{body:{provider,url},key});setSyncMessage(calendarSaveMessage(saved.sync));})){setUrl('');reload();}}}><h3>Add calendar source</h3><p>The property is already saved. If saving or syncing this calendar fails, the property remains available and you can retry here.</p><p>{provider==='airbnb'?'Paste the Airbnb calendar export link for this property. Use the calendar export (iCal) link, not the listing page or an import link.':'Paste the Vrbo calendar export (iCal) link for this property.'} Links are private.</p><p>Saving a link automatically starts an import. Review its result below. If it fails, the link remains saved and you can choose Sync now to retry.</p><label>Platform<Select value={provider} onChange={e=>setProvider(e.target.value)}><option value="airbnb">Airbnb</option><option value="vrbo">Vrbo</option></Select></label><label>Private calendar export link<input type="password" autoComplete="off" required maxLength={4096} value={url} onChange={e=>setUrl(e.target.value)}/></label><button className="bloom-button" disabled={mutation.busy}>{mutation.busy?'Saving and syncing…':'Save calendar link'}</button><p role="status">{syncMessage}</p><Result mutation={mutation}/></form>;
 }
-function PropertySettings({id,integration,back,section='settings'}:{id:string;integration:BloomIntegration;back:()=>void;onRenamed:()=>void;section?:'settings'|'calendars'}) {
+function PropertySettings({id,integration,back,section='settings',room=false}:{room?:boolean;id:string;integration:BloomIntegration;back:()=>void;onRenamed:()=>void;section?:'settings'|'calendars'}) {
  const load=useCallback((signal:AbortSignal)=>integration.admin!.property(id,signal),[integration,id]);const property=useResource(load);
  const [revision,setRevision]=useState(0);const reload=()=>setRevision(v=>v+1);
  const [syncOutcome,setSyncOutcome]=useState('');
  const [reviewRevision,setReviewRevision]=useState(0);
  const reviews=useCallback((cursor:string|null,signal:AbortSignal)=>request<import('../../contracts').CalendarReviewPage>(`/admin/properties/${encodeURIComponent(id)}/calendar-review${cursor?`?cursor=${encodeURIComponent(cursor)}`:''}`,{signal}),[id]);
  const sources=useCallback((cursor:string|null,signal:AbortSignal)=>integration.admin!.propertySources(id,cursor,signal),[integration,id]);
- if(property.loading)return <><button type="button" className="bloom-button secondary" onClick={back}>Back to Properties</button><Loading/></>;if(property.error)return <><button className="bloom-button" onClick={back}>Back to Properties</button><ErrorNotice error={property.error} retry={property.reload}/></>;
+ if(property.loading)return <><BackButton onClick={back}>Back to Properties</BackButton><Loading/></>;if(property.error)return <><BackButton onClick={back}>Back to Properties</BackButton><ErrorNotice error={property.error} retry={property.reload}/></>;
  const p=property.data!;
- return <>{section==='settings'?<>{p.pendingOwnerEmail&&<p className="bloom-notice">Pending owner: {p.pendingOwnerEmail}. Access begins after sign-in with this verified primary email. No invitation has been sent.</p>}<PropertyThumbnailSettings key={id} id={id}/><PropertyPin id={id} address={p.address}/><AdminUnitPricing id={id} onSaved={property.reload}/><h3>Access info</h3><AccessInfo propertyId={id}/><CleaningConfiguration propertyId={id}/><PropertyPeoplePanel listing={p}/></>:<><h2>Connected calendars</h2><p>Airbnb and Vrbo sources for {p.name}. Links are kept private.</p><Paginated key={revision} loader={sources} render={(items,refresh)=><>{items.length?items.map(s=><SourceRow source={s} reload={()=>{refresh();setReviewRevision(value=>value+1);}} onOutcome={setSyncOutcome} key={s.id}/>):<Empty title="No calendar sources">Add an export link for this property below.</Empty>}</>}/><p role="status">{syncOutcome}</p><details><summary>Add a calendar connection</summary><SourceForm propertyId={id} reload={reload}/></details><CalendarExport key={id} propertyId={id}/><section aria-label="Flagged calendar entries"><h2>Needs attention</h2><p>Read-only inspection of blocked, unconfirmed, or source-flagged stays. Dates are local to this property. Classification changes are not available here; use Jobs to resolve changes affecting existing cleanings.</p><Paginated key={reviewRevision} loader={reviews} render={items=><CalendarReviewList entries={items}/>}/></section></>}</>;
+ return <>{section==='settings'?<>{p.pendingOwnerEmail&&<p className="bloom-notice">Pending owner: {p.pendingOwnerEmail}. Access begins after sign-in with this verified primary email. No invitation has been sent.</p>}<PropertyThumbnailSettings key={id} id={id}/><PropertyPin id={id} address={p.address}/>{!room&&<AdminUnitPricing id={id} onSaved={property.reload}/>}<h3>Access info</h3><AccessInfo propertyId={id}/>{room?<RoomSpaces propertyId={id}/>:<CleaningConfiguration propertyId={id}/>}<PropertyPeoplePanel listing={p}/></>:<><h2>Connected calendars</h2><p>Airbnb and Vrbo sources for {p.name}. Links are kept private.</p><Paginated key={revision} loader={sources} render={(items,refresh)=><>{items.length?items.map(s=><SourceRow source={s} reload={()=>{refresh();setReviewRevision(value=>value+1);}} onOutcome={setSyncOutcome} key={s.id}/>):<Empty title="No calendar sources">Add an export link for this property below.</Empty>}</>}/><p role="status">{syncOutcome}</p><details><summary>Add a calendar connection</summary><SourceForm propertyId={id} reload={reload}/></details><CalendarExport key={id} propertyId={id}/><section aria-label="Flagged calendar entries"><h2>Needs attention</h2><p>Read-only inspection of blocked, unconfirmed, or source-flagged stays. Dates are local to this property. Classification changes are not available here; use Jobs to resolve changes affecting existing cleanings.</p><Paginated key={reviewRevision} loader={reviews} render={items=><CalendarReviewList entries={items}/>}/></section></>}</>;
 }
 function Properties({integration,initialPropertyId}:{integration:BloomIntegration;initialPropertyId?:string}) {
  const router=useRouter();const search=useSearchParams();const adding=search.get('new')==='1';
@@ -202,9 +225,9 @@ function Properties({integration,initialPropertyId}:{integration:BloomIntegratio
   {data.loading?<Loading/>:data.error?<ErrorNotice error={data.error} retry={data.reload}/>:<OwnerListings admin listings={data.data??[]} initialSelectedId={initialPropertyId} integration={integration} onChanged={changed} from={range.from} toExclusive={range.to} revision={revision}
    addListingAction={<div className="bloom-actions"><button className="bloom-button secondary" onClick={changed}>Refresh</button><Link className="bloom-button" href="/admin?view=properties&new=1" scroll={false}>+ Add listing</Link></div>}
    renderCalendars={listing=><PropertySettings section="calendars" key={listing.id} id={listing.id} integration={integration} back={back} onRenamed={changed}/>}
-   renderSettings={listing=><PropertySettings key={listing.id} id={listing.id} integration={integration} back={back} onRenamed={changed}/>}
+   renderSettings={listing=><PropertySettings room={listing.listingType==='room'} key={listing.id} id={listing.id} integration={integration} back={back} onRenamed={changed}/>}
   />}
-  {adding&&<Modal className="owner-create-dialog" title="Add property" onClose={back}><div className="owner-create-body"><PropertyForm integration={integration} created={id=>{changed();router.push(`/admin?property=${encodeURIComponent(id)}`,{scroll:false});}}/></div></Modal>}
+  {adding&&<Modal className="owner-create-dialog" title="Add property" onClose={back}><div className="owner-create-body"><PropertyForm integration={integration} houses={[...new Map((data.data??[]).filter(l=>l.houseId).map(l=>[l.houseId!,{id:l.houseId!,name:l.houseName??l.name}])).values()]} draftSaved={changed} created={id=>{changed();router.push(`/admin?property=${encodeURIComponent(id)}`,{scroll:false});}}/></div></Modal>}
  </div>;
 }
 
@@ -281,7 +304,7 @@ function Jobs({ user, integration }: { user: SessionUser; integration: BloomInte
     </section>
   </div>
     {selectedDay&&!selected&&!!jobs.data&&calendarType==='cleanings'&&<CleanerDayDialog creation={{propertyId:propertyFilter,onCreated:()=>{jobs.reload();bookings.reload();},onViewDate:date=>{setMonth(date.slice(0,7));setSelectedDay(date);}}} date={selectedDay} jobs={jobs.error?[]:(visibleJobs??[]).filter(job=>job.checkoutDate===selectedDay)} onSelect={job=>{setSelectedId(job.id);}} onClose={()=>{const date=selectedDay;setSelectedDay(null);requestAnimationFrame(()=>document.querySelector<HTMLButtonElement>(`button[data-calendar-date="${date}"]`)?.focus());}}/>}
-    {selected&&<Modal className="cleaner-day-dialog admin-job-dialog" title={`Manage cleaning · ${selected.propertyName}`} onClose={()=>setSelectedId(null)}><AdminJob key={selected.id} job={selected} user={user} integration={integration} close={()=>setSelectedId(null)} reload={jobs.reload}/></Modal>}
+    {selected?.houseId?<RoomVisitDialog job={selected} user={user} integration={integration} onClose={()=>setSelectedId(null)} onUpdate={()=>jobs.reload()}/>:selected&&<Modal className="cleaner-day-dialog admin-job-dialog bloom-job-frame" title={`Manage cleaning · ${selected.propertyName}`} onClose={()=>setSelectedId(null)}><AdminJob key={selected.id} job={selected} user={user} integration={integration} close={()=>setSelectedId(null)} reload={jobs.reload}/></Modal>}
     {selectedBooking&&<AdminBooking block={selectedBooking} close={()=>setSelectedBooking(null)}/>}
     </>;
 }
