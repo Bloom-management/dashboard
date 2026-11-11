@@ -1,4 +1,13 @@
-:global(dialog.bloom-dialog).surface { border-radius:28px; }
+:global(dialog.bloom-dialog).surface { border-radius:28px; overflow:hidden; box-sizing:border-box; }
+:global(dialog.bloom-dialog[data-content-scrolled] > [data-bloom-dialog-close]) { visibility:hidden; pointer-events:none; }
+.scroll { width:100%; min-width:0; max-height:calc(100dvh - 144px); overflow-y:auto; overflow-x:hidden; overscroll-behavior:contain; }
+.scroll > div { overflow:visible !important; }
+.scroll [data-modal-header] { position:sticky; top:0; z-index:4; background:#fff; isolation:isolate; }
+.scroll [data-modal-header]::before { content:""; position:absolute; inset:0 -1px; background:#fff; z-index:-1; }
+.scroll h2[data-modal-header] { padding-block:12px; margin-top:0; }
+/* Long default titles scroll with the body so they cannot cover dialog controls. */
+.scroll .title[data-modal-header] { position:relative; top:auto; padding-block:0; }
+.scroll .title[data-modal-header]::before { content:none; }
 /* Safe layout for Modal callers without a custom full-screen/card layout. */
 :global(dialog.bloom-dialog).dialog {
  width:min(640px,calc(100vw - 24px));

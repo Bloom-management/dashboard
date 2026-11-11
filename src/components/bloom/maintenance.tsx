@@ -1,4 +1,6 @@
 'use client';
+import type {RoomCompletionSummary} from '../../contracts/room-summary';
+import {RoomReportItems} from './room-listings/summary';
 import {SupplyLevelBar} from './supply-level-bar';
 import {DialogLoading} from './dialog-loading';
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
@@ -62,7 +64,7 @@ export function MaintenanceCheck({answers,onChange,disabled}:{answers:Partial<Re
   }
   animation.current=requestAnimationFrame(frame);
  }
- if(columns===1)return <div ref={root} className="maintenance-mobile-stack">{maintenanceItems.map(item=>{const answer=answers[item.category];return <fieldset key={item.category} className="maintenance-card maintenance-report-card" disabled={disabled}><legend>{item.label}</legend><div className="maintenance-options">{(['ok','attention'] as const).map(status=><button type="button" key={status} className="maintenance-choice" aria-label={`${item.label}: ${maintenanceStatuses[status]}`} aria-pressed={answer?.status===status} onClick={()=>onChange({...answers,[item.category]:{category:item.category,status:answer?.status===status?'not_applicable':status,notes:answer?.notes??''}})}><MaintenanceIcon path={item.path}/><span>{maintenanceStatuses[status]}</span></button>)}</div>{answer?.status==='attention'&&<label>{item.label} issue<textarea aria-label={`${item.label} issue`} required maxLength={500} value={answer.notes} onChange={event=>onChange({...answers,[item.category]:{...answer,notes:event.target.value}})}/></label>}</fieldset>;})}</div>;
+ if(columns===1)return <div ref={root} className="maintenance-mobile-stack">{maintenanceItems.map(item=>{const answer=answers[item.category];return <fieldset key={item.category} className="maintenance-card maintenance-report-card" disabled={disabled}><legend>{item.label}</legend><div className="maintenance-options">{(['ok','attention'] as const).map(status=><button type="button" key={status} className="maintenance-choice" aria-label={`${item.label}: ${maintenanceStatuses[status]}`} aria-pressed={(answer?.status??'ok')===status} onClick={()=>onChange({...answers,[item.category]:{category:item.category,status:status==='attention'&&answer?.status==='attention'?'ok':status,notes:answer?.notes??''}})}><MaintenanceIcon path={item.path}/><span>{maintenanceStatuses[status]}</span></button>)}</div>{answer?.status==='attention'&&<label>{item.label} issue<textarea aria-label={`${item.label} issue`} required maxLength={500} value={answer.notes} onChange={event=>onChange({...answers,[item.category]:{...answer,notes:event.target.value}})}/></label>}</fieldset>;})}</div>;
  return <div ref={root} className="maintenance-check maintenance-workspace" style={{aspectRatio:`${columns} / ${rows}`}}>
   <ResizablePanelGroup key={columns} orientation="horizontal" groupRef={horizontal}>
    {Array.from({length:columns},(_,col)=><Fragment key={col}>
@@ -78,8 +80,8 @@ export function MaintenanceCheck({answers,onChange,disabled}:{answers:Partial<Re
          {item&&<fieldset className="maintenance-card maintenance-report-card" disabled={disabled} data-category={item.category}>
           <legend>{item.label}</legend>
           <div className="maintenance-options">
-           {Object.entries(maintenanceStatuses).filter(([status])=>status!=='not_applicable').map(([status,label])=><button type="button" key={status} className="maintenance-choice" aria-label={`${item.label}: ${label}`} aria-pressed={answer?.status===status} onClick={()=>{
-            onChange({...answers,[item.category]:{category:item.category,status:answer?.status===status?'not_applicable':status as MaintenanceAnswer['status'],notes:answer?.notes??''}});
+           {Object.entries(maintenanceStatuses).filter(([status])=>status!=='not_applicable').map(([status,label])=><button type="button" key={status} className="maintenance-choice" aria-label={`${item.label}: ${label}`} aria-pressed={(answer?.status??'ok')===status} onClick={()=>{
+            onChange({...answers,[item.category]:{category:item.category,status:status==='attention'&&answer?.status==='attention'?'ok':status as MaintenanceAnswer['status'],notes:answer?.notes??''}});
             if(status==='attention'&&answer?.status!==status)expand(item.category);else expand(null);
            }}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -100,11 +102,20 @@ export function MaintenanceCheck({answers,onChange,disabled}:{answers:Partial<Re
 }
 export function SupplyReferenceGrid({supplies,reports=[],compact=true}:{compact?:boolean;supplies:CleaningConfig['supplies'];reports?:{supplyId:string;level:SupplyLevel;reportedAt:string}[]}){
  const [expanded,setExpanded]=useState(false);
- const grid=(items:typeof supplies)=><div className="maintenance-grid owner-supply-grid">{items.map(s=>{const r=reports.find(x=>x.supplyId===s.id);return <article className="maintenance-card owner-supply-card" key={s.id} data-level={r?.level??'full'}><SupplyIcon/><strong>{s.name}</strong><span>{r?levels[r.level]:'Full'}</span><SupplyLevelBar level={r?.level??'full'}/>{r&&<small>Last reported {new Date(r.reportedAt).toLocaleString()}</small>}</article>;})}</div>;
- return supplies.length?<>{grid(compact?supplies.slice(0,4):supplies)}{compact&&supplies.length>4&&<button type="button" className="bloom-button secondary" aria-haspopup="dialog" onClick={()=>setExpanded(true)}>+{supplies.length-4} supplies</button>}{expanded&&<Modal title="All supplies" className="bloom-dialog-surface bloom-supplies-dialog" onClose={()=>setExpanded(false)}><h2>Supplies</h2>{grid(supplies)}</Modal>}</>:<p>No supplies are configured for this cleaning.</p>;
+ const grid=(items:typeof supplies)=><div className="maintenance-grid owner-supply-grid">{items.map(s=>{const r=reports.find(x=>x.supplyId===s.id);return <article className="maintenance-card owner-supply-card" key={s.id} data-level={r?.level??'full'}><SupplyIcon/><strong>{s.name}</strong><span>{r?levels[r.level]:'Full'}</span><SupplyLevelBar level={r?.level??'full'}/>{r&&<small>Last reported {new Date(r.reportedAt).toLocaleString()}</small>}</article>;})}{compact&&items.length<supplies.length&&<button type="button" className="maintenance-card owner-supply-card bloom-more-supplies" aria-haspopup="dialog" onClick={()=>setExpanded(true)}>+{supplies.length-items.length} supplies</button>}</div>;
+ return supplies.length?<>{grid(compact?supplies.slice(0,4):supplies)}{expanded&&<Modal title="All supplies" onClose={()=>setExpanded(false)}>{grid(supplies)}</Modal>}</>:<p>No supplies are configured for this cleaning.</p>;
 }
 
-export function JobSupplies({jobId,compact=true}:{jobId:string;compact?:boolean}){const load=useCallback((signal:AbortSignal)=>request<{supplies:CleaningConfig['supplies'];reports:{supplyId:string;level:SupplyLevel;reportedAt:string}[]}>(`/jobs/${jobId}/supplies`,{signal}),[jobId]);const data=useResource(load);return data.loading?(compact?<Loading/>:<DialogLoading/>):data.error?<ErrorNotice error={data.error} retry={data.reload}/>:data.data?<SupplyReferenceGrid compact={compact} supplies={data.data.supplies} reports={data.data.reports}/>:null;}
+type JobInventoryReference={supplies:CleaningConfig['supplies'];reports:{supplyId:string;level:SupplyLevel;reportedAt:string}[];roomReference?:RoomCompletionSummary};
+function useJobInventory(jobId:string){const load=useCallback((signal:AbortSignal)=>request<JobInventoryReference>(`/jobs/${jobId}/supplies`,{signal}),[jobId]);return useResource(load);}
+export function JobSupplies({jobId,compact=true}:{jobId:string;compact?:boolean}){
+ const data=useJobInventory(jobId);
+ return data.loading?(compact?<Loading/>:<DialogLoading/>):data.error?<ErrorNotice error={data.error} retry={data.reload}/>:data.data?.roomReference?<RoomReportItems summary={data.data.roomReference} kind="supply"/>:data.data?<SupplyReferenceGrid compact={compact} supplies={data.data.supplies} reports={data.data.reports}/>:null;
+}
+export function JobMaintenance({jobId}:{jobId:string}){
+ const data=useJobInventory(jobId);
+ return data.loading?<DialogLoading/>:data.error?<ErrorNotice error={data.error} retry={data.reload}/>:data.data?.roomReference?<RoomReportItems summary={data.data.roomReference} kind="maintenance"/>:<MaintenanceGrid showHeading={false}/>;
+}
 
 export function MaintenancePreview(){return <span className="bloom-section-preview" aria-hidden="true">{maintenanceItems.slice(0,4).map(item=><span className="bloom-section-mini" key={item.category} title={item.label}><MaintenanceIcon path={item.path}/></span>)}</span>;}
 export function SupplyPreview({jobId}:{jobId:string}){

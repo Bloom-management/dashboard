@@ -5,11 +5,12 @@
 .card[data-disabled] { opacity:.5; pointer-events:none; }
 .label { min-width:0; overflow-wrap:anywhere; }
 .indicator { display:grid; place-items:center; width:18px; height:18px; flex:0 0 18px; box-sizing:border-box; border:1px solid #a69b89; border-radius:50%; color:#4a4538; }
-.dot { display:block; width:8px; height:8px; border-radius:50%; background:#4a4538; }
+.dot { display:block; width:8px; height:8px; border-radius:50%; background:#b85563; }
 .checkbox { border-radius:4px; font-size:12px; line-height:1; }
 .listCard { margin:8px 2px; }
 @media(prefers-reduced-motion:reduce) { .card { transition:none; } }
 
 .radioIndicator { position:relative; }
+.card:is([data-checked],[aria-checked="true"]) .radioIndicator { border-color:#b85563; }
 .card:is(:hover,[data-highlighted],:focus-visible) .radioIndicator { border-color:#b85563; }
 .card:is(:hover,[data-highlighted],:focus-visible):not([aria-checked="true"]) .radioIndicator::after { content:""; position:absolute; width:8px; height:8px; border-radius:50%; background:#b85563; }

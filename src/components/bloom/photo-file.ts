@@ -5,12 +5,14 @@ export async function preparePhotoFile(file:File):Promise<File>{
  if(file.size>40*1024*1024)throw new ApiError('VALIDATION_ERROR','Choose a photo smaller than 40 MB.');
  const bitmap=await createImageBitmap(file);
  try{
-  if(file.size<=2*1024*1024&&bitmap.width<=2560&&bitmap.height<=2560)return file;
+  const withinSize=bitmap.width<=2560&&bitmap.height<=2560;
+  if(file.size<=1024*1024&&withinSize)return file;
   const scale=Math.min(1,2560/Math.max(bitmap.width,bitmap.height));
   const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(bitmap.width*scale));canvas.height=Math.max(1,Math.round(bitmap.height*scale));
   const context=canvas.getContext('2d');if(!context)throw new Error('Image conversion unavailable');
   context.fillStyle='#fff';context.fillRect(0,0,canvas.width,canvas.height);context.drawImage(bitmap,0,0,canvas.width,canvas.height);
-  const blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(value=>value?resolve(value):reject(new Error('Image conversion failed')),'image/jpeg',0.85));
+  const blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(value=>value?resolve(value):reject(new Error('Image conversion failed')),'image/jpeg',0.82));
+  if(withinSize&&file.size<=10*1024*1024&&blob.size>=file.size)return file;
   if(blob.size>10*1024*1024)throw new ApiError('VALIDATION_ERROR','This photo is still too large. Choose a smaller image.');
   return new File([blob],file.name.replace(/\.[^.]+$/,'')+'.jpg',{type:'image/jpeg',lastModified:file.lastModified});
  }finally{bitmap.close();}

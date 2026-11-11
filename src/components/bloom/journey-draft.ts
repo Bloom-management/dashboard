@@ -6,7 +6,7 @@ export function completionInput(version: number, supplyIds: string[], answers: R
   if (notes.length>1500 || supplyIds.some(id=>answers[id]!==undefined&&!Object.hasOwn(supplyLevels,answers[id]))) return null;
   if(maintenance && maintenanceCategories.some(category=>{const a=maintenance[category];return !!a&&(a.category!==category||!Object.hasOwn(maintenanceStatuses,a.status)||typeof a.notes!=='string'||a.notes.length>500||(a.status==='attention'&&!a.notes.trim()));}))return null;
   if(guestReview&&(!Number.isInteger(guestReview.rating*2)||guestReview.rating<1||guestReview.rating>5||typeof guestReview.comment!=='string'||guestReview.comment.length>1500))return null;
-  return {...(guestReview?{guestReview}:{}),...(maintenance?{maintenance:maintenanceCategories.map(category=>maintenance[category]??{category,status:'not_applicable' as const,notes:''})}:{}),configVersion:version,answers:supplyIds.map(supplyId=>({supplyId,level:answers[supplyId]??'full'})),notes};
+  return {...(guestReview?{guestReview}:{}),...(maintenance?{maintenance:maintenanceCategories.map(category=>maintenance[category]??{category,status:'ok' as const,notes:''})}:{}),configVersion:version,answers:supplyIds.map(supplyId=>({supplyId,level:answers[supplyId]??'full'})),notes};
 }
 export function uncertainCompletion(code: string) {
   return !['VALIDATION_ERROR','PHOTO_COVERAGE_REQUIRED','CONFLICT','INVALID_STATE','REVIEW_REQUIRED','UNAUTHENTICATED','FORBIDDEN','NOT_FOUND','CITY_MISMATCH'].includes(code);

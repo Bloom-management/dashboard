@@ -29,8 +29,8 @@ export function ConnectedHub({role,initialPropertyId}:{role:Role;initialProperty
    }
   },
   ownerProperties:signal=>request('/owner/properties',{signal}),
-  prepareUpload:async(jobId,category,file,key,signal,roomId)=>{
-   const target=await request<{photoId:string;bucket:'job-photos';path:string}>(`/jobs/${encodeURIComponent(jobId)}/photos/upload`,{body:{category,mime:file.type,bytes:file.size,...(roomId?{roomId}:{})},key,signal});
+  prepareUpload:async(jobId,category,file,key,signal,roomId,noteContext)=>{
+   const target=await request<{photoId:string;bucket:'job-photos';path:string}>(`/jobs/${encodeURIComponent(jobId)}/photos/upload`,{body:{category,mime:file.type,bytes:file.size,...(roomId?{roomId}:{}),...(noteContext?{noteContext}:{})},key,signal});
    return {photoId:target.photoId,upload:async(bytes,progress,abort)=>{
     const token=await getToken();const base=process.env.NEXT_PUBLIC_SUPABASE_URL;const publicKey=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
     if(!token)throw new ApiError('UNAUTHENTICATED','Sign in to upload photos.');

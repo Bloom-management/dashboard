@@ -3,3 +3,5 @@
 .input { box-sizing: border-box; width: 100%; height: 36px; padding: 8px 10px; border: 1px solid #dedbd2; border-radius: 7px; background: #fff; color: inherit; font: inherit; outline: none; }
 .input:focus-visible { border-color: #cb7c8b; outline:none; box-shadow:none; }
 .input:disabled { opacity: .5; cursor: not-allowed; }
+/* The popup takes focus on open; keep its elevation despite Bloom's global focus-shadow reset. */
+.content.content:is(:focus,:focus-visible) { box-shadow: 0 6px 22px #302f2620 !important; }

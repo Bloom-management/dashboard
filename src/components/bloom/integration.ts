@@ -17,7 +17,7 @@ export interface BloomIntegration {
   getMyCityRequest?: (signal: AbortSignal) => Promise<{ requestedCityName: string; status: 'pending' | 'approved' | 'rejected' } | null>;
   getInstructions?: (jobId: string, signal: AbortSignal, propertyId?: string) => Promise<{ instructions: string; address?: string }>;
   uploaderLabel?: (photo: JobPhoto) => string | undefined;
-  prepareUpload?: (jobId: string, category: PhotoCategory, file: File, key: string, signal: AbortSignal, roomId?: string) => Promise<UploadTicket>;
+  prepareUpload?: (jobId: string, category: PhotoCategory, file: File, key: string, signal: AbortSignal, roomId?: string, noteContext?: 'supplies'|'maintenance'|'guest') => Promise<UploadTicket>;
   ownerProperties?: (signal: AbortSignal) => Promise<{ id: string; name: string }[]>;
   ownerFreshness?: (signal: AbortSignal) => Promise<{ propertyId: string; lastSuccessAt: string | null; message: string | null }[]>;
   accountControl?: (user: SessionUser) => import('react').ReactNode;

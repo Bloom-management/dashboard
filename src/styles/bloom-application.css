@@ -279,6 +279,10 @@ dialog.bloom-dialog.property-delete-dialog {
  .admin-properties-workspace .owner-listings-section { display:flex; flex-direction:column; flex:1; min-height:0; }
  .admin-properties-workspace .owner-listings-section > .loc-header { flex-shrink:0; }
  .admin-properties-workspace .owner-listings-split { flex:1; height:auto; min-height:0; grid-template-rows:minmax(0,1fr); }
+ /* Listing drafts sit above the split: let the page area scroll past them, and keep the split near full height. */
+ .admin-properties-main:has(.owner-listings-section > :not(.loc-header):not(.owner-listings-split)) { overflow-y:auto !important; }
+ .admin-properties-workspace .owner-listings-section > :not(.loc-header):not(.owner-listings-split) { flex-shrink:0; }
+ .admin-properties-workspace .owner-listings-section:has(> :not(.loc-header):not(.owner-listings-split)) > .owner-listings-split { flex:0 0 auto; height:calc(100dvh - 120px); }
 }
 .admin-properties-workspace.bloom-owner { font-family:inherit; }
 
@@ -593,6 +597,7 @@ dialog.cleaner-city-dialog { width:min(480px,calc(100vw - 24px)); border-radius:
 .bloom-push-dialog input[role="switch"]:checked::after { transform:translateX(18px); }
 .bloom-push-dialog input[role="switch"]:focus-visible { outline:2px solid var(--bloom-deep); outline-offset:3px; }
 .bloom-push-dialog input[role="switch"]:disabled { opacity:.5; cursor:wait; }
+.bloom-push-dialog .bloom-push-divider { border:0; border-top:1px solid #eee8df; margin:0; }
 .bloom-push-device { border-top:1px solid #eee8df; padding-top:16px; }
 .bloom-push-device summary { cursor:pointer; padding:8px 0; font-weight:600; }
 .bloom-push-device .bloom-button { display:block; }
@@ -897,3 +902,36 @@ html body input:focus-visible + :is(span, svg, .onboarding-role-body) {
   outline: none !important;
   box-shadow: none !important;
 }
+.maintenance-grid button.bloom-more-supplies { display:flex; align-items:center; justify-content:center; width:100%; min-height:160px; border:1px dashed #d9d2c6; border-radius:24px; background:#f6f3ec; color:#2d2a1f; font:inherit; font-weight:600; cursor:pointer; }
+.maintenance-grid button.bloom-more-supplies:hover { border-color:#b85563; color:#b85563; }
+
+/* Job dialog frame: every job dialog (open, claimed, finish, report, admin) keeps one fixed size.
+   Content adapts to the frame through the bloom-job container, not the viewport. */
+dialog.bloom-job-frame.bloom-job-frame.bloom-job-frame[open] { display:flex; flex-direction:column; box-sizing:border-box; width:min(460px,calc(100vw - 16px)); max-width:none; height:min(888px,calc(100dvh - 32px)); min-height:0; max-height:none; overflow:hidden; }
+dialog.bloom-job-frame.bloom-job-frame > [data-bloom-dialog-scroll] { flex:1 1 auto; min-height:0; max-height:none; overflow-y:auto; overflow-x:hidden; container:bloom-job / inline-size; }
+
+/* Chat-style photo thumbnails: preview, inline remove, caption below. */
+.bloom-photo.bloom-photo-tile { width:120px; margin:0; }
+.bloom-photo-tile .bloom-photo-frame { position:relative; width:120px; height:120px; }
+.bloom-photo-tile button.bloom-photo-thumb { display:grid; place-items:center; width:100%; height:100%; min-height:0; padding:0; border:1px solid #ece8df; border-radius:16px; overflow:hidden; background:#f6f4ef; color:#817b70; font:inherit; font-size:11px; cursor:zoom-in; }
+.bloom-photo-tile button.bloom-photo-thumb:disabled { cursor:default; }
+.bloom-photo-tile .bloom-photo-thumb img { display:block; width:100%; height:100%; aspect-ratio:auto; max-height:none; object-fit:cover; border-radius:0; }
+.bloom-photo-tile .bloom-photo-frame button.bloom-photo-remove { position:absolute; top:5px; right:5px; display:grid; place-items:center; width:24px; height:24px; min-height:24px; min-width:24px; padding:0; margin:0; border:0; border-radius:50%; background:#fff; color:#2d2a1f; line-height:0; cursor:pointer; box-shadow:0 1px 4px #302f2640; transform:none; }
+.bloom-photo-tile .bloom-photo-frame button.bloom-photo-remove:is(:hover,:active,:focus-visible) { background:#f3f1ec; color:#2d2a1f; transform:none; }
+.bloom-photo-tile .bloom-photo-remove svg { display:block; }
+.bloom-photo-tile .bloom-photo-frame button.bloom-photo-remove:disabled { opacity:.4; cursor:default; }
+.bloom-photo-tile figcaption { font-size:12px; margin:6px 0 0; color:#4f4a40; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.bloom-room-photos { display:flex; flex-wrap:wrap; gap:12px; }
+.bloom-photos:has(.bloom-photo-tile) { display:flex; flex-wrap:wrap; gap:12px; }
+.bloom-photo-tile[data-removing] .bloom-photo-frame { opacity:.45; transition:opacity 160ms ease; }
+/* Red "!" on the Maintenance folder while a room-visit issue is unresolved. */
+.bloom-section-folder:has(> .bloom-issue-badge) { position:relative; }
+.bloom-issue-badge { position:absolute; top:10px; right:10px; z-index:1; display:grid; place-items:center; width:26px; height:26px; border-radius:50%; background:#c4384b; color:#fff; font-size:16px; font-weight:800; line-height:1; box-shadow:0 1px 4px #302f2640; }
+/* Comment photos in reports: up to 5 thumbnails on one row, scaled to fit. */
+.bloom-photo-strip { display:flex; gap:8px; min-width:0; }
+.bloom-photo-strip .bloom-photo.bloom-photo-tile { flex:0 1 120px; width:auto; min-width:0; }
+.bloom-photo-strip .bloom-photo-tile .bloom-photo-frame { width:100%; height:auto; aspect-ratio:1; }
+.bloom-photo-strip .bloom-photo-tile button.bloom-photo-thumb { border-radius:12px; }
+.bloom-photo-strip .bloom-photo-tile figcaption { font-size:11px; }
+/* "Already added" / limit notice in a comment box, styled like a small dark tooltip. */
+.bloom-photo-notice { width:fit-content; margin:0; padding:8px 12px; border-radius:10px; background:#2d2a1f; color:#fff; font-size:13px; line-height:1.3; }

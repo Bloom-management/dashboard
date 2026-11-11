@@ -20,7 +20,7 @@ test('serialized draft preserves immutable payload and idempotency key across ba
 test('maintenance defaults missing categories and requires a note for attention, preserving replay payload',()=>{
  const categories=['painting','fridge','electricity','wifi','tv','garage','climate','water'];
  const answers=Object.fromEntries(categories.map(category=>[category,{category,status:'ok',notes:''}]));
- assert.equal(completionInput(1,[],{},'',{}).maintenance.filter(a=>a.status==='not_applicable').length,8);
+ assert.equal(completionInput(1,[],{},'',{}).maintenance.filter(a=>a.status==='ok').length,8);
  answers.water={category:'water',status:'attention',notes:''};
  assert.equal(completionInput(1,[],{},'',answers),null);
  answers.water.notes='Tap leaks';

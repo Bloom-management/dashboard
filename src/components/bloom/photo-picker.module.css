@@ -1,0 +1,8 @@
+.picker { min-width:0; }
+.picker button.trigger { display:flex; align-items:center; justify-content:center; width:100%; min-height:44px; padding:12px 16px; border:1px solid #d6cfc3; border-radius:12px; background:#fff; color:#b85563; font:inherit; font-weight:600; cursor:pointer; }
+.option { padding:12px 16px; font:inherit; cursor:pointer; border-radius:8px; color:#2d2a1f; }
+.option[data-highlighted] { background:#f6f3ec; }
+.trigger:focus-visible { outline:2px solid #b85563; outline-offset:2px; }
+.picker button.camera { display:grid; place-items:center; width:44px; height:44px; padding:0; border:0; border-radius:10px; background:transparent; color:#b85563; cursor:pointer; }
+.picker button.camera:hover { background:#f8eef1; }
+.camera:focus-visible { outline:2px solid #b85563; outline-offset:2px; }
