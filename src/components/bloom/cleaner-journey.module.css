@@ -247,6 +247,8 @@ dialog.sharedReport.sharedReport { width:840px; max-width:calc(100vw - 24px); ma
 .dialog .footer .withdrawAction p { font-size:11px; text-align:center; }
 .dialog .footer > .notes { flex-basis:100%; }
 @container bloom-job (max-width:600px){.dialog .footer { gap:6px; }.dialog .footer > button,.dialog .footer .withdrawAction button { padding:8px 5px;font-size:11px;min-height:52px; }.dialog .footer .withdrawAction p { font-size:10px; }}
+/* The short "Withdraw" label reads larger than the other footer actions at every width. */
+.dialog .footer .withdrawAction button { font-size:16px; font-weight:700; }
 .starRating input { left:50%; width:50%; }
 .starRating input.halfRating { left:0; width:50%; }
 .starRating label:first-child input { left:0; width:100%; }
