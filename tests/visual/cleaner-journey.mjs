@@ -149,7 +149,7 @@ try{
   assert.deepEqual(errors,[]);console.log(`PASS ${width}x${height}: claim/start/end, room step, supplies/maintenance/back, lost response + reload retry, no horizontal overflow`);started=false;job={...job,status:'open',myAssignmentId:'test-assignment',activeCleanerCount:1,startAt:new Date(Date.now()+86400000).toISOString(),endAt:new Date(Date.now()+100800000).toISOString()};
   await page.goto(`http://127.0.0.1:${server.address().port}?withdraw=1&role=${role}`);
   await page.getByRole('button',{name:'Claim this cleaning',exact:true}).click();
-  await page.getByRole('button',{name:'Withdraw from cleaning',exact:true}).click();
+  await page.getByRole('button',{name:'Withdraw',exact:true}).click();
   await page.getByRole('button',{name:'Claim this cleaning',exact:true}).waitFor({state:'visible'});
   await page.locator('dialog').waitFor({state:'detached'});
   console.log(`PASS ${width}: withdraw returns to original card then closes`);
