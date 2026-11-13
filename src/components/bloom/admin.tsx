@@ -4,6 +4,7 @@ import {RoomVisitDialog} from './room-listings/visit';
 import {CalendarSourceBrand} from './booking-source-card';
 import {BookingSourceCard} from './booking-source-card';
 import {PropertyThumbnailSettings} from './property-thumbnail';
+import {ListingImportSection,applyListingImport,useImportReceipts,type ImportedListing} from './listing-import';
 import {AccessInfo} from './access-info';
 import {CalendarTypeToggle} from './calendar-add-flow';
 import type {OwnerCalendarBlock} from '../../contracts';
@@ -119,6 +120,12 @@ function PropertyForm({ integration, created, houses=[], draftSaved }: { integra
   const [ownerMode,setOwnerMode]=useState<'existing'|'pending'>('existing');
   const [ownerEmail,setOwnerEmail]=useState('');
   const [validation,setValidation]=useState('');
+  const [imported,setImported]=useState<ImportedListing|null>(null);const [importMessage,setImportMessage]=useState('');const importReceipt=useImportReceipts();const importDone=useRef<string|null>(null);
+  async function applyImport(id:string,type:'entire_home'|'room'){
+    if(!imported||importDone.current===id)return true;
+    const problem=await applyListingImport(id,imported,type,importReceipt);setImportMessage(problem??'');
+    if(!problem)importDone.current=id;return !problem;
+  }
   const rateCents = parseSoloRate(rate);
   const mutation=useMutation();
   const citiesLoad=useCallback((signal:AbortSignal)=>integration.listCities!(signal),[integration]);
@@ -129,8 +136,10 @@ function PropertyForm({ integration, created, houses=[], draftSaved }: { integra
     if(listingType==='room'&&!identifier.trim()){setValidation('Enter the room identifier, such as DH1.');return;}
     setValidation('');
     const body={action:'create',cityId,listingType,houseId:listingType==='room'&&house?house:null,data:{name:draft.name.trim(),...(listingType==='room'&&house?{}:{address:draft.address}),timezone:draft.timezone,...(listingType==='room'?{identifier:identifier.trim()}:{}),...(draft.instructions.trim()?{instructions:draft.instructions}:{})}};
-    if(await draftMutation.run(body,key=>request('/listing-drafts',{body,key}))){
+    let draftId='';
+    if(await draftMutation.run(body,async key=>{draftId=(await request<{id:string}>('/listing-drafts',{body,key})).id;})){
       draftSaved?.();
+      if(!await applyImport(draftId,'room'))return;
       const url=new URL(window.location.href);url.searchParams.delete('new');url.searchParams.set('listings','drafts');window.history.pushState(null,'',url);window.dispatchEvent(new PopStateEvent('popstate'));
     }
   }
@@ -153,9 +162,11 @@ function PropertyForm({ integration, created, houses=[], draftSaved }: { integra
         if(receipt.done)continue;
         const saved=await request<CalendarSaveResult>(`/admin/properties/${encodeURIComponent(savedId.current)}/calendar-sources`,{body:{provider:feed.provider,url:feed.url.trim()},key:receipt.key});receipt.done=true;setCalendarMessages(items=>[...items,calendarSaveMessage(saved.sync)]);if(saved.sync.status==='failed'||saved.sync.status==='partial')calendarFailed.current=true;
       }
-      if(!calendarFailed.current)created(savedId.current);});
+      const importOk=await applyImport(savedId.current,'entire_home');
+      if(!calendarFailed.current&&importOk)created(savedId.current);});
   }
   return <form className="bloom-form admin-create-property" onSubmit={save} aria-busy={mutation.busy}><h2>Add Property</h2><fieldset className="property-create-fields" disabled={mutation.busy||draftMutation.busy||!!savedProperty}>
+    <ListingImportSection value={imported} onChange={setImported} listingType={listingType} disabled={mutation.busy||draftMutation.busy||!!savedProperty} onImported={data=>{if(data.kind&&data.kind!==listingType){setListingType(data.kind);setHouse('');}if(data.title&&!draft.name.trim())setDraft(current=>({...current,name:data.title!}));}}/>
     <label>Listing type<Select value={listingType} onChange={e=>{setListingType(e.target.value as 'entire_home'|'room');setHouse('');}}><option value="entire_home">Entire home</option><option value="room">Room</option></Select></label>
     {listingType==='room'&&<><label>House<Select value={house} onChange={e=>setHouse(e.target.value)}><option value="">New house</option>{houses.map(h=><option key={h.id} value={h.id}>{h.name}</option>)}</Select></label>
     <label>Room identifier<input required maxLength={100} value={identifier} onChange={e=>setIdentifier(e.target.value)}/></label></>}
@@ -173,7 +184,7 @@ function PropertyForm({ integration, created, houses=[], draftSaved }: { integra
     {listingType==='entire_home'&&<><p>Cleaning window: 11 AM–3 PM on checkout day, in the property's timezone.</p>
     <label>Initial solo rate (USD)<input type="number" required min="0.02" step="0.02" value={rate} onChange={e=>setRate(e.target.value)}/><small>Shared rate: {rateCents === null ? 'Enter a valid solo rate' : money(rateCents/2)} per cleaner. Admins can update cleaner pricing in unit Settings.</small></label></>}
     </fieldset>{listingType==='entire_home'&&<CalendarSetupSection calendars={calendars} onChange={setCalendars} disabled={mutation.busy}/>}{savedProperty&&<p role="status">Your property is saved. Review calendar results below; saving again will not create another property.</p>}
-    {calendarMessages.map((message,index)=><p role="status" key={index}>{message}</p>)}{savedProperty&&<button type="button" className="bloom-button secondary" onClick={()=>created(savedProperty)}>Open saved property</button>}{validation && <p className="bloom-notice" role="alert">{validation}</p>}{listingType==='room'?<button className="bloom-button" disabled={draftMutation.busy||cities.loading||!!cities.error}>{draftMutation.busy?'Saving…':'Save draft'}</button>:<div className="bloom-actions"><button className="bloom-button" disabled={mutation.busy||draftMutation.busy||cities.loading||!!cities.error||!cities.data?.some(c=>c.active)||!propertyOwnership(draft.isBloomOwned,ownerMode,draft.ownerIds,ownerEmail)}>{mutation.busy?'Saving…':savedProperty?'Retry calendar links':'Save property'}</button>{!savedProperty&&<button type="button" className="bloom-button secondary" disabled={mutation.busy||draftMutation.busy} onClick={()=>void saveDraft()}>{draftMutation.busy?'Saving…':'Save draft'}</button>}</div>}<Result mutation={mutation}/><Result mutation={draftMutation}/>
+    {calendarMessages.map((message,index)=><p role="status" key={index}>{message}</p>)}{importMessage&&<p className="bloom-notice" role="alert">{importMessage}</p>}{savedProperty&&<button type="button" className="bloom-button secondary" onClick={()=>created(savedProperty)}>Open saved property</button>}{validation && <p className="bloom-notice" role="alert">{validation}</p>}{listingType==='room'?<button className="bloom-button" disabled={draftMutation.busy||cities.loading||!!cities.error}>{draftMutation.busy?'Saving…':'Save draft'}</button>:<div className="bloom-actions"><button className="bloom-button" disabled={mutation.busy||draftMutation.busy||cities.loading||!!cities.error||!cities.data?.some(c=>c.active)||!propertyOwnership(draft.isBloomOwned,ownerMode,draft.ownerIds,ownerEmail)}>{mutation.busy?'Saving…':savedProperty?'Retry calendar links':'Save property'}</button>{!savedProperty&&<button type="button" className="bloom-button secondary" disabled={mutation.busy||draftMutation.busy} onClick={()=>void saveDraft()}>{draftMutation.busy?'Saving…':'Save draft'}</button>}</div>}<Result mutation={mutation}/><Result mutation={draftMutation}/>
   </form>;
 }
 function SourceRow({source,reload,onOutcome}:{source:SourceHealth;reload:()=>void;onOutcome:(message:string)=>void}) {

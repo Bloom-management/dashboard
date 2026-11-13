@@ -1,0 +1,16 @@
+.import{display:flex;flex-direction:column;gap:10px;padding:18px;border:1px solid #e7e5df;border-radius:18px;background:#faf9f6;min-width:0}
+.row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:end}
+.row label{min-width:0}
+.row :global(.bloom-button){min-height:48px}
+@media (max-width:520px){.row{grid-template-columns:1fr}}
+.preview{display:flex;gap:14px;align-items:center;min-width:0}
+.preview img{width:96px;height:72px;object-fit:cover;border-radius:12px;flex-shrink:0}
+.summary{display:flex;flex-direction:column;gap:4px;min-width:0;overflow-wrap:anywhere}
+.summary span{color:#6f6c63;font-size:14px}
+.clear{align-self:flex-start;background:none;border:0;padding:0;font:inherit;font-size:14px;color:#6f6c63;text-decoration:underline;cursor:pointer}
+.checklist{border:0;padding:0;margin:0;min-width:0}
+.checklist legend{font-weight:600;margin-bottom:8px;padding:0}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border:1px solid #ddd9d0;border-radius:999px;background:#fff;font-size:14px;cursor:pointer}
+.chip input{margin:0;accent-color:#2b2a26}
+.chip:has(input:not(:checked)){color:#8a877e;background:transparent}

@@ -29,6 +29,12 @@ export function PropertyThumbnail({id,placeholder=true}:{id:string;placeholder?:
  if(!placeholder&&!data.data?.image)return null;
  return <span style={{display:'grid',placeItems:'center',width:44,height:44,flexShrink:0,borderRadius:12,overflow:'hidden'}}>{data.data?.image?<ThumbnailImage key={data.data.image+':'+data.data.revision} src={data.data.image}/>:<Icon name="pin"/>}</span>;
 }
+/** Shared Airbnb listing URL input: Settings → cover photo and Add listing → import use the same field. */
+export function AirbnbListingUrlField({value,onChange,label='Airbnb listing URL',required}:{value:string;onChange:(value:string)=>void;label?:string;required?:boolean}){
+ return <label>{label}<input type="url" inputMode="url" autoComplete="off" maxLength={2048} required={required} placeholder="https://www.airbnb.com/rooms/…" value={value} onChange={e=>onChange(e.target.value)}/></label>;
+}
+/** Tells every cover consumer (cards, Settings, Drafts) that a property's cover changed. */
+export const announceCoverChange=changed;
 export function PropertyThumbnailSettings({id}:{id:string}){
  const data=useCover(id);
  return <section className="bloom-admin-card"><h3>Airbnb listing and cover photo</h3>
@@ -48,7 +54,7 @@ function CoverForm({id,value,reload}:{id:string;value:PropertyCover;reload:()=>v
   finally{lock.current=false;setBusy(false);}
  }
  return <form className="bloom-form" onSubmit={e=>{e.preventDefault();void save();}}>
- <fieldset disabled={busy||!!pending.current}><label>Airbnb listing URL<input type="url" maxLength={2048} placeholder="https://www.airbnb.com/rooms/…" value={url} onChange={e=>{setUrl(e.target.value);setManual('');}}/></label>
+ <fieldset disabled={busy||!!pending.current}><AirbnbListingUrlField value={url} onChange={value=>{setUrl(value);setManual('');}}/>
  <details open={manualOpen} onToggle={e=>setManualOpen(e.currentTarget.open)}><summary>Use a manual cover image URL</summary><label>Airbnb image URL<input type="url" maxLength={2048} placeholder="https://a0.muscache.com/…" value={manual} onChange={e=>setManual(e.target.value)}/></label><p>Paste the direct Airbnb cover image URL if automatic extraction is unavailable.</p></details></fieldset>
  {value.image&&url.trim()===value.listingUrl&&<img src={value.image} alt="Property cover preview" width={128} height={96} referrerPolicy="no-referrer" style={{objectFit:'cover',borderRadius:12}} onError={e=>{e.currentTarget.style.display='none';}}/>}
  {value.status==='unavailable'&&url.trim()===value.listingUrl&&<p role="status">Listing saved. Airbnb did not provide a cover photo. Retry extraction or add a manual image URL.</p>}
