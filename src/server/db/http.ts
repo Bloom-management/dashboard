@@ -1,6 +1,7 @@
 import 'server-only';
 import { createHash } from 'node:crypto';
 import { BackendError, errorStatus } from './errors';
+import { logRequestFailure } from './failure-log';
 import type { ApiResult, ErrorCode } from '../../contracts';
 
 export type JsonObject = Record<string, unknown>;
@@ -82,6 +83,7 @@ export async function response<T>(operation: () => Promise<T>, conditionalReques
   }
   catch (error) {
     const code = error instanceof BackendError ? error.code : 'CONFIGURATION_ERROR';
+    logRequestFailure(requestId, errorStatus[code], code, error);
     return Response.json({ error: { code, message: messages[code], requestId } } satisfies ApiResult<T>, { status: errorStatus[code], headers: { 'Cache-Control': 'no-store', 'X-Request-Id': requestId } });
   }
 }

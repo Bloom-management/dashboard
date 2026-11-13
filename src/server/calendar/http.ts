@@ -1,5 +1,6 @@
 import { randomUUID, timingSafeEqual } from 'node:crypto';
 import { CalendarError, actions } from './errors';
+import { logRequestFailure } from '../db/failure-log';
 export function authenticateSchedule(request: Request) {
   const secret = process.env.CALENDAR_SYNC_SECRET;
   if (!secret || secret.length < 32 || secret.startsWith('replace_')) throw new CalendarError('CONFIGURATION_ERROR', 503);
@@ -20,6 +21,7 @@ export async function calendarResponse(operation: () => Promise<unknown>) {
       error instanceof Error && 'code' in error && ['UNAUTHENTICATED','FORBIDDEN','NOT_FOUND','VALIDATION_ERROR','CONFIGURATION_ERROR','CONFLICT'].includes(String(error.code)) ? String(error.code) : 'CONFIGURATION_ERROR';
     const status = error instanceof CalendarError ? error.status : ({ UNAUTHENTICATED:401, FORBIDDEN:403, NOT_FOUND:404, VALIDATION_ERROR:400, CONFLICT:409 }[code] || 503);
     const apiCode = code in actions && code !== 'CONFIGURATION_ERROR' ? 'SOURCE_UNAVAILABLE' : code;
+    logRequestFailure(requestId, status, code, error);
     return Response.json({ error: { code: apiCode, message: actions[code] || 'The calendar operation could not be completed.', requestId } }, { status, headers });
   }
 }

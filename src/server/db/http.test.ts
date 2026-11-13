@@ -1,4 +1,4 @@
-import { BackendError } from './errors';
+import { BackendError, databaseError } from './errors';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mutation, dateRange, response, trustedMutationOrigin } from './http';
@@ -53,4 +53,30 @@ test('development loopback aliases share the configured port without allowing fo
   const crossSite = request('{}');
   crossSite.headers.set('sec-fetch-site', 'cross-site');
   await assert.rejects(mutation(crossSite, []), /FORBIDDEN/);
+});
+
+test('server failures log the reference ID with safe identifiers, client errors are not logged', async () => {
+  const lines: string[] = [];
+  const original = console.error;
+  console.error = (...args: unknown[]) => { lines.push(args.map(String).join(' ')); };
+  try {
+    const missing = await response(async () => databaseError({ code: 'PGRST202', message: 'function public.bloom_room_visit(p_secret_value) not found' }, 'rpc:bloom_room_visit'));
+    const { error } = await missing.json();
+    assert.equal(missing.status, 503);
+    assert.equal(lines.length, 1);
+    const logged = JSON.parse(lines[0].replace('[Bloom request failure] ', ''));
+    assert.equal(logged.requestId, error.requestId);
+    assert.equal(logged.code, 'CONFIGURATION_ERROR');
+    assert.equal(logged.databaseCode, 'PGRST202');
+    assert.equal(logged.source, 'rpc:bloom_room_visit');
+    assert.ok(!lines[0].includes('p_secret_value'));
+    assert.ok(!JSON.stringify(error).includes('PGRST202'));
+
+    await response(async () => { throw new Error('SQL with a synthetic secret'); });
+    assert.equal(lines.length, 2);
+    assert.ok(!lines[1].includes('synthetic secret'));
+
+    await response(async () => { throw new BackendError('VALIDATION_ERROR'); });
+    assert.equal(lines.length, 2);
+  } finally { console.error = original; }
 });
