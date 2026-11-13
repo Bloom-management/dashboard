@@ -935,3 +935,7 @@ dialog.bloom-job-frame.bloom-job-frame > [data-bloom-dialog-scroll] { flex:1 1 a
 .bloom-photo-strip .bloom-photo-tile figcaption { font-size:11px; }
 /* "Already added" / limit notice in a comment box, styled like a small dark tooltip. */
 .bloom-photo-notice { width:fit-content; margin:0; padding:8px 12px; border-radius:10px; background:#2d2a1f; color:#fff; font-size:13px; line-height:1.3; }
+
+/* iOS widens the layout viewport when any content overflows horizontally, which shifts
+   top-layer dialogs and their backdrop off-center. Clip (not hidden) keeps sticky headers working. */
+@media(max-width:760px) { html, body { overflow-x:clip; } }
