@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "node scripts/local-dev.mjs",
-    "build": "next build",
+    "build": "node scripts/migrate-on-deploy.mjs && next build",
     "start": "next start --hostname 127.0.0.1",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src tests --max-warnings=0",
