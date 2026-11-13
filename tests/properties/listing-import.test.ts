@@ -20,3 +20,14 @@ test('listing import detects rooms and studios and always suggests basics',()=>{
  assert.ok(listingSuggestions([]).supplies.includes('Toilet paper'));
  assert.deepEqual(listingSuggestions(['Dishwasher']).maintenance,['Dishwasher']);
 });
+test('listing import trusts roomType over the "Home in" title and suggests room cleaning steps',()=>{
+ const room=parseListing(page('Home in Dearborn Heights · ★4.88 · 1 bedroom · 1 bed · 1 shared bath','"roomType":"Private room"'+amenity('Dishwasher')),'https://www.airbnb.com/rooms/5');
+ assert.equal(room.kind,'room');
+ assert.ok(room.instructions[0].startsWith('Clean only this room'));
+ assert.ok(room.instructions.includes('Clean the shared bathroom after the room is done.'));
+ assert.ok(room.instructions.includes('Run the dishwasher if it has dirty dishes, and put away clean ones.'));
+ assert.ok(!room.instructions.includes('Vacuum and mop all floors.'));
+ const home=parseListing(page('Home in Detroit · 2 bedrooms · 1 bath','"roomType":"Entire home/apt"'),'https://www.airbnb.com/rooms/6');
+ assert.equal(home.kind,'entire_home');assert.ok(home.instructions.includes('Vacuum and mop all floors.'));
+ assert.ok(!home.instructions.some(l=>l.includes('this room')));
+});

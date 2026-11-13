@@ -5,7 +5,7 @@ import {coverUrl} from './airbnb-cover';
 export type ListingImport={
  listingUrl:string;image:string|null;status:'extracted'|'unavailable';
  title:string|null;kind:'room'|'entire_home'|null;bedrooms:number|null;bathrooms:number|null;
- amenities:string[];supplies:string[];maintenance:string[];
+ amenities:string[];supplies:string[];maintenance:string[];instructions:string[];
 };
 
 const decode=(value:string)=>value.replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/&#39;|&apos;/g,"'").replace(/&lt;/g,'<').replace(/&gt;/g,'>');
@@ -52,6 +52,37 @@ export function listingSuggestions(amenities:string[]){
  }
  return {supplies:[...supplies],maintenance:[...maintenance]};
 }
+const baseInstructions=[
+ 'Strip every bed and remake it with fresh linens.',
+ 'Clean and disinfect the bathroom: toilet, shower or tub, sink and mirror.',
+ 'Wipe kitchen counters, sink and appliance fronts.',
+ 'Vacuum and mop all floors.',
+ 'Empty all trash and replace the liners.',
+ 'Restock supplies and report anything running low.',
+];
+const instructionRules:[RegExp,string][]=[
+ [/dishwasher/i,'Run the dishwasher if it has dirty dishes, and put away clean ones.'],
+ [/(?<!dish)washer/i,'Start laundry first so linens and towels are dry before you leave.'],
+ [/refrigerator/i,'Remove guest food from the fridge and wipe the shelves.'],
+ [/microwave/i,'Wipe the inside of the microwave.'],
+ [/stove|oven/i,'Check the stovetop and oven for spills.'],
+ [/coffee maker|espresso|keurig|nespresso/i,'Empty and rinse the coffee maker.'],
+ [/pets allowed/i,'Pets are allowed: vacuum for pet hair on furniture and under beds.'],
+ [/hot tub/i,'Check the hot tub water and cover, and wipe the edges.'],
+ [/fireplace/i,'Make sure the fireplace is off and clear of debris.'],
+ [/patio|balcony|outdoor furniture|outdoor dining/i,'Sweep the patio and reset the outdoor furniture.'],
+ [/bbq|grill/i,'Clean the grill grates.'],
+ [/ev charger/i,'Make sure the EV charger cable is stowed.'],
+ [/extra pillows/i,'Check that extra pillows and blankets are clean and stored.'],
+ [/crib|pack ’n play|pack 'n play/i,'Check that the travel crib is clean and folded.'],
+ [/keypad|smart lock|self check-in|lockbox/i,'Lock the door when you leave and confirm the keypad works.'],
+];
+/** Cleaning instructions suggested from the listing type, shared spaces and amenities. */
+export function listingInstructions(amenities:string[],kind:ListingImport['kind'],sharedBath=false){
+ const lines=kind==='room'?['Clean only this room and its assigned spaces; leave other guests’ rooms untouched.',...baseInstructions.map(l=>l.startsWith('Vacuum')?'Vacuum and mop the room floor.':l),...(sharedBath?['Clean the shared bathroom after the room is done.']:[])]:[...baseInstructions];
+ for(const [rule,line] of instructionRules)if(amenities.some(a=>rule.test(a.replace(/hair dryer/i,''))))lines.push(line);
+ return [...new Set(lines)];
+}
 export function parseListing(html:string,listingUrl:string):ListingImport{
  // og:title is "Townhouse in Detroit · ★4.98 · 2 bedrooms · 3 beds · 2.5 baths"; og:description holds the listing title.
  const summary=meta(html,'og:title')??'';
@@ -59,8 +90,10 @@ export function parseListing(html:string,listingUrl:string):ListingImport{
  const count=(pattern:RegExp)=>{const value=summary.match(pattern)?.[1];return value==null?null:Number(value);};
  const bedrooms=/\bstudio\b/i.test(summary)?0:count(/(\d+)\s+bedrooms?\b/i);
  const baths=count(/(\d+(?:\.\d+)?)\s+(?:private |shared |dedicated )?(?:half-)?baths?\b/i);
- const kind=/^\s*(?:private |shared )?room\b/i.test(summary)?'room':summary?'entire_home':null;
+ // og:title says "Home in …" even for private rooms; the embedded roomType is authoritative.
+ const roomType=html.match(/"roomType":"([^"]{1,40})"/)?.[1]??'';
+ const kind=/private room|shared room|hotel room/i.test(roomType)||/^\s*(?:private |shared )?room\b/i.test(summary)?'room':roomType||summary?'entire_home':null;
  let image:string|null=null;try{const raw=parseProduct(html,listingUrl).imageUrl;image=raw?coverUrl(raw):null;}catch{}
  const amenities=listingAmenities(html);
- return {listingUrl,image,status:image?'extracted':'unavailable',title,kind,bedrooms:bedrooms==null?null:Math.min(bedrooms,20),bathrooms:baths==null?null:Math.min(Math.ceil(baths),20),amenities,...listingSuggestions(amenities)};
+ return {listingUrl,image,status:image?'extracted':'unavailable',title,kind,bedrooms:bedrooms==null?null:Math.min(bedrooms,20),bathrooms:baths==null?null:Math.min(Math.ceil(baths),20),amenities,...listingSuggestions(amenities),instructions:listingInstructions(amenities,kind,/\bshared (?:half-)?baths?\b/i.test(summary))};
 }

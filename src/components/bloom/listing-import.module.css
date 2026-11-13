@@ -14,3 +14,7 @@
 .chip{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border:1px solid #ddd9d0;border-radius:999px;background:#fff;font-size:14px;cursor:pointer}
 .chip input{margin:0;accent-color:#2b2a26}
 .chip:has(input:not(:checked)){color:#8a877e;background:transparent}
+.list{display:flex;flex-direction:column;gap:6px;margin-bottom:6px}
+.option{display:flex;align-items:flex-start;gap:10px;font-size:14px;line-height:1.4;cursor:pointer}
+.option input{margin:2px 0 0;flex-shrink:0;accent-color:#2b2a26}
+.option:has(input:not(:checked)){color:#8a877e}
