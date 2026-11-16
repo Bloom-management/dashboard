@@ -11,6 +11,12 @@ const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 const project='bloom-backend-local', origin='http://localhost:3000', base='http://127.0.0.1:55441';
 const state=join(root,'.bloom-local','process.json');
 const action=process.argv[2]??'start';
+// Opt-in phone testing: BLOOM_DEV_LAN_HOST=<this Mac's LAN IP> npm run dev. Read before env cleanup below.
+const lanHost=process.env.BLOOM_DEV_LAN_HOST?.trim()||'';
+// A private IPv4 address, or this Mac's Bonjour name (e.g. MyMac.local) for IPv6-only hotspots.
+if(lanHost&&!/^(10|172\.(1[6-9]|2\d|3[01])|192\.168)\.\d{1,3}\.\d{1,3}(\.\d{1,3})?$/.test(lanHost)&&!/^[a-z\d](?:[a-z\d-]{0,61}[a-z\d])?\.local$/i.test(lanHost))throw new Error('BLOOM_DEV_LAN_HOST must be a private LAN IPv4 address or a .local hostname.');
+// '::' is dual-stack, so both IPv4 LANs and IPv6-only hotspots reach the app.
+const listenHost=lanHost?'::':'127.0.0.1';
 let child, worker, heartbeat, ownsLock=false, stopping=false;
 const lock=join(root,'.bloom-local','runtime.lock');
 const workerState=join(root,'.bloom-local','calendar-worker.json');
@@ -80,7 +86,7 @@ async function stopApp(){
  if(record.root!==root||!Number.isInteger(record.pid)||record.pid<=1)fail('Invalid local process record; refusing to signal a process.');
  const ps=await run('ps',['-p',String(record.pid),'-o','command=']);
  if(ps.code===0&&ps.stdout.trim()){
-  if(!ps.stdout.includes(join(root,'node_modules','next','dist','bin','next'))||!ps.stdout.includes('--hostname 127.0.0.1 --port 3000'))fail('Recorded PID no longer belongs to this Bloom app; refusing to stop it.');
+  if(!ps.stdout.includes(join(root,'node_modules','next','dist','bin','next'))||!/--hostname (127\.0\.0\.1|0\.0\.0\.0|::) --port 3000/.test(ps.stdout))fail('Recorded PID no longer belongs to this Bloom app; refusing to stop it.');
   // Signal the verified launcher so app and polling worker stop together.
   const launcher=Number.isInteger(record.launcher)&&record.launcher>1?await run('ps',['-p',String(record.launcher),'-o','command=']):null;
   if(launcher?.stdout.includes('scripts/local-dev.mjs'))process.kill(record.launcher,'SIGTERM');
@@ -112,6 +118,7 @@ async function main(){
   for(const [key,value] of Object.entries(parseEnv(readFileSync(path,'utf8'))))if(/^(NEXT_PUBLIC_|CLERK_|SUPABASE_|CALENDAR_|BLOOM_)/.test(key))process.env[key]=value;
  }
  process.env.NODE_ENV='development';
+ if(lanHost)process.env.BLOOM_ALLOWED_DEV_ORIGINS=lanHost;
  if(process.env.NEXT_PUBLIC_APP_URL!==origin||process.env.NEXT_PUBLIC_SUPABASE_URL!==base)fail('Persistent app configuration must target http://localhost:3000 and local Supabase http://127.0.0.1:55441.');
  for(const name of ['NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY','CLERK_SECRET_KEY','NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY','SUPABASE_SERVICE_ROLE_KEY','CLERK_ISSUER_DOMAIN'])if(!process.env[name]||process.env[name].startsWith('replace_'))fail(`${name} needs configuration in .env.local.`);
  if(!process.env.CLERK_SECRET_KEY.startsWith('sk_test_')||!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.startsWith('pk_test_'))fail('This launcher accepts Clerk development keys only.');
@@ -140,8 +147,9 @@ async function main(){
  await waitForApi();clearInterval(heartbeat);
  const commit=(await requireSuccess('git',['rev-parse','--short','HEAD'],'Cannot identify checkout.')).trim();
  output(`Ready: original checkout ${commit}, local Supabase 55441, app ${origin}. Ctrl-C stops the app; npm run local:stop also stops Bloom Supabase safely.`);
+ if(lanHost)output(`LAN preview enabled: open http://${lanHost}:3000 from a device on this network.`);
  mkdirSync(dirname(state),{recursive:true,mode:0o700});
- child=spawn(process.execPath,[join(root,'node_modules','next','dist','bin','next'),'dev','--hostname','127.0.0.1','--port','3000'],{cwd:root,env:process.env,stdio:['inherit','pipe','pipe']});
+ child=spawn(process.execPath,[join(root,'node_modules','next','dist','bin','next'),'dev','--hostname',listenHost,'--port','3000'],{cwd:root,env:process.env,stdio:['inherit','pipe','pipe']});
  // Next request logs may include Clerk handshake JWTs. Never forward those values.
  for(const stream of [child.stdout,child.stderr])createInterface({input:stream}).on('line',line=>{
   const safe=line.replace(/eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g,'[redacted JWT]').replace(/([?&]__clerk_[^=\s]+)=([^&\s]+)/g,'$1=[redacted]');
