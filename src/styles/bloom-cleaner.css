@@ -620,7 +620,7 @@
 @media (max-width: 600px) {
   .cleaner-hub .phone-cal-actions .bloom-button { min-height:44px; padding:8px 16px; }
   .cleaner-hub .phone-filters-button[data-active] { border:1px solid #b85563; }
-  .cleaner-hub .main-inner { padding-bottom:120px; }
+  .cleaner-hub .main-inner { padding-bottom:136px; }
   .cleaner-hub .phone-month { scroll-margin-top:8px; }
   .cleaner-hub .phone-month + .phone-month { margin-top:12px; }
   .cleaner-hub .phone-month-title { margin:20px 4px 12px; font-size:24px; font-weight:700; letter-spacing:-.02em; }
@@ -628,7 +628,7 @@
   /* Give each phone month the taller, readable row rhythm used by the calendar view. */
   .cleaner-hub .phone-month .bookingCell { min-height:var(--booking-cell-min-height); aspect-ratio:auto; }
   .cleaner-hub .day-pill .dp-label { font-size:11px; }
-  .phone-view-nav { position:fixed; left:50%; bottom:max(16px, env(safe-area-inset-bottom)); z-index:40; transform:translateX(-50%); width:min(calc(100vw - 32px), 420px); }
+  .phone-view-nav { position:fixed; left:50%; bottom:max(28px, calc(env(safe-area-inset-bottom) + 12px)); z-index:40; transform:translateX(-50%); width:min(calc(100vw - 32px), 420px); }
   .phone-view-nav > * { width:100%; box-shadow:0 10px 30px #302f262e, 0 2px 6px #302f2614; }
   .phone-view-nav .vt-btn { flex:1; justify-content:center; min-height:48px; }
 }

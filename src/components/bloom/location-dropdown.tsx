@@ -21,7 +21,8 @@ export function LocationDropdown({ locations, value, onValueChange, label, place
   const [open,setOpen]=useState(false);
   const [search,setSearch]=useState('');
   const input=useRef<HTMLInputElement>(null);
-  useEffect(()=>{if(open)input.current?.focus();},[open]);
+  // Focus search only with a mouse/trackpad; on phones it would pop the keyboard over the list.
+  useEffect(()=>{if(open&&window.matchMedia('(pointer: fine)').matches)input.current?.focus();},[open]);
   const selected=locations.find(location=>location.id===value);
   const filtered=locations.filter(location=>location.name.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()));
   return <>

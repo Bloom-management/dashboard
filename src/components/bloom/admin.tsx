@@ -36,9 +36,11 @@ import { DatePicker } from './date-picker';
 import { CleaningConfiguration, CompletionReport } from './cleaning-config';
 import { LocationDropdown } from './location-dropdown';
 import { BookingCalendar } from '../ui/calendar';
+import {CalendarFilters,CleanerPhoneMonth,PhoneMonthSection,PhoneMonths,useIsPhone} from './cleaner-mobile-calendar';
+import {DropdownMenu,DropdownMenuContent,DropdownMenuRadioGroup,DropdownMenuRadioItem,DropdownMenuTrigger} from '../ui/dropdown-menu';
 import styles from './admin-jobs.module.css';
 
-import { useCallback, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCalendar } from './use-calendar';
@@ -276,8 +278,25 @@ function AdminBooking({ block, close }: { block: OwnerCalendarBlock; close: () =
   const label = bookingLabel(block);
   return <div className="bloom-owner"><Modal className="bk-card" title={`${block.propertyName} ${label}`} onClose={close}><div className="bk-body"><div className="bk-guest"><span className="bk-guest-label">{label}</span><h2 className="bk-guest-name">{block.propertyName}</h2></div><BookingSourceCard providers={block.providers}/><div className="bk-stay"><div className="bk-stay-end"><span className="bk-stay-cap">{block.kind === 'reservation' ? 'Arrival' : 'Start'}</span><span className="bk-stay-date">{formatDate(block.startDate)}</span></div><div className="bk-stay-line" /><div className="bk-stay-end"><span className="bk-stay-cap">{block.kind === 'reservation' ? 'Checkout' : 'End · exclusive'}</span><span className="bk-stay-date">{formatDate(block.endDate)}</span></div></div><p className="bk-foot-note">{block.timezone}</p>{block.removed && <p className="bloom-notice">{block.providers.includes('manual') ? 'This manual booking was canceled and remains visible for reference.' : 'This block was removed from its source calendar and remains visible for reference.'}</p>}<Changes changes={block.changes} /></div></Modal></div>;
 }
-function Jobs({ user, integration }: { user: SessionUser; integration: BloomIntegration }) {
-  const [calendarType,setCalendarType]=useState<'cleanings'|'bookings'>('cleanings');
+const bookingSources=[{id:'all',name:'All sources'},{id:'airbnb',name:'Airbnb'},{id:'vrbo',name:'VRBO'},{id:'external',name:'External'}];
+const matchesSource=(block:OwnerCalendarBlock,source:string)=>source==='all'||(source==='external'?!block.providers.some(provider=>provider==='airbnb'||provider==='vrbo'):block.providers.some(provider=>provider===source));
+/** Phone calendar state lives in AdminContent because Today / Filters / the type toggle sit in the pinned header. */
+type PhoneCalendar={calendarType:'cleanings'|'bookings';setCalendarType:(value:'cleanings'|'bookings')=>void;todayRequest:number;filtersOpen:boolean;setFiltersOpen:(open:boolean)=>void;setFiltersActive:(active:boolean)=>void};
+/** One admin bookings month on phones: its own stays request, then the shared owner month grid. */
+function AdminPhoneBookingsMonth({month,scope,reloadToken,sourceFilter,visibleIds,selectedDay,onDayChange,onSelect,onCreated}:{month:string;scope:string;reloadToken:number;sourceFilter:string;visibleIds:string[]|null;selectedDay:string|null;onDayChange:(day:string|null)=>void;onSelect:(block:OwnerCalendarBlock)=>void;onCreated:()=>void}){
+  const range=monthRange(month);
+  const calendar=useCalendar<OwnerCalendarBlock[]>(scope,`/owner/calendar?from=${range.from}&to=${range.to}`);
+  const reload=calendar.reload,first=useRef(true);
+  useEffect(()=>{if(first.current){first.current=false;return;}reload();},[reloadToken,reload]);
+  return <PhoneMonthSection month={month}>{calendar.error?<ErrorNotice error={calendar.error} retry={calendar.reload}/>:<OwnerMonth month={month} day={selectedDay?.startsWith(month)?selectedDay:null} onDayChange={onDayChange} onSelect={onSelect} onCreated={()=>{reload();onCreated();}} initialPropertyId={visibleIds?.length===1?visibleIds[0]:undefined} blocks={(calendar.data??[]).filter(block=>!block.removed&&(!visibleIds||visibleIds.includes(block.propertyId))&&matchesSource(block,sourceFilter))}/>}</PhoneMonthSection>;
+}
+function Jobs({ user, integration, phone }: { user: SessionUser; integration: BloomIntegration; phone?: PhoneCalendar }) {
+  const [localType,setLocalType]=useState<'cleanings'|'bookings'>('cleanings');
+  const calendarType=phone?.calendarType??localType;const setCalendarType=phone?.setCalendarType??setLocalType;
+  const [phoneJobs,setPhoneJobs]=useState<Record<string,CleanerJob[]>>({});
+  const onPhoneJobs=useCallback((month:string,items:CleanerJob[])=>setPhoneJobs(current=>current[month]===items?current:{...current,[month]:items}),[]);
+  const [phoneProps,setPhoneProps]=useState<string[]|null>(null);
+  const [reloadToken,setReloadToken]=useState(0);
   const [month, setMonth] = useState(todayIn('America/Detroit').slice(0, 7));
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedBooking, setSelectedBooking] = useState<OwnerCalendarBlock | null>(null);
@@ -305,7 +324,24 @@ function Jobs({ user, integration }: { user: SessionUser; integration: BloomInte
   const bookings=useCalendar<OwnerCalendarBlock[]>(`${user.id}:${user.role}:stays`, `/owner/calendar?from=${range.from}&to=${range.to}`);
   const visibleBookings=(bookings.data??[]).filter(booking=>!booking.removed&&(sourceFilter==='all'||(sourceFilter==='external'?!booking.providers.some(provider=>provider==='airbnb'||provider==='vrbo'):booking.providers.some(provider=>provider===sourceFilter))));
   const visibleJobs = jobs.data?.filter(job => !propertyFilter || job.propertyId === propertyFilter);
-  const selected = visibleJobs?.find(job => job.id === selectedId);
+  // Phones load each scrolled month separately and filter by the Filters drawer selection.
+  const phoneVisible = Object.values(phoneJobs).flat().filter(job => !phoneProps || phoneProps.includes(job.propertyId));
+  const dayJobs = phone ? phoneVisible : (visibleJobs ?? []);
+  const selected = dayJobs.find(job => job.id === selectedId);
+  const reloadAll = () => { jobs.reload(); bookings.reload(); setReloadToken(value => value + 1); };
+  const setFiltersActive = phone?.setFiltersActive;
+  useEffect(() => { setFiltersActive?.(!!phoneProps || sourceFilter !== 'all'); }, [phoneProps, sourceFilter, setFiltersActive]);
+  const phonePill = (job: CleanerJob, date: string) => { const open = job.status === 'open' && job.activeCleanerCount < (job.capacity ?? 2); return <div key={job.id}><button type="button" className={`day-pill${open ? ' open' : ''}`} onClick={() => setSelectedDay(date)} aria-label={`${job.propertyName}, ${formatDate(date)}, ${job.activeCleanerCount} of ${job.capacity ?? 2} assigned, ${job.status}${job.reviewRequired ? ', needs attention' : ''}`}>{open && <span className="dp-plus"><Icon name="plus" size={12}/></span>}<span className="dp-label">{job.propertyName}</span></button>{job.reviewRequired && <span className="bloom-block-notice">Needs attention</span>}</div>; };
+  const phoneCounts = (properties.data ?? []).map(item => ({ id: item.id, name: item.name, count: Object.values(phoneJobs).flat().filter(job => job.propertyId === item.id).length }));
+  if (phone) return <>
+    <div className={calendarType === 'bookings' ? 'bloom-owner' : undefined}><PhoneMonths anchor={month} todayRequest={phone.todayRequest} renderMonth={item => calendarType === 'cleanings'
+      ? <CleanerPhoneMonth month={item} scope={`${user.id}:${user.role}`} reloadToken={reloadToken} onJobs={onPhoneJobs} onDaySelect={setSelectedDay} renderDay={(items, date) => items.filter(job => job.checkoutDate === date && (!phoneProps || phoneProps.includes(job.propertyId))).map(job => phonePill(job, date))}/>
+      : <AdminPhoneBookingsMonth month={item} scope={`${user.id}:${user.role}:stays`} reloadToken={reloadToken} sourceFilter={sourceFilter} visibleIds={phoneProps} selectedDay={selectedDay} onDayChange={setSelectedDay} onSelect={setSelectedBooking} onCreated={reloadAll}/>}/></div>
+    <CalendarFilters open={phone.filtersOpen} onOpenChange={phone.setFiltersOpen} countLabel={['cleaning', 'cleanings']} properties={phoneCounts} selected={phoneProps} onApply={value => { setPhoneProps(value); setSelectedId(null); setSelectedBooking(null); setSelectedDay(null); }}>{calendarType === 'bookings' && <><h3 className="calendar-filter-heading">Calendar source</h3><div className="calendar-filter-sources" role="radiogroup" aria-label="Calendar source">{bookingSources.map(source => <button type="button" role="radio" key={source.id} aria-checked={sourceFilter === source.id} onClick={() => { setSourceFilter(source.id); setSelectedDay(null); }}>{source.name}</button>)}</div></>}</CalendarFilters>
+    {selectedDay && !selected && calendarType === 'cleanings' && <CleanerDayDialog creation={{ propertyId: phoneProps?.length === 1 ? phoneProps[0] : '', onCreated: reloadAll, onViewDate: date => { setSelectedDay(date); } }} date={selectedDay} jobs={dayJobs.filter(job => job.checkoutDate === selectedDay)} onSelect={job => { setSelectedId(job.id); }} onClose={() => setSelectedDay(null)}/>}
+    {selected?.houseId ? <RoomVisitDialog job={selected} user={user} integration={integration} onClose={() => setSelectedId(null)} onUpdate={reloadAll}/> : selected && <Modal className="cleaner-day-dialog admin-job-dialog bloom-job-frame" title={`Manage cleaning · ${selected.propertyName}`} onClose={() => setSelectedId(null)}><AdminJob key={selected.id} job={selected} user={user} integration={integration} close={() => setSelectedId(null)} reload={reloadAll}/></Modal>}
+    {selectedBooking && <AdminBooking block={selectedBooking} close={() => setSelectedBooking(null)}/>}
+  </>;
   return <><div className={styles.filters}>{calendarType==='bookings'?<LocationDropdown label="Calendar source" value={sourceFilter} onValueChange={value=>{setSourceFilter(value);setSelectedBooking(null);setSelectedDay(null);}} locations={[{id:'all',name:'All sources'},{id:'airbnb',name:'Airbnb'},{id:'vrbo',name:'VRBO'},{id:'external',name:'External'}]}/>:properties.loading ? <Loading /> : properties.error ? <ErrorNotice error={properties.error} retry={properties.reload} /> : properties.data ? <LocationDropdown label="Filter jobs by property" placeholder="All properties" searchLabel="Search properties" locations={[{ id: '', name: 'All properties' }, ...properties.data]} value={propertyFilter} onValueChange={value => { setPropertyFilter(value); setSelectedId(null); setSelectedBooking(null); setSelectedDay(null); }} /> : <p>Property filtering is unavailable.</p>}</div><div className={`admin-calendar-layout${calendarType==='bookings'?' bloom-owner':''}`}>
     <section className={styles.calendar} aria-label="Cleaning calendar">
       <MonthHead owner={calendarType==='bookings'} beforeToday={<CalendarTypeToggle value={calendarType} onChange={value=>{setCalendarType(value);setSelectedId(null);setSelectedBooking(null);setSelectedDay(null);}}/>} month={month} onDaySelect={setSelectedDay} onMonth={value => { setSelectedId(null); setSelectedBooking(null); setSelectedDay(null); setMonth(value); }} />
@@ -333,17 +369,31 @@ function AdminContent({ user, integration, initialPropertyId }: { user: SessionU
   const requestedView = search.get('view')==='people'?'users':search.get('view');
   const normalizedView=requestedView==='city requests'?'requests':requestedView;
   const view = initialPropertyId ? 'properties' : ['activity', 'properties', 'users', 'payouts', 'cities', 'requests'].includes(normalizedView ?? '') ? normalizedView! : 'jobs';
-  return <><header className="topbar bloom-compact-header bloom-admin-header"><Brand role="admin" /><div className="topbar-right"><HubSelector user={user} view="admin"/><AdminPricingInbox admin/><div className="bloom-header-account">{integration.accountControl?.(user) ?? <Account user={user} />}</div></div></header><main className={`main${view==='properties'?' admin-properties-main':''}`} id="bloom-main"><div className={`main-inner ${(view === 'jobs' || view === 'properties') ? styles.jobsPage : ''}`}><MobileViewMenu label="Admin tools" value={view} values={['jobs','activity','properties','users','payouts','cities','requests']} onChange={value=>router.push(`/admin?${new URLSearchParams({view:value})}`)}/><SelectorPill className="bloom-admin-tabs" aria-label="Admin tools">{['jobs', 'activity', 'properties', 'users', 'payouts', 'cities', 'requests'].map(item => <button key={item} className={`vt-btn${item === view ? ' active' : ''}`} aria-pressed={item === view} onClick={() => router.push(`/admin?${new URLSearchParams({view:item})}`)}>{navigationLabel(item)}</button>)}</SelectorPill><h1 className="loc-name">{navigationLabel(view)}</h1>
+  const phone = useIsPhone();
+  const [calendarType,setCalendarType]=useState<'cleanings'|'bookings'>('cleanings');
+  const [todayRequest,setTodayRequest]=useState(0);
+  const [filtersOpen,setFiltersOpen]=useState(false);
+  const [filtersActive,setFiltersActive]=useState(false);
+  const phoneCalendar = phone && view === 'jobs';
+  const go = (item: string) => router.push(`/admin?${new URLSearchParams({view:item})}`);
+  const more = ['activity','users','cities','requests'];
+  const wallet=<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true" style={{display:'block'}}><rect x="3" y="5" width="18" height="15" rx="3"/><path d="M16 11h5v5h-5a2.5 2.5 0 0 1 0-5Z"/></svg>;
+  const dots=<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style={{display:'block'}}><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>;
+  const phoneNav=<nav className="phone-view-nav" aria-label="Admin views"><SelectorPill aria-label="Admin views">{(['jobs','properties','payouts'] as const).map(item=><button type="button" key={item} className={`vt-btn${view===item?' active':''}`} aria-current={view===item?'page':undefined} onClick={()=>go(item)}>{item==='payouts'?wallet:<Icon name={item==='jobs'?'grid':'house'}/>}<span>{item==='jobs'?'Calendar':navigationLabel(item)}</span></button>)}<DropdownMenu><DropdownMenuTrigger className={`vt-btn${more.includes(view)?' active':''}`} aria-label="More admin views">{dots}<span>{more.includes(view)?navigationLabel(view):'More'}</span></DropdownMenuTrigger><DropdownMenuContent><DropdownMenuRadioGroup value={view} onValueChange={go}>{more.map(item=><DropdownMenuRadioItem key={item} value={item}>{navigationLabel(item)}</DropdownMenuRadioItem>)}</DropdownMenuRadioGroup></DropdownMenuContent></DropdownMenu></SelectorPill></nav>;
+  const filterIcon=<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true" style={{display:'block'}}><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>;
+  return <><header className="topbar bloom-compact-header bloom-admin-header"><Brand role="admin" />{phoneCalendar&&<div className="phone-toolbar"><CalendarTypeToggle value={calendarType} onChange={setCalendarType}/><div className="phone-cal-actions"><button type="button" className="bloom-button secondary" onClick={()=>setTodayRequest(value=>value+1)}>Today</button><button type="button" className="bloom-button secondary phone-filters-button" data-active={filtersActive||undefined} onClick={()=>setFiltersOpen(true)}><ButtonContent icon={filterIcon}>Filters</ButtonContent></button></div></div>}<div className="topbar-right"><HubSelector user={user} view="admin"/><AdminPricingInbox admin/><div className="bloom-header-account">{integration.accountControl?.(user) ?? <Account user={user} />}</div></div></header><main className={`main${view==='properties'?' admin-properties-main':''}`} id="bloom-main"><div className={`main-inner ${(view === 'jobs' || view === 'properties') ? styles.jobsPage : ''}`}>{!phone&&<><MobileViewMenu label="Admin tools" value={view} values={['jobs','activity','properties','users','payouts','cities','requests']} onChange={go}/><SelectorPill className="bloom-admin-tabs" aria-label="Admin tools">{['jobs', 'activity', 'properties', 'users', 'payouts', 'cities', 'requests'].map(item => <button key={item} className={`vt-btn${item === view ? ' active' : ''}`} aria-pressed={item === view} onClick={() => go(item)}>{navigationLabel(item)}</button>)}</SelectorPill></>}{!phoneCalendar&&<h1 className="loc-name">{navigationLabel(view)}</h1>}
     {view === 'activity' && <CleaningActivity hub="admin"/>}
     {view === 'payouts' && <AdminPayouts key={search.get('cleaner')??'all'} initialCleanerId={search.get('cleaner')} onCloseLinkedCleaner={()=>router.replace('/admin?view=payouts')}/>}
-    {view === 'jobs' && <Jobs user={user} integration={integration} />}
+    {view === 'jobs' && <Jobs user={user} integration={integration} phone={phone ? {calendarType,setCalendarType,todayRequest,filtersOpen,setFiltersOpen,setFiltersActive} : undefined} />}
     {view === 'properties' && (integration.admin && integration.listCities ? <Properties integration={integration} initialPropertyId={initialPropertyId}/> : unavailable)}
     {view === 'users' && (integration.admin ? <><InvitePerson onSent={()=>setInvitationRevision(v=>v+1)}/><PendingInvitations revision={invitationRevision}/><Paginated loader={integration.admin.users} render={(users, reload) => <div className="admin-people-table-scroll"><table className="admin-people-table"><thead><tr><th scope="col">Name</th><th scope="col">Email</th><th scope="col">Role</th><th scope="col">Location</th></tr></thead><tbody>{users.map(item => <UserRow key={item.id} user={item} currentUser={user} reload={reload} />)}</tbody></table>{!users.length&&<p>No people found.</p>}</div>} /></> : unavailable)}
     {view === 'cities' && <ServiceCities/>}
     {view === 'requests' && (integration.admin ? <Paginated loader={integration.admin.cityRequests} render={(items, reload) => <>{items.length ? items.map(item => <RequestRow key={item.id} item={item} reload={reload} integration={integration} />) : <Empty title="No requests" />}</>} /> : unavailable)}
 
-  </div></main></>;
+  </div></main>{phone&&phoneNav}</>;
 }
 export function AdminHub({ integration = noIntegration, initialPropertyId }: { integration?: BloomIntegration; initialPropertyId?:string }) {
-  return <div className="bloom-cleaner app"><a className="bloom-skip" href="#bloom-main">Skip to content</a><RoleGate role="admin">{user => <AdminContent user={user} integration={integration} initialPropertyId={initialPropertyId}/>}</RoleGate></div>;
+  // Phones share the cleaner hub's phone layout (pinned toolbar, stacked months, floating view pill).
+  const phone = useIsPhone();
+  return <div className={`bloom-cleaner app admin-hub${phone?' cleaner-hub':''}`}><a className="bloom-skip" href="#bloom-main">Skip to content</a><RoleGate role="admin">{user => <AdminContent user={user} integration={integration} initialPropertyId={initialPropertyId}/>}</RoleGate></div>;
 }

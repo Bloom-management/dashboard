@@ -294,7 +294,7 @@ dialog.cleaner-city-dialog { width:min(480px,calc(100vw - 24px)); border-radius:
 .cleaner-city-body h2,.cleaner-city-body p { margin:0; }
 .cleaner-city-dialog .detail-close { position:absolute; right:12px; top:12px; left:auto; }
 .admin-invite-fields { display:grid; grid-template-columns:minmax(0,2fr) minmax(140px,1fr) auto; align-items:end; gap:16px; }
-.admin-invite-fields label { display:grid; gap:8px; min-width:0; }
+.admin-invite-fields label,.admin-invite-fields .admin-invite-field { display:grid; gap:8px; min-width:0; }
 .admin-invite-fields input,.admin-invite-fields select { width:100%; box-sizing:border-box; }
 @media(max-width:600px) { .admin-invite-fields { grid-template-columns:minmax(0,1fr); } }
 .maintenance-options { display:grid; gap:8px; }
@@ -416,13 +416,13 @@ dialog.cleaner-city-dialog { width:min(480px,calc(100vw - 24px)); border-radius:
 .bloom-owner .property-owner-picker select { flex:0 1 420px; width:100%; min-width:0; max-width:100%; }
 .property-invite-form { min-width:0; max-width:100%; box-sizing:border-box; }
 .property-invite-form .admin-invite-fields { display:flex; flex-wrap:wrap; align-items:flex-end; gap:20px; min-width:0; }
-.property-invite-form .admin-invite-fields > label { flex:1 1 240px; min-width:0; max-width:100%; }
+.property-invite-form .admin-invite-fields > label,.property-invite-form .admin-invite-fields > .admin-invite-field { flex:1 1 240px; min-width:0; max-width:100%; }
 .property-invite-form .admin-invite-fields > .property-invite-context { flex:1 1 200px; min-width:0; margin:0; padding-bottom:12px; overflow-wrap:anywhere; }
 .property-invite-form .admin-invite-fields > button { flex:0 0 auto; max-width:100%; }
 @media(max-width:600px) {
  .bloom-owner .property-owner-picker { align-items:stretch; flex-direction:column; gap:12px; }
  .bloom-owner .property-owner-picker select { flex:auto; }
- .property-invite-form .admin-invite-fields > label,.property-invite-form .admin-invite-fields > .property-invite-context { flex-basis:100%; }
+ .property-invite-form .admin-invite-fields > label,.property-invite-form .admin-invite-fields > .admin-invite-field,.property-invite-form .admin-invite-fields > .property-invite-context { flex-basis:100%; }
  .property-invite-form .admin-invite-fields > button { width:100%; }
 }
 
@@ -955,3 +955,12 @@ dialog.bloom-job-frame.bloom-job-frame > [data-bloom-dialog-scroll] { flex:1 1 a
 .bloom-coverage-heading.bloom-coverage-heading h3{margin:0}
 .bloom-coverage-heading{margin-bottom:12px}
 .bloom-coverage-heading .bloom-management-toggle{width:auto;padding:0;flex:none;min-height:44px}
+/* Non-label field wrappers (a dropdown with its own dialog must not sit inside a <label>). */
+.bloom-form .admin-invite-field > span { font-size:13px; font-weight:600; }
+
+/* Admin on phones: owner-style four-tab floating pill (icon over label). */
+@media (max-width: 600px) {
+  .admin-hub .phone-view-nav { width:min(calc(100vw - 32px), 440px); }
+  .admin-hub .phone-view-nav .vt-btn { flex:1 1 0; min-width:0; flex-direction:column; justify-content:center; gap:2px; min-height:52px; padding:6px 2px; font-size:12px; white-space:nowrap; overflow:hidden; }
+  .admin-hub .phone-view-nav .vt-btn span { display:inline; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
+}

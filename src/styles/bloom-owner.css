@@ -874,13 +874,13 @@ main:has(.owner-drafts-page) .main-inner > :not(:has(.owner-drafts-page)):not(.o
   .bloom-owner .phone-cal-actions .bloom-button { min-height:44px; padding:8px 14px; white-space:nowrap; }
   .bloom-owner .phone-cal-actions .bloom-button.secondary { background:#fff; box-shadow:0 1px 3px #302f2612; }
   .bloom-owner .phone-filters-button[data-active] { border:1px solid #b85563; }
-  .bloom-owner .main-inner { padding-bottom:120px; }
+  .bloom-owner .main-inner { padding-bottom:136px; }
   .bloom-owner .phone-month { scroll-margin-top:var(--phone-header-height, 132px); }
   .bloom-owner .phone-month-title { margin:20px 4px 12px; font-size:24px; font-weight:700; letter-spacing:-.02em; }
   .bloom-owner .phone-months-edge { height:1px; }
   .bloom-owner .phone-month td[data-outside] > * { visibility:hidden; }
   .bloom-owner .phone-month tbody tr:not(:has(td:not([data-outside]))) { display:none; }
-  .bloom-owner .phone-view-nav { position:fixed; left:50%; bottom:max(16px, env(safe-area-inset-bottom)); z-index:40; transform:translateX(-50%); width:min(calc(100vw - 32px), 440px); }
+  .bloom-owner .phone-view-nav { position:fixed; left:50%; bottom:max(28px, calc(env(safe-area-inset-bottom) + 12px)); z-index:40; transform:translateX(-50%); width:min(calc(100vw - 32px), 440px); }
   .bloom-owner .phone-view-nav > * { display:flex; width:100%; gap:2px; padding:4px; box-sizing:border-box; box-shadow:0 10px 30px #302f262e, 0 2px 6px #302f2614; }
   .bloom-owner .phone-view-nav .vt-btn { flex:1 1 0; min-width:0; flex-direction:column; justify-content:center; gap:2px; min-height:52px; padding:6px 2px; font-size:12px; white-space:nowrap; overflow:hidden; }
   .bloom-owner .phone-view-nav .vt-btn span { display:inline; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
