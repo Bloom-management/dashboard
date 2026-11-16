@@ -1,0 +1,10 @@
+/* Grid cell that owns a card plus its hover-revealed remove button. */
+.cell { position:relative; display:grid; min-width:0; }
+.cell > :first-child { min-width:0; }
+.remove.remove { position:absolute; top:10px; right:10px; z-index:1; opacity:0; pointer-events:none; transition:opacity 160ms ease; color:#a44453; box-shadow:0 1px 4px #302f261f; }
+.cell:hover > .remove, .cell:focus-within > .remove { opacity:1; pointer-events:auto; }
+/* Touch screens have no hover: keep the action reachable. */
+@media (hover:none) { .remove.remove { opacity:1; pointer-events:auto; } }
+@media (prefers-reduced-motion:reduce) { .remove.remove { transition:none; } }
+.message { margin:0; }
+.actions { display:flex; flex-wrap:wrap; gap:12px; margin-top:20px; }

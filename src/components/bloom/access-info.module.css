@@ -5,3 +5,8 @@
 .dialog button.back:focus-visible { outline:2px solid #b85563; outline-offset:4px; border-radius:4px; }
 .card .summary{margin:0}
 .placeholder .summary{cursor:default;color:#8f8a7e}
+
+/* Shared entry/parking fields (Edit dialogs and Add listing). */
+.fields{display:grid;gap:16px;min-width:0}
+.fields label{display:grid;gap:8px}
+.fields input:not([type=checkbox]),.fields textarea{width:100%;box-sizing:border-box}

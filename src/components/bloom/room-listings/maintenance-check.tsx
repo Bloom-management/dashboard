@@ -63,9 +63,11 @@ function IssueNote({item,job,user,integration,initial,disabled}:{item:RoomSupply
 }
 
 /** The whole-home maintenance cards, adapted for rooms: pick a unit or Shared, then mark each item. */
-export function RoomMaintenanceCheck({rooms,job,user,integration,startedAt,disabled=false}:{rooms:{propertyId:string;identifier:string}[];job:CleanerJob;user:SessionUser;integration:BloomIntegration;startedAt:string|null;disabled?:boolean}){
+/** `wholeHome`: an entire home's own checks, shown under the standard checklist (no Room/Shared split or item notes). */
+export function RoomMaintenanceCheck({rooms,job,user,integration,startedAt,disabled=false,wholeHome=false}:{rooms:{propertyId:string;identifier:string}[];job:CleanerJob;user:SessionUser;integration:BloomIntegration;startedAt:string|null;disabled?:boolean;wholeHome?:boolean}){
  const jobId=job.id;
- const loadNotes=useCallback((signal:AbortSignal)=>loadIssueNotes(jobId,signal),[jobId]);
+ // Item notes belong to house visits; entire-home checks have none.
+ const loadNotes=useCallback((signal:AbortSignal)=>wholeHome?Promise.resolve<Record<string,string>>({}):loadIssueNotes(jobId,signal),[jobId,wholeHome]);
  const notes=useResource(loadNotes,true);
  const [scopeChoice,setScope]=useState<'room'|'shared'|null>(null);
  const [room,setRoom]=useState(rooms[0]?.propertyId??'');
@@ -74,7 +76,7 @@ export function RoomMaintenanceCheck({rooms,job,user,integration,startedAt,disab
  const items=useResource(load,true);
  const [saving,setSaving]=useState<string>(),[error,setError]=useState<unknown>();
  const [chosen,setChosen]=useState<Record<string,Status>>({});
- const scope=scopeChoice??(items.data?.some(item=>item.kind==='maintenance'&&item.scope==='room')===false?'shared':'room');
+ const scope=wholeHome?'room':scopeChoice??(items.data?.some(item=>item.kind==='maintenance'&&item.scope==='room')===false?'shared':'room');
  const visible=items.data?.filter(item=>item.kind==='maintenance'&&item.scope===scope)??[];
  async function choose(item:RoomSupplyItem,status:Status){
   if(saving||disabled)return;
@@ -84,7 +86,7 @@ export function RoomMaintenanceCheck({rooms,job,user,integration,startedAt,disab
   finally{setSaving(undefined);}
  }
  return <div className={styles.houseItems}>
-  <div className={styles.choices}>{(['room','shared'] as const).map(s=><button type="button" aria-pressed={scope===s} key={s} onClick={()=>setScope(s)}><Icon name={s==='room'?'grid':'house'} size={28}/><strong>{s==='room'?'Room':'Shared'}</strong></button>)}</div>
+  {!wholeHome&&<div className={styles.choices}>{(['room','shared'] as const).map(s=><button type="button" aria-pressed={scope===s} key={s} onClick={()=>setScope(s)}><Icon name={s==='room'?'grid':'house'} size={28}/><strong>{s==='room'?'Room':'Shared'}</strong></button>)}</div>}
   {scope==='room'&&rooms.length>1&&<RoomPicker rooms={rooms} value={propertyId} onChange={setRoom} disabled={!!saving}/>}
   {items.loading&&!items.data?<Loading/>:items.error?<ErrorNotice error={items.error} retry={items.reload}/>:<div className="maintenance-mobile-stack">
    {visible.map(item=>{
@@ -93,10 +95,10 @@ export function RoomMaintenanceCheck({rooms,job,user,integration,startedAt,disab
     return <fieldset key={item.id} className="maintenance-card maintenance-report-card" disabled={disabled} aria-busy={saving===item.id||undefined}>
      <legend>{item.name}</legend>
      <div className="maintenance-options">{choices.map(choice=><button type="button" key={choice.status} className="maintenance-choice" aria-label={`${item.name}: ${choice.label}`} aria-pressed={status===choice.status} onClick={()=>void choose(item,choice.status==='issue'&&status==='issue'?'good':choice.status)}><ItemIcon name={item.name}/><span>{choice.label}</span></button>)}</div>
-     {status==='issue'&&notes.data&&<IssueNote item={item} job={job} user={user} integration={integration} initial={notes.data[item.id]??''} disabled={disabled}/>}
+     {status==='issue'&&!wholeHome&&notes.data&&<IssueNote item={item} job={job} user={user} integration={integration} initial={notes.data[item.id]??''} disabled={disabled}/>}
     </fieldset>;
    })}
-   {!visible.length&&<p>No {scope==='shared'?'shared':'room'} maintenance items are configured.</p>}
+   {!visible.length&&!wholeHome&&<p>No {scope==='shared'?'shared':'room'} maintenance items are configured.</p>}
   </div>}
   {error!=null&&<ErrorNotice error={error}/>}
  </div>;

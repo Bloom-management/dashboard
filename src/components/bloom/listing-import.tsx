@@ -1,5 +1,5 @@
 'use client';
-import {useRef,useState} from 'react';
+import {useEffect,useRef,useState} from 'react';
 import type {ListingImport} from '../../server/properties/listing-import';
 import type {CleaningConfig,PhotoCategory} from '../../contracts';
 import {request,ApiError} from './api';
@@ -38,35 +38,49 @@ export function ListingInstructionSuggestions({listingUrl,value,onChange,disable
 }
 
 /** Top-of-dialog Airbnb import. Prefills the form via `onImported`; suggestions are applied after save with `applyListingImport`. */
-export function ListingImportSection({value,onChange,onImported,listingType,disabled,instructions,onInstructionsChange}:{value:ImportedListing|null;onChange:(value:ImportedListing|null)=>void;onImported:(data:ListingImport)=>void;listingType:'entire_home'|'room';disabled?:boolean;instructions:string;onInstructionsChange:(next:string)=>void}){
- const [url,setUrl]=useState(value?.data.listingUrl??'');const [busy,setBusy]=useState(false);const [error,setError]=useState<unknown>();
+export function ListingImportSection({value,onChange,onImported,disabled,instructions='',onInstructionsChange,showSuggestions=true}:{value:ImportedListing|null;onChange:(value:ImportedListing|null)=>void;onImported:(data:ListingImport)=>void;disabled?:boolean;instructions?:string;onInstructionsChange?:(next:string)=>void;showSuggestions?:boolean}){
+ const [url,setUrl]=useState(value?.data.listingUrl??'');const [busy,setBusy]=useState(false);const [error,setError]=useState<unknown>();const [touched,setTouched]=useState(false);
+ const current=useRef(url);current.current=url;const inFlight=useRef(false);const attempted=useRef<string|null>(null);
+ const data=value?.data;const listingId=airbnbListingId(url);const stale=!!data&&listingId!==airbnbListingId(data.listingUrl);
  async function run(){
-  if(busy||!url.trim())return;setBusy(true);setError(undefined);
-  try{const data=await request<ListingImport>('/listing-prefill',{body:{listingUrl:url.trim()}});setUrl(data.listingUrl);onChange({data,supplies:data.supplies,maintenance:data.maintenance});onImported(data);onInstructionsChange(suggestedInstructions(instructions,data.instructions));}
-  catch(e){setError(e);}finally{setBusy(false);}
+  const requested=url.trim();if(inFlight.current||!airbnbListingId(requested))return;inFlight.current=true;attempted.current=requested;setBusy(true);setError(undefined);
+  try{const data=await request<ListingImport>('/listing-prefill',{body:{listingUrl:requested}});
+   // The link was edited while Airbnb was being read: let the newer link import instead.
+   if(current.current.trim()!==requested)return;
+   setUrl(data.listingUrl);onChange({data,supplies:data.supplies,maintenance:data.maintenance});onImported(data);onInstructionsChange?.(suggestedInstructions(instructions,data.instructions));}
+  catch(e){if(current.current.trim()===requested)setError(e);}finally{inFlight.current=false;setBusy(false);}
  }
- const data=value?.data;const stale=!!data&&url.trim()!==data.listingUrl;
+ // Import automatically once a valid Airbnb listing link is pasted or typed.
+ useEffect(()=>{
+  if(disabled||busy||!listingId||!stale&&data||attempted.current===url.trim())return;
+  const timer=setTimeout(()=>void run(),500);return()=>clearTimeout(timer);
+ });
  const facts=data&&[data.bedrooms!=null&&(data.bedrooms===0?'Studio':`${data.bedrooms} bedroom${data.bedrooms===1?'':'s'}`),data.bathrooms!=null&&`${data.bathrooms} bathroom${data.bathrooms===1?'':'s'}`].filter(Boolean).join(' · ');
  return <section className={styles.import} aria-label="Import from Airbnb">
-  <div className={styles.row} onKeyDown={e=>{if(e.key==='Enter'&&(e.target as HTMLElement).tagName==='INPUT'){e.preventDefault();void run();}}}>
-   <AirbnbListingUrlField label="Import Airbnb listing (optional)" value={url} onChange={setUrl}/>
-   <button type="button" className="bloom-button secondary" disabled={disabled||busy||!url.trim()||(!!data&&!stale)} onClick={()=>void run()}>{busy?'Importing…':'Import'}</button>
+  <div onBlur={()=>setTouched(true)} onKeyDown={e=>{if(e.key==='Enter'&&(e.target as HTMLElement).tagName==='INPUT'){e.preventDefault();attempted.current=null;void run();}}}>
+   <AirbnbListingUrlField label="Import Airbnb listing (optional)" value={url} onChange={next=>{setUrl(next);setError(undefined);}}/>
   </div>
-  <small>Paste the public listing link. Bloom uses it for the cover photo and to suggest supplies{listingType==='room'?' and maintenance checks':''}.</small>
-  {error!=null&&<ErrorNotice error={error instanceof ApiError&&error.code==='VALIDATION_ERROR'?new ApiError('VALIDATION_ERROR','Enter an Airbnb listing link, such as https://www.airbnb.com/rooms/123.'):error}/>}
+  {busy&&<p className={styles.status} role="status">Importing listing…</p>}
+  {touched&&url.trim()&&!listingId&&<p className={styles.status} role="alert">Enter an Airbnb listing link, such as https://www.airbnb.com/rooms/123.</p>}
+  {error!=null&&<><ErrorNotice error={error instanceof ApiError&&error.code==='VALIDATION_ERROR'?new ApiError('VALIDATION_ERROR','Enter an Airbnb listing link, such as https://www.airbnb.com/rooms/123.'):error}/><button type="button" className="bloom-button secondary" disabled={disabled||busy} onClick={()=>{attempted.current=null;void run();}}>Try again</button></>}
   {data&&!stale&&<div className={styles.preview}>
    {data.image?<img src={data.image} alt="" referrerPolicy="no-referrer" onError={e=>{e.currentTarget.style.display='none';}}/>:null}
    <div className={styles.summary}><strong>{data.title??'Airbnb listing'}</strong>{facts&&<span>{facts}</span>}{data.status==='unavailable'&&<span>Airbnb did not share listing details. The link is still saved, and you can retry cover extraction in Settings.</span>}
     <button type="button" className={styles.clear} disabled={disabled} onClick={()=>{onChange(null);setUrl('');}}>Remove import</button></div>
   </div>}
-  {data&&!stale&&value&&<>
+  {showSuggestions&&data&&!stale&&value&&<>
    <Checklist legend="Suggested supplies" items={data.supplies} selected={value.supplies} disabled={disabled} onChange={supplies=>onChange({...value,supplies})}/>
-   {listingType==='room'?<Checklist legend="Suggested maintenance checks" items={data.maintenance} selected={value.maintenance} disabled={disabled} onChange={maintenance=>onChange({...value,maintenance})}/>:data.supplies.length>0&&<small>Entire homes use Bloom’s standard maintenance checklist. Rooms from the listing ({facts||'kitchen and living room'}) are added to the cleaning setup with these supplies.</small>}
-   <InstructionSuggestions suggestions={data.instructions} value={instructions} onChange={onInstructionsChange} disabled={disabled}/>
+   <Checklist legend="Suggested maintenance checks" items={data.maintenance} selected={value.maintenance} disabled={disabled} onChange={maintenance=>onChange({...value,maintenance})}/>
+   {onInstructionsChange&&<InstructionSuggestions suggestions={data.instructions} value={instructions} onChange={onInstructionsChange} disabled={disabled}/>}
   </>}
  </section>;
 }
 
+/** The numeric listing ID of a public Airbnb room link (same rules as the server), or null. */
+export function airbnbListingId(value:string):string|null{
+ try{const url=new URL(value.trim());const match=url.pathname.match(/^\/(?:[a-z]{2}(?:-[a-z]{2})?\/)?rooms\/([0-9]+)\/?$/i);
+  return url.protocol==='https:'&&['airbnb.com','www.airbnb.com','m.airbnb.com'].includes(url.hostname)&&!url.username&&!url.password&&!url.port&&match?match[1]:null;}catch{return null;}
+}
 const roomName:Record<PhotoCategory,string>={bedrooms:'Bedroom',bathrooms:'Bathroom',kitchen:'Kitchen',living_room:'Living room'};
 function rooms(bedrooms:number,bathrooms:number):CleaningConfig['rooms']{
  const make=(type:PhotoCategory,count:number)=>Array.from({length:count},(_,i)=>({id:crypto.randomUUID(),type,label:`${roomName[type]} ${i+1}`,requiredPhoto:true as const}));
@@ -90,11 +104,15 @@ export async function applyListingImport(propertyId:string,imported:ImportedList
    try{await request('/house-items',{body:{propertyId,action,value},key:receipt(`${propertyId}:${action}:${value}`)});}catch(e){if(!(e instanceof ApiError&&e.code==='CONFLICT'))failed=true;}
   }
   if(failed)problems.push('some supplies or maintenance checks');
- }else if(imported.supplies.length){
-  try{
+ }else{
+  if(imported.supplies.length)try{
    const path=`/owner/properties/${propertyId}/cleaning-config`;const current=await request<CleaningConfig|null>(path);
    if(!current?.version){const config={version:current?.version??0,rooms:rooms(imported.data.bedrooms??0,imported.data.bathrooms??0),supplies:imported.supplies.slice(0,100).map(name=>({id:crypto.randomUUID(),name:name.slice(0,100)}))};await request(path,{body:config,key:receipt(`${propertyId}:cleaning-config`)});}
   }catch{problems.push('the supply list (add supplies in Settings)');}
+  // Entire homes keep their own maintenance checks alongside Bloom's standard checklist.
+  let failed=false;
+  for(const value of imported.maintenance){try{await request('/house-items',{body:{propertyId,action:'add_room_maintenance',value},key:receipt(`${propertyId}:add_room_maintenance:${value}`)});}catch(e){if(!(e instanceof ApiError&&e.code==='CONFLICT'))failed=true;}}
+  if(failed)problems.push('some maintenance checks (add them in the Maintenance tab)');
  }
  return problems.length?`Property saved, but Bloom could not import ${problems.join(' and ')}.`:null;
 }

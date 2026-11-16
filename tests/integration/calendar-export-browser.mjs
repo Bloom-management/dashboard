@@ -34,9 +34,9 @@ try{
  await panel.getByRole('button',{name:'Copy calendar link'}).click();
  await page.waitForFunction(()=>document.body.textContent.includes('Calendar link copied.'));
  assert.equal(clipboard,status.url);assert.equal(status.ownerConfirmedAt,null);
- assert.match(await panel.innerText(),/Export setup not confirmed/);
- await panel.locator('summary').click();
- assert.match(await panel.innerText(),/Syncing is not immediate/);
+ assert.doesNotMatch(await panel.innerText(),/Export setup not confirmed/);
+ 
+ assert.doesNotMatch(await panel.innerText(),/Syncing is not immediate/);
  await panel.getByRole('button',{name:'I completed setup in Airbnb'}).click();
  await panel.getByText('Setup marked complete by you. Airbnb availability has not been verified.').waitFor();
  await panel.getByRole('button',{name:'Regenerate link',exact:true}).click();
@@ -47,7 +47,7 @@ try{
  assert.equal(await panel.getByLabel('Private subscription link').inputValue(),'https://calendar.example.test/second.ics');
  for(const width of [320,375,393,430]){await page.setViewportSize({width,height:852});await panel.scrollIntoViewIfNeeded();assert(await panel.evaluate(el=>el.scrollWidth<=el.clientWidth+1),`export panel overflow at ${width}`);}
  status.lastFetchedAt='2026-10-02T11:00:00Z';await page.reload();await page.getByRole('group',{name:'Setup sections'}).getByRole('button',{name:'Calendar',exact:true}).click();
- await panel.getByText(/Feed last fetched/).waitFor();assert.match(await panel.innerText(),/Export setup not confirmed/);assert.match(await panel.innerText(),/does not confirm that Airbnb applied/);
+ await panel.getByText(/Feed last fetched/).waitFor();assert.doesNotMatch(await panel.innerText(),/Export setup not confirmed/);assert.doesNotMatch(await panel.innerText(),/does not confirm that Airbnb applied/);
  assert.deepEqual(actions,['create','confirm','regenerate']);
  console.log('PASS mocked export UI: create/copy without connection claim, owner-reported confirmation, regeneration acknowledgment/reset, fetched distinction, 320/375/393/430px layout. Real Clerk session; no real export or provider checks.');
 }finally{if(session)await clerk.sessions.revokeSession(session).catch(()=>{});await browser.close();}

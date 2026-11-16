@@ -23,7 +23,7 @@ try{
   });
   const base=`http://127.0.0.1:${server.address().port}`;await page.goto(base);
   await page.getByRole('button',{name:'Cleaning team',exact:true}).click();
-  await page.getByText('Bloom Cleaning manages new cleanings.',{exact:true}).waitFor();
+  await page.getByText('Bloom cleaning coverage',{exact:true}).waitFor();
   assert.equal(await page.getByText('Default assignees',{exact:true}).count(),0);
   assert.equal(await page.getByRole('button',{name:'Send cleaner invitation'}).count(),0);
   await page.getByRole('button',{name:'Coverage',exact:true}).click();await page.getByText('No upcoming cleanings.',{exact:true}).waitFor();
@@ -33,7 +33,7 @@ try{
   await page.getByRole('button',{name:'Calendars',exact:true}).click();await page.getByRole('heading',{name:'Connected calendars'}).waitFor();
   assert(await page.getByRole('heading',{name:'Share Bloom availability'}).isVisible());
   assert.equal(await page.getByRole('button',{name:'Connect Airbnb calendar'}).isVisible(),false);
-  await page.getByText('Add a calendar connection',{exact:true}).click();assert(await page.getByRole('button',{name:'Connect Airbnb calendar'}).isVisible());
+  assert(await page.getByRole('button',{name:'Connect Airbnb calendar'}).isVisible());
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false);
   management='bloom';status='accepted';await page.goto(base+'?admin');await page.getByRole('button',{name:'Cleaning team',exact:true}).click();await page.getByRole('button',{name:'Send cleaner invitation'}).waitFor();
   await page.getByRole('button',{name:'Coverage',exact:true}).click();await page.getByRole('combobox',{name:/Assigned cleaner/}).selectOption('assignment');assert(await page.getByRole('button',{name:'Remove cleaner',exact:true}).isDisabled());await page.getByLabel('Reason for removal').fill('Unavailable');await page.getByRole('button',{name:'Remove cleaner',exact:true}).click();await page.waitForTimeout(200);assert.deepEqual(removals,[{assignmentId:'assignment',reason:'Unavailable',expectedVersion:3}]);

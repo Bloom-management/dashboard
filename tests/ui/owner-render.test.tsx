@@ -27,9 +27,9 @@ test('listing source controls offer Airbnb and Vrbo sync',()=>{
  const base={propertyId:'unit',enabled:true,lastSuccessAt:null,lastAttemptAt:null,message:null};
  const listing:OwnerListing={id:'unit',name:'Local test',timezone:'America/Detroit',active:true,nightlyGuestRateCents:null,hostPayoutCents:null,currency:'USD',supplies:[],sources:[{...base,id:'airbnb-source',provider:'airbnb'},{...base,id:'vrbo-source',provider:'vrbo'}]};
  const html=renderToStaticMarkup(<OwnerSources listing={listing} onChanged={()=>{}}/>);
- assert.match(html,/Vrbo/);assert.match(html,/Airbnb/);assert.equal((html.match(/Sync now<\/button>/g)||[]).length,2);assert.match(html,/public listing URL/);assert.match(html,/listing stays saved/);
+ assert.match(html,/Vrbo/);assert.match(html,/Airbnb/);assert.equal((html.match(/Sync now<\/button>/g)||[]).length,2);assert.doesNotMatch(html,/public listing URL/);assert.doesNotMatch(html,/listing stays saved/);
  const share=renderToStaticMarkup(<OwnerPlatformShare totals={totals}/>);
- assert.match(share,/Share of known occupied nights/);assert.match(share,/not a measure of complete calendar coverage/);assert.match(share,/60%/);
+ assert.match(share,/Share of known occupied nights/);assert.doesNotMatch(share,/not a measure of complete calendar coverage/);assert.match(share,/60%/);
 });
 
 test('same-day timeline marker is visible and names its zero-night duration',()=>{

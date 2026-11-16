@@ -658,7 +658,7 @@
 
 .bloom-owner .owner-create-dialog { width:min(640px,calc(100vw - 32px)); max-height:calc(100dvh - 48px); overflow-y:auto; border-radius:var(--r-lg); padding:0; background:#fff; }
 .bloom-owner .owner-create-body { padding:64px 28px 28px; }
-.bloom-owner .owner-create-fields { display:grid; gap:16px; border:0; padding:0; margin:0; min-width:0; }
+.bloom-owner .owner-create-fields { display:grid; grid-template-columns:minmax(0,1fr); gap:16px; border:0; padding:0; margin:0; min-width:0; }
 .bloom-owner .owner-create-fields label { display:grid; gap:8px; }
 .bloom-owner .owner-create-fields:disabled { opacity:.7; }
 .bloom-owner .loc-header { flex-wrap:wrap; gap:12px; }
@@ -748,7 +748,7 @@
 .bloom-owner .owner-listings-rail { align-content:start; padding-right:8px; }
 .bloom-owner .owner-listing-detail { padding-right:12px; }
 .bloom-owner .owner-settings-heading { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; }
-.bloom-owner .owner-settings-heading > :last-child { margin-left:auto; }
+.bloom-owner .owner-settings-heading > :last-child:not(:first-child) { margin-left:auto; }
 .bloom-owner .owner-supply-demo { border:1px dashed var(--bloom); border-radius:16px; padding:16px; margin-top:24px; }
 .bloom-owner .owner-property-legend { display:flex; flex-wrap:wrap; gap:12px 22px; margin-bottom:20px; }
 .bloom-owner .owner-property-key { display:flex; align-items:flex-start; gap:8px; font-size:12px; color:var(--ink-2); max-width:280px; }
@@ -778,7 +778,11 @@
 .bloom-owner .owner-room-stepper button { display:grid; place-items:center; width:36px; height:36px; padding:0; border:1px solid var(--line-2); border-radius:50%; background:var(--cream); font-size:22px; }
 .bloom-owner .owner-room-stepper button:disabled { opacity:.45; cursor:not-allowed; }
 .bloom-owner .owner-room-stepper output { min-width:30px; text-align:center; font-size:22px; font-weight:700; }
-.bloom-owner .owner-detail-navigation > .view-toggle { max-width:100%; flex-wrap:wrap; }
+/* One-row pill: extra tabs scroll sideways (arrows step through them) instead of wrapping into a tall pill. */
+.bloom-owner .owner-detail-navigation { flex-wrap:nowrap; }
+.bloom-owner .owner-detail-navigation > .view-toggle { flex:0 1 auto; min-width:0; max-width:100%; flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; overscroll-behavior-x:contain; }
+.bloom-owner .owner-detail-navigation > .view-toggle::-webkit-scrollbar { display:none; }
+.bloom-owner .owner-detail-navigation > .view-toggle > .vt-btn { flex:0 0 auto; white-space:nowrap; }
 @media(max-width:700px) { .bloom-owner .owner-detail-navigation .vt-btn { padding:8px 10px; font-size:12px; } }
 
 
@@ -824,9 +828,6 @@
  .bloom-owner .owner-listings-main .owner-listing-detail { height:auto; max-height:none; overflow:visible; overscroll-behavior:auto; padding-bottom:max(24px,env(safe-area-inset-bottom)); }
 }
 
-.bloom-owner .owner-supply-card.owner-supply-add { min-height: 210px; align-items: center; justify-content: center; border: 1px dashed var(--pink, #cf8492); color: var(--pink, #b85b70); background: #fff; }
-.bloom-owner .owner-supply-card.owner-supply-add:hover { background: #fbf4f5; }
-.owner-supply-plus { font-size: 32px; line-height: 1; }
 .bloom-owner .owner-property-select { position:absolute; inset:0; border:0; background:transparent; border-radius:var(--r-lg); cursor:pointer; }
 .bloom-owner .owner-property-select:focus-visible { outline:2px solid var(--bloom); outline-offset:3px; }
 .bloom-owner .owner-property-title { display:block; min-width:0; line-height:1.5; }
@@ -892,3 +893,6 @@ main:has(.owner-drafts-page) .main-inner > :not(:has(.owner-drafts-page)):not(.o
 .calendar-filter-sources { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 20px; }
 .calendar-filter-sources button { min-height:40px; padding:8px 14px; border:1px solid #e5e0d6; border-radius:999px; background:#fff; color:#2d2a1f; font:inherit; font-size:14px; cursor:pointer; }
 .calendar-filter-sources button[aria-checked=true] { border-color:#2d2a1f; background:#2d2a1f; color:#fff; }
+.owner-create-step { margin:0 0 16px; color:#6f6c63; font-size:14px; }
+/* Dialog rows never grow past the dialog: the tab pill scrolls inside its own row. */
+.bloom-owner .owner-create-fields > *, .bloom-owner .owner-create-fields fieldset { min-width:0; }

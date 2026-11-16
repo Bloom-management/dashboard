@@ -1,0 +1,4 @@
+/* Email field with its Invite button on the same row; the button drops below only on very narrow screens. */
+.row{display:flex;flex-wrap:wrap;align-items:stretch;gap:8px;min-width:0}
+.input.input{flex:1 1 140px;min-width:0;width:auto;margin:0;box-sizing:border-box;min-height:48px}
+.button.button{flex:0 0 auto;min-height:48px;border-radius:10px;white-space:nowrap}

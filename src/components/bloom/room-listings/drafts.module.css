@@ -26,3 +26,12 @@ button.issueCard.issueCard[aria-expanded=true] { border-color:#b85563; }
 .issuePanel { grid-column:1/-1; display:grid; gap:12px; padding:16px; border:1px solid #efebe1; border-radius:16px; background:#fff; }
 .issuePanel p { margin:0; }
 .issueResolved { color:#4f4a40; font-size:14px; }
+/* Dashed "+ Add supply/maintenance" card at the end of the item grid (same look as the owner "Add supply" card). */
+.houseItems .items > div > .item { height:100%; box-sizing:border-box; }
+/* Owner/admin shells reset button borders globally; keep item cards as bordered tiles. */
+.houseItems .items .item { border:1px solid #e7e5df; background:#fff; border-radius:18px; padding:20px; }
+/* Draft listing cards: a rounded white card around the cover and details (doubled class beats global button resets). */
+.card.card { background:#fff; border:1px solid #e7e5df; border-radius:24px; padding:12px 12px 18px; box-shadow:0 1px 3px #302f2610; height:100%; box-sizing:border-box; }
+.card.card .cover { margin-bottom:12px; border-radius:16px; }
+.card.card > :not(.cover) { padding-inline:6px; }
+.card.card:hover { box-shadow:0 4px 14px #302f261a; }

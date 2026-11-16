@@ -39,7 +39,9 @@
 :is(.bloom-cleaner, .bloom-owner) :is(button, a, input, select, textarea):focus-visible { outline: 2px solid #cf7f8d; outline-offset: 3px; }
 :is(.bloom-cleaner, .bloom-owner) button:disabled { opacity: .5; cursor: not-allowed; }
 :is(.bloom-cleaner, .bloom-owner) .bloom-button { display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: var(--r-full); padding: 12px 20px; background: var(--ink); color: #fff; font: inherit; font-weight: 700; text-decoration: none; min-height: 44px; }
-:is(.bloom-cleaner, .bloom-owner) .bloom-button.secondary { background: var(--cream-2); color: var(--ink); }
+:is(.bloom-cleaner, .bloom-owner) .bloom-button.secondary { background: #fff; color: var(--ink); box-shadow: inset 0 0 0 1px #d6cdbb; }
+/* Secondary buttons: white fill with a tan outline (inset, so sizes match primary buttons). */
+:is(.bloom-cleaner, .bloom-owner) .bloom-button.secondary:hover:not(:disabled) { background: var(--cream); }
 .bloom-notice { padding: 12px 16px; border: 1px solid var(--line-2); border-radius: var(--r-md); background: var(--cream); color: var(--ink-2); overflow-wrap: anywhere; }
 .bloom-notice p { margin: 0 0 8px; }
 .bloom-notice small { display: block; margin-bottom: 8px; }
@@ -877,12 +879,12 @@ select:is(:focus,:focus-visible) {
 .bloom-owner button.owner-supply-card:hover { border-color:#c8b6ad; }
 .bloom-owner button.owner-supply-card:disabled { cursor:default; }
 
-/* Shared checkbox rows keep the label readable and the control on the right. */
+/* Shared checkbox rows: the box sits right beside its label. */
 body label:has(> input[type="checkbox"]:not([role="switch"])) {
- display:flex; flex-direction:row; align-items:center; justify-content:space-between; gap:16px; text-align:left;
+ display:flex; flex-direction:row; align-items:center; justify-content:flex-start; gap:12px; text-align:left;
 }
 body label > input[type="checkbox"]:not([role="switch"]) {
- order:2; flex:0 0 auto; width:20px; height:20px; margin:0 0 0 auto;
+ order:0; flex:0 0 auto; width:20px; height:20px; margin:0;
 }
 .bloom-management-toggle {
  display:flex; align-items:center; justify-content:space-between; gap:16px; width:100%;
@@ -939,3 +941,17 @@ dialog.bloom-job-frame.bloom-job-frame > [data-bloom-dialog-scroll] { flex:1 1 a
 /* iOS widens the layout viewport when any content overflows horizontally, which shifts
    top-layer dialogs and their backdrop off-center. Clip (not hidden) keeps sticky headers working. */
 @media(max-width:760px) { html, body { overflow-x:clip; } }
+.admin-create-property .property-create-step { margin:0; color:#6f6c63; font-size:14px; }
+
+/* Map pin picker and owner pin confirmation: even vertical rhythm on phones and desktop. */
+.bloom-pin-picker,.bloom-pin-suggestion{display:flex;flex-direction:column;align-items:flex-start;gap:12px;min-width:0}
+.bloom-pin-suggestion{gap:16px;margin-top:28px}
+.bloom-pin-picker>*,.bloom-pin-suggestion>*{margin:0}
+.bloom-pin-picker>:not(button),.bloom-pin-suggestion>:not(button){align-self:stretch}
+.bloom-pin-picker>button,.bloom-pin-suggestion>button{max-width:100%;white-space:normal;text-align:center}
+
+/* Coverage card heading with the Bloom-managed switch on the right. */
+.bloom-coverage-heading{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.bloom-coverage-heading.bloom-coverage-heading h3{margin:0}
+.bloom-coverage-heading{margin-bottom:12px}
+.bloom-coverage-heading .bloom-management-toggle{width:auto;padding:0;flex:none;min-height:44px}

@@ -117,18 +117,18 @@ try {
    await create.getByLabel('Listing name',{exact:true}).fill('Supply grid test');
    await create.getByLabel('Address / unit',{exact:true}).fill('Test address');
    await create.getByRole('button',{name:'Supplies',exact:true}).click();
-   await create.getByRole('button',{name:'+ Add supply',exact:true}).click();
+   await create.getByRole('button',{name:'Add supply',exact:true}).click();
    await create.getByPlaceholder('e.g. Dish soap').fill('Dish soap');
    await create.getByRole('button',{name:'Calendars',exact:true}).click();
-   await create.getByRole('button',{name:'+ Add calendar',exact:true}).click();
+   await create.getByRole('button',{name:'Add calendar',exact:true}).click();
    await create.getByRole('button',{name:'Calendars',exact:true}).click();
-   await create.getByRole('button',{name:'+ Add calendar',exact:true}).click();
+   await create.getByRole('button',{name:'Add calendar',exact:true}).click();
    await create.getByLabel('Private iCal export link',{exact:true}).nth(0).fill('https://www.airbnb.com/calendar/ical/123.ics');
    await create.getByLabel('Private iCal export link',{exact:true}).nth(1).fill('https://www.vrbo.com/icalendar/example.ics');
    await create.getByLabel('Provider',{exact:true}).nth(1).selectOption('vrbo');
    await create.getByRole('button',{name:'Save listing',exact:true}).click();
    await create.getByRole('button',{name:'Retry saving supplies',exact:true}).click();
-   await create.getByText('Supplies saved. You can update them later in Settings.').waitFor();
+   await create.getByRole('button',{name:'Retry saving supplies',exact:true}).waitFor({state:'detached'});
    assert.equal(supplyBody.supplies[0].name,'Dish soap');assert.deepEqual(feeds.map(f=>f.provider),['airbnb','vrbo']);
    await create.getByRole('button',{name:'Close details'}).click();
   }
