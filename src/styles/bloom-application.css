@@ -964,3 +964,12 @@ dialog.bloom-job-frame.bloom-job-frame > [data-bloom-dialog-scroll] { flex:1 1 a
   .admin-hub .phone-view-nav .vt-btn { flex:1 1 0; min-width:0; flex-direction:column; justify-content:center; gap:2px; min-height:52px; padding:6px 2px; font-size:12px; white-space:nowrap; overflow:hidden; }
   .admin-hub .phone-view-nav .vt-btn span { display:inline; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
 }
+
+/* iOS Safari zooms into any text field under 16px when it is focused and can leave the page
+   zoomed and panned, which pushes fixed dialogs off-centre. Keep every field at 16px on phones. */
+@media (max-width: 600px) {
+  :is(.bloom-cleaner, .bloom-owner, .bloom-onboarding) :is(input:not([type=checkbox]):not([type=radio]):not([type=range]), select, textarea) { font-size:16px !important; }
+  /* Owner calendar toolbar: the Cleanings/Bookings toggle shrinks instead of running off narrow phones. */
+  .bloom-owner .phone-toolbar .view-toggle { flex:1 1 auto; min-width:0; }
+  .bloom-owner .phone-toolbar .view-toggle .vt-btn { min-width:0; padding-inline:10px; overflow:hidden; text-overflow:ellipsis; }
+}

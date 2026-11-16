@@ -698,7 +698,7 @@
   .bloom-cleaner .topbar.bloom-compact-header:has(.phone-toolbar) > .topbar-right { justify-content:flex-end; gap:10px; }
 }
 @media (max-width: 600px) {
-  .bloom-cleaner .topbar.bloom-compact-header:has(.phone-toolbar) > .topbar-right > * { flex:0 0 auto; width:auto; margin:0; }
+  .bloom-cleaner .topbar.bloom-compact-header:has(.phone-toolbar) > .topbar-right > :not(dialog) { flex:0 0 auto; width:auto; margin:0; }
 }
 @media (max-width: 600px) {
   .bloom-cleaner .topbar.bloom-compact-header:has(.phone-toolbar) > .topbar-right { display:flex; align-items:center; }

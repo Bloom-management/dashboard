@@ -866,7 +866,7 @@ main:has(.owner-drafts-page) .main-inner > :not(:has(.owner-drafts-page)):not(.o
   .bloom-owner .topbar.bloom-compact-header:has(.phone-toolbar) { position:sticky; top:0; z-index:30; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; background:var(--bg, #f5f2ec); }
   .bloom-owner .topbar.bloom-compact-header:has(.phone-toolbar) > .brand { order:0; }
   .bloom-owner .topbar.bloom-compact-header > .topbar-right { order:1; display:flex; align-items:center; justify-content:flex-end; gap:10px; width:auto; margin-left:auto; }
-  .bloom-owner .topbar.bloom-compact-header > .topbar-right > * { flex:0 0 auto; width:auto; margin:0; }
+  .bloom-owner .topbar.bloom-compact-header > .topbar-right > :not(dialog) { flex:0 0 auto; width:auto; margin:0; }
   .bloom-owner .phone-toolbar { order:2; display:flex; align-items:center; gap:8px; width:100%; min-width:0; }
   .bloom-owner .phone-toolbar > .calendar-type-toggle { flex:0 1 auto; min-width:0; }
   .bloom-owner .phone-toolbar > .calendar-type-toggle .vt-btn { min-height:40px; padding:6px 12px; font-size:14px; }
