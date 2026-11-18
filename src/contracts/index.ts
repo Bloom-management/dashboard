@@ -10,6 +10,8 @@ export type InlineChange = { id: string; type: 'changed' | 'removed' | 'conflict
 export type CleanerJob = { houseId?:string|null;scopeRevision?:number;roomIdentifiers?:string[];propertyIds?:string[];
   id: string; propertyId: string; propertyName: string; cityId: string;
   checkoutDate: LocalDate; startAt: Instant; endAt: Instant; timezone: string;
+  /** Next guest arrival after this cleaning; null when no stay is booked. */
+  checkInAt?: Instant | null;
   status: 'open' | 'completed' | 'cancelled'; reviewRequired: boolean; version: number;
   soloRateCents: number; sharedRateCents: number; activeCleanerCount: number;
   myAssignmentId: string | null; myCompletedPayCents: number | null;

@@ -1,0 +1,35 @@
+/* Guest check-in tile, note, and live cleaning-window timeline. */
+.tile { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; flex-shrink:0; box-sizing:border-box; width:84px; min-height:84px; padding:10px 6px; border-radius:14px; background:#fbeae4; color:#86351f; text-align:center; line-height:1.15; }
+.tile[data-empty] { background:#f1eee7; color:#6b6457; }
+.tile .tileCap { font-size:12px; font-weight:500; }
+.tile .tileTime { font-size:24px; font-weight:800; letter-spacing:-.01em; font-variant-numeric:tabular-nums; }
+.tile .tileDay { font-size:12px; font-weight:500; overflow-wrap:anywhere; }
+
+.note { display:flex; align-items:center; gap:8px; margin:12px 0 0; color:#86351f; font-size:14px; }
+.note strong { font-weight:700; }
+
+.window { background:var(--cream); border-radius:var(--r-md); padding:16px 18px; }
+.head { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.badge { flex-shrink:0; padding:4px 10px; border-radius:8px; font-size:12px; font-weight:600; line-height:1.4; font-variant-numeric:tabular-nums; background:#eeeae2; color:#5d574b; }
+.badge[data-tone="live"], .badge[data-tone="done"] { background:#e8eee5; color:#42533d; }
+.badge[data-tone="upcoming"] { background:#f5ebd5; color:#776027; }
+.ends { display:flex; justify-content:space-between; gap:12px; margin-top:10px; }
+.ends > div { display:flex; flex-direction:column; gap:2px; }
+.ends > div:last-child { align-items:flex-end; }
+.endTime { font-size:22px; font-weight:800; letter-spacing:-.01em; }
+.endCap { font-size:12px; font-weight:600; color:var(--muted); }
+
+.track { position:relative; padding:14px 6px 30px; }
+.track[data-checkin] { padding-top:46px; }
+.bar { position:relative; display:block; height:6px; }
+.past, .remaining, .gap { position:absolute; top:0; height:6px; border-radius:3px; }
+.past { left:0; background:#d9d3c7; }
+.remaining { background:#2d2a1f; }
+.gap { right:0; background:repeating-linear-gradient(90deg,#e0866f 0 6px,transparent 6px 10px); }
+.tick { position:absolute; top:-5px; width:2px; height:16px; margin-left:-1px; border-radius:1px; background:#a9a293; }
+.checkInTick { background:#d0654a; }
+.dot { position:absolute; top:50%; width:16px; height:16px; margin-left:-8px; transform:translateY(-50%); box-sizing:border-box; border-radius:50%; background:#fff; border:4px solid #2d2a1f; box-shadow:0 0 0 3px var(--cream); transition:left 480ms cubic-bezier(.4,0,.2,1); }
+.nowLabel { position:absolute; bottom:4px; transform:translateX(-50%); white-space:nowrap; font-size:13px; font-weight:700; transition:left 480ms cubic-bezier(.4,0,.2,1); }
+.flag { position:absolute; top:4px; right:0; display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:8px; background:#fbeae4; color:#86351f; font-size:13px; font-weight:600; white-space:nowrap; }
+.flag::after { content:''; position:absolute; right:14px; bottom:-5px; border:6px solid transparent; border-bottom:0; border-top-color:#fbeae4; }
+@media (prefers-reduced-motion:reduce) { .dot, .nowLabel { transition:none; } }

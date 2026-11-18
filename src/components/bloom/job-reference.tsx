@@ -5,6 +5,7 @@ import {SelectorPill} from './selector-pill';
 import {CleanerAvatar,useJobTeam} from './cleaner-identity';
 import {ErrorNotice,Loading,Modal, Icon} from './primitives';
 import {formatTime,money} from './dates';
+import {CheckInNote} from './check-in';
 import styles from './cleaner-journey.module.css';
 
 /** Shared by the whole-home journey and grouped room visits so both read identically. */
@@ -38,7 +39,7 @@ export function JobDetailsDialog({job:current,user,started,team,now,onClose}:{jo
   <h2>{current.propertyName}</h2>
   {!started&&current.status==='open'&&countdown.seconds>0&&<p className={styles.startCountdown}>{countdown.beforeReminder?'Start reminder in':'Start in'} {countdown.label}</p>}
   <p className={styles.factsDate}>{new Intl.DateTimeFormat('en-US',{timeZone:'UTC',weekday:'long',month:'long',day:'numeric',year:'numeric'}).format(new Date(`${current.checkoutDate}T12:00:00Z`))}</p>
-  </header><div className={styles.timeWindow}><div><strong>{formatTime(current.startAt,current.timezone)}</strong><span>Start</span></div><div className={styles.timeLine} aria-hidden="true"/><div><strong>{formatTime(current.endAt,current.timezone)}</strong><span>Finish</span></div></div>
+  </header><div className={styles.timeWindow}><div><strong>{formatTime(current.startAt,current.timezone)}</strong><span>Start</span></div><div className={styles.timeLine} aria-hidden="true"/><div><strong>{formatTime(current.endAt,current.timezone)}</strong><span>Finish</span></div></div><CheckInNote job={current} now={now}/>
   <div className={styles.teamSection}><p>{current.timezone}</p>
    {team.loading&&!team.data?<Loading/>:team.error?<ErrorNotice error={team.error} retry={team.reload}/>:team.data?.map(cleaner=><div className={styles.teamMember} key={cleaner.id}><span className={styles.avatar}><CleanerAvatar name={cleaner.displayName} url={cleaner.avatarUrl}/></span><div><strong>{cleaner.displayName}{cleaner.id===user.id?' (You)':''}</strong><p>{current.status==='completed'?'Completed this cleaning':'Assigned to this cleaning'}</p></div></div>)}
    {current.activeCleanerCount<(current.capacity??2)&&<div className={styles.teamMember}><span className={`${styles.avatar} ${styles.openSlot}`} aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 4v16M4 12h16"/></svg></span><div><strong>{current.status==='open'?'Open cleaning slot':'Unfilled cleaning slot'}</strong><p>{current.management==='private'?'The owner manages replacements.':current.status==='open'?'Another eligible cleaner can join':'No cleaner assigned'}</p></div></div>}

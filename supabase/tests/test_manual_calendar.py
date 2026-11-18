@@ -192,4 +192,13 @@ class ManualCalendarTests(unittest.TestCase):
         self.assertEqual(scalar(f"select count(*) from public.jobs where property_id='{prop}';"),'2')
         self.assertEqual(scalar(f"select count(*) from public.assignments where job_id='{job}' and ended_at is null;"),'2')
 
+    def test_job_exposes_next_guest_check_in(self):
+        owner, _, prop, _ = fixture()
+        self.create(owner,prop,'create_booking',{'checkIn':'2032-07-01','checkout':'2032-07-04'})
+        self.create(owner,prop,'create_booking',{'checkIn':'2032-07-06','checkout':'2032-07-08'})
+        arrival = lambda date: scalar(f"select coalesce(to_char(private.job_next_check_in(j.id) at time zone p.timezone,'YYYY-MM-DD HH24:MI'),'none') from public.jobs j join public.properties p on p.id=j.property_id where j.property_id='{prop}' and j.checkout_date='{date}';")
+        self.assertEqual(arrival('2032-07-04'),'2032-07-06 15:00')
+        self.assertEqual(arrival('2032-07-08'),'none')
+        self.assertEqual(scalar(f"select count(*) from pg_proc where proname='job_dto' and prosrc like '%checkInAt%';"),'1')
+
 if __name__ == '__main__': unittest.main()

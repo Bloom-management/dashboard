@@ -664,6 +664,10 @@ dialog.cleaner-city-dialog { width:min(480px,calc(100vw - 24px)); border-radius:
 .bloom-cleaner .cleaner-day-jobs li:is(:hover,:focus-within,.selected) { border-color:#b85563; background:#fff6f8; box-shadow:0 2px 10px #b8556314; }
 .cleaner-day-card-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; width:100%; }
 .cleaner-day-card-heading strong { min-width:0; }
+.cleaner-day-jobs button.cleaner-day-card { flex-direction:row; align-items:flex-start; gap:16px; }
+.cleaner-day-card-body { display:flex; flex-direction:column; gap:8px; flex:1; min-width:0; }
+@media(max-width:480px) { .cleaner-day-jobs button.cleaner-day-card { gap:12px; } .cleaner-day-card .cleaner-day-card-heading { flex-direction:column; gap:8px; } .cleaner-day-card .cleaner-day-badges { justify-content:flex-start; max-width:none; } .cleaner-day-card > span:first-child { width:72px; min-height:76px; } }
+@media(min-width:481px) { .bloom-cleaner .cleaner-day-jobs li > button.cleaner-day-link { margin-left:120px; max-width:calc(100% - 140px); } }
 .cleaner-day-jobs .cleaner-day-completed { flex-shrink:0; padding:4px 8px; border-radius:6px; background:#e8eee5; color:#42533d; font-size:11px; font-weight:600; line-height:1.4; }
 @media(prefers-reduced-motion:reduce) { .bloom-cleaner .cleaner-day-jobs li { transition:none; } }
 

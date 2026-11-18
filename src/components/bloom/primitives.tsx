@@ -45,7 +45,7 @@ export function Loading() { return <p className="bloom-notice" role="status">Loa
 export function Changes({ changes }: { changes: InlineChange[] }) {
   return <>{changes.map(change => <p className="bloom-notice" key={change.id}><strong>{change.type === 'removed' ? 'Removed from source' : change.type === 'conflict' ? 'Booking conflict' : 'Booking changed'}</strong><br />{change.message}</p>)}</>;
 }
-export type IconName = 'grid' | 'list' | 'left' | 'right' | 'close' | 'plus' | 'minus' | 'pin' | 'house' | 'trash' | 'arrow-left' | 'arrow-right' | 'arrow-up-right';
+export type IconName = 'grid' | 'list' | 'left' | 'right' | 'close' | 'plus' | 'minus' | 'pin' | 'house' | 'trash' | 'arrow-left' | 'arrow-right' | 'arrow-up-right' | 'door';
 /**
  * Shared SVG icons. Never type a glyph (×, ‹, ›, ←, →, ↗) as an icon: font glyphs carry baseline and side
  * bearings, so they never sit centred in a pill or circle. These paths are drawn centred in a 24×24 box and
@@ -56,6 +56,7 @@ export function Icon({ name, size = 18 }: { name: IconName; size?: number }) {
     name === 'grid' ? <path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z" /> :
     name === 'list' ? <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" /> :
     name === 'house' ? <path d="m3 10 9-7 9 7M5 9v12h14V9M9 21v-8h6v8" /> :
+    name === 'door' ? <><path d="M4 21h16M6 21V4a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v17M15 7h3v14" /><path d="M11.5 12.5h.01" /></> :
     name === 'pin' ? <><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z" /><circle cx="12" cy="10" r="2.5" /></> :
     <path d={{ left: 'M15 6l-6 6 6 6', right: 'M9 6l6 6-6 6', close: 'M6 6l12 12M18 6L6 18', plus: 'M12 5v14M5 12h14', minus: 'M5 12h14', trash: 'M4 7h16M10 7V4h4v3M6 7l1 13h10l1-13M10 11v5M14 11v5', 'arrow-left': 'M19 12H5M11 6l-6 6 6 6', 'arrow-right': 'M5 12h14M13 6l6 6-6 6', 'arrow-up-right': 'M7 17 17 7M8 7h9v9' }[name]} />
   }</svg>;
