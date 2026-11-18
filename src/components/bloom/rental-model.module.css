@@ -1,0 +1,113 @@
+/* Entire unit <-> room model (board D). Cream #f4f1ea, ink #2d2a1f, rose #a94e63 / #c4818d. */
+.stack { display:grid; gap:16px; margin-block:8px 24px; }
+.card, .panel, .preview { background:#fff; border:1px solid #e7e2d8; border-radius:28px; padding:24px; box-sizing:border-box; }
+.cardHead, .studioHead { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+.cardHead h3, .studioHead h3 { margin:0; color:#2d2a1f; }
+.models { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr)); gap:12px; margin-top:16px; }
+.model { display:grid; gap:2px; padding:14px 18px; border-radius:20px; background:#f4f1ea; border:1.5px solid transparent; color:#7a7466; }
+.model strong { color:#7a7466; }
+.model span { font-size:13px; }
+.selected { background:#f8e9ec; border-color:#c4818d; }
+.selected strong { color:#7d3346; }
+.selected span { color:#2d2a1f; }
+.chip, .chipRose { display:inline-flex; align-items:center; width:fit-content; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:600; line-height:1.5; white-space:nowrap; }
+.chip { background:#ece8df; color:#2d2a1f; }
+.chipRose { background:#f8e1e6; color:#a94e63; }
+.banner { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; padding:16px 20px; border-radius:24px; background:#f8e9ec; border:1px solid #e9c3cb; color:#2d2a1f; }
+.banner div { display:grid; gap:2px; }
+.roomList { list-style:none; margin:16px 0 0; padding:0; display:grid; gap:8px; }
+.roomList li { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:16px; background:#f4f1ea; }
+.roomList li span:last-child { margin-left:auto; color:#7a7466; }
+.muted { color:#7a7466; font-size:13px; }
+.dot { width:9px; height:9px; border-radius:50%; background:#b5ad9c; flex:none; }
+.active { background:#6f9a6a; }
+.needs_channel_link { background:#d39a4a; }
+.draft { background:#c98a3d; }
+
+.studio { display:grid; gap:16px; margin-block:8px 24px; }
+.steps { list-style:none; margin:0; padding:6px; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; background:#fff; border-radius:999px; border:1px solid #e7e2d8; }
+.steps button { width:100%; display:flex; align-items:center; justify-content:center; gap:8px; padding:10px 12px; border:0; border-radius:999px; background:transparent; color:#2d2a1f; font:600 14px/1.2 "Plus Jakarta Sans",sans-serif; cursor:pointer; }
+.steps button:disabled { cursor:default; color:#7a7466; }
+.stepActive { background:#ece8df !important; }
+.stepNumber { display:inline-grid; place-items:center; width:24px; height:24px; border-radius:50%; background:#ece8df; color:#2d2a1f; font-size:12px; flex:none; }
+.stepActive .stepNumber { background:#2d2a1f; color:#fff; }
+.stepDone .stepNumber { background:#a94e63; }
+.checkMark { display:block; width:5px; height:10px; margin-top:-2px; border:solid #fff; border-width:0 2px 2px 0; transform:rotate(45deg); }
+.studioBody { display:grid; grid-template-columns:minmax(0,1fr) minmax(220px,280px); gap:16px; align-items:start; }
+@media (max-width:900px) { .studioBody { grid-template-columns:1fr; } .steps { grid-template-columns:repeat(2,minmax(0,1fr)); border-radius:24px; } }
+.panel { display:grid; gap:16px; padding:0; overflow:hidden; }
+.panelInner { display:grid; gap:14px; padding:24px 24px 4px; }
+.panelInner h4 { margin:8px 0 0; color:#2d2a1f; font-size:17px; }
+.panelInner label { display:grid; gap:6px; font-size:12px; font-weight:600; letter-spacing:.02em; text-transform:uppercase; color:#4a4538; }
+.panelInner input:not([type=checkbox]) { box-sizing:border-box; width:100%; min-height:46px; padding:10px 14px; border:1px solid #d5d0c6; border-radius:999px; font:500 15px/1.4 "Plus Jakarta Sans",sans-serif; color:#2d2a1f; background:#fff; text-transform:none; }
+.panelInner input:focus-visible { outline:2px solid #c4818d; outline-offset:1px; }
+.footer { display:flex; justify-content:space-between; gap:12px; padding:16px 24px 24px; border-top:1px solid #efebe3; }
+.counter { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 16px; border-radius:20px; background:#f4f1ea; font-weight:600; }
+.counter div { display:flex; align-items:center; gap:12px; }
+.counter output { min-width:20px; text-align:center; font-size:18px; }
+.counter button { display:grid; place-items:center; width:40px; height:40px; border-radius:50%; border:1px solid #d5d0c6; background:#fff; color:#2d2a1f; cursor:pointer; }
+.counter button:disabled { opacity:.4; cursor:default; }
+.roomRow { display:grid; grid-template-columns:minmax(0,2fr) minmax(90px,1fr); gap:12px; padding:14px; border:1px solid #efebe3; border-radius:20px; }
+.chips { display:flex; flex-wrap:wrap; gap:10px; }
+.chips button { padding:9px 18px; border-radius:999px; border:1px solid #d5d0c6; background:#fff; color:#2d2a1f; font:600 14px/1.2 "Plus Jakarta Sans",sans-serif; cursor:pointer; }
+.chips button[aria-pressed="true"], .chips button[aria-checked="true"] { background:#f8e9ec; border-color:#c4818d; color:#7d3346; }
+.chips button:focus-visible, .choiceList button:focus-visible { outline:2px solid #c4818d; outline-offset:2px; }
+.channelRow { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 16px; border:1px solid #efebe3; border-radius:20px; }
+.badgeGreen, .badgeAmber { padding:3px 10px; border-radius:999px; font-size:12px; font-weight:600; }
+.badgeGreen { background:#e3eedf; color:#3f6a3a; }
+.badgeAmber { background:#f8ecd4; color:#8a5a14; }
+.accessRow { display:grid; gap:12px; margin:0; padding:14px; border:1px solid #efebe3; border-radius:20px; }
+.accessRow legend { padding:0 6px; font-weight:700; color:#2d2a1f; }
+.checklist, .summary { list-style:none; margin:0; padding:0; display:grid; gap:8px; }
+.checklist li { display:flex; align-items:center; gap:10px; padding:12px 16px; border-radius:16px; font-weight:600; }
+.checklist li::before { content:""; width:10px; height:10px; border-radius:50%; flex:none; }
+.ok { background:#eef5ec; color:#3f6a3a; }
+.ok::before { background:#6f9a6a; }
+.warn { background:#fbf1e1; color:#8a5a14; }
+.warn::before { background:#d39a4a; }
+.priceGrid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.summary li { display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; padding:12px 16px; border-radius:16px; background:#f4f1ea; }
+.summary li span { color:#7a7466; font-size:14px; }
+.choiceList { display:grid; gap:8px; }
+.choiceList button { display:flex; align-items:center; gap:12px; padding:14px 16px; border-radius:20px; border:1px solid #d5d0c6; background:#fff; color:#2d2a1f; font:500 15px/1.4 "Plus Jakarta Sans",sans-serif; text-align:left; cursor:pointer; }
+.choiceList button span:last-child { margin-left:auto; }
+.choiceList button[aria-checked="true"] { border-color:#c4818d; background:#f8e9ec; }
+.radio { width:18px; height:18px; border-radius:50%; border:1.5px solid #a69b89; box-sizing:border-box; flex:none; display:grid; place-items:center; }
+[aria-checked="true"] > .radio { border-color:#a94e63; }
+[aria-checked="true"] > .radio::after { content:""; width:8px; height:8px; border-radius:50%; background:#a94e63; }
+.check { display:flex !important; align-items:center; gap:10px; text-transform:none !important; font-size:15px !important; letter-spacing:0 !important; }
+.check input { width:18px; height:18px; accent-color:#a94e63; }
+.notice { margin:0; padding:12px 16px; border-radius:16px; background:#f4f1ea; }
+.warning { margin:0; padding:12px 16px; border-radius:16px; background:#fbf1e1; color:#6d470f; }
+
+.preview { display:grid; gap:10px; position:sticky; top:16px; }
+.eyebrow { font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#7a7466; }
+.previewTitle { font-size:18px; color:#2d2a1f; }
+.previewShared { padding:12px 14px; border-radius:16px; background:#f4f1ea; font-size:14px; }
+.previewRoom { display:grid; gap:8px; padding:12px 14px; border-radius:16px; border:1px solid #efebe3; }
+.previewRoom > div:first-child { display:flex; justify-content:space-between; gap:8px; }
+.previewRoom > div:first-child span { color:#7a7466; font-size:14px; }
+.flags { display:flex; flex-wrap:wrap; gap:6px; }
+.flags > span { display:inline-flex; align-items:center; gap:6px; padding:3px 10px; border-radius:999px; background:#f4f1ea; color:#7a7466; font-size:12px; font-weight:600; }
+.flags > span.flagOn { background:#e3eedf; color:#3f6a3a; }
+.flagMark { width:8px; height:8px; border-radius:50%; border:1.5px solid currentColor; box-sizing:border-box; }
+.flagOn .flagMark { background:currentColor; }
+
+/* Rail: houses grouped with their rooms; plain units keep their card. */
+.houseGroup { display:grid; gap:10px; padding:14px; border-radius:28px; background:#fff; border:1px solid #e7e2d8; }
+.houseGroupActive { border-color:#c4818d; box-shadow:inset 0 0 0 1px #c4818d; }
+.houseHead { display:flex; align-items:flex-start; gap:12px; width:100%; padding:6px; border:0; background:transparent; color:#2d2a1f; text-align:left; cursor:pointer; border-radius:20px; font:inherit; }
+.houseHead:focus-visible { outline:2px solid #c4818d; outline-offset:2px; }
+.houseIcon { display:grid; place-items:center; width:48px; height:48px; border-radius:16px; background:#ece8df; flex:none; }
+.houseText { display:grid; gap:4px; min-width:0; flex:1; }
+.houseText small { color:#7a7466; }
+.chevron { display:grid; place-items:center; transition:transform 200ms cubic-bezier(.4,0,.2,1); }
+.open .chevron { transform:rotate(90deg); }
+@media (prefers-reduced-motion:reduce) { .chevron { transition:none; } }
+.houseRooms { list-style:none; margin:0; padding:10px 0 0; display:grid; gap:8px; border-top:1px solid #efebe3; }
+.houseRooms button { display:flex; align-items:center; gap:10px; width:100%; padding:10px 14px; border-radius:16px; border:1.5px solid transparent; background:#f4f1ea; color:#2d2a1f; font:600 15px/1.3 "Plus Jakarta Sans",sans-serif; cursor:pointer; text-align:left; }
+.houseRooms button[aria-pressed="true"] { border-color:#c4818d; background:#f8e9ec; }
+.houseRooms button span:last-child { margin-left:auto; color:#7a7466; font-weight:500; }
+.railChip { margin-top:6px; }
+.archivedCard { cursor:default; }
+.archivedDot { background:#a69b89 !important; }

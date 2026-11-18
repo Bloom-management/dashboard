@@ -99,7 +99,14 @@ class RoomVisits(unittest.TestCase):
   self.assertEqual(scalar(f"select status from jobs where id='{newj}';"),'cancelled')
   self.assertGreater(int(scalar(f"select count(*) from private.room_turnover_history where turnover_id='{tid}';")),2)
  def test_rooms_without_common_authorized_owner_require_review(self):
-  other,other_id=make_user('owner');sql(f"delete from property_owners where property_id='{self.rooms[1]}';insert into property_owners values('{self.rooms[1]}','{other_id}');")
+  other,other_id=make_user('owner')
+  # Owners are house-wide since 104: an ordinary edit on one room reaches every room.
+  sql(f"insert into property_owners values('{self.rooms[1]}','{other_id}');")
+  self.assertEqual(scalar(f"select count(*) from property_owners where owner_id='{other_id}';"),'4')
+  sql(f"delete from property_owners where property_id='{self.rooms[1]}' and owner_id='{other_id}';")
+  self.assertEqual(scalar(f"select count(*) from property_owners where owner_id='{other_id}';"),'0')
+  # Diverged legacy ownership (pre-104 data, written with mirroring disabled) must still be held for review.
+  sql(f"set session_replication_role=replica;delete from property_owners where property_id='{self.rooms[1]}';insert into property_owners values('{self.rooms[1]}','{other_id}');")
   j=self.attach(0);self.attach(1)
   self.assertEqual(self.visit(j)['job']['soloRateCents'],4500)
   self.assertEqual(len(self.visit(j)['rooms']),1)
@@ -183,10 +190,13 @@ class RoomVisits(unittest.TestCase):
   # Read-only private summaries require team authorization for every included room.
   sql(f"update jobs set status='completed',completed_at=now(),completed_by='{self.cleaners[0][1]}' where id='{j}';")
   sub,uid=self.cleaners[2]
-  sql(f"insert into private.property_cleaner_members(property_id,cleaner_id) values('{self.rooms[0]}','{uid}');")
+  # Diverged legacy membership (pre-104 data, written with mirroring disabled) stays insufficient.
+  sql(f"set session_replication_role=replica;insert into private.property_cleaner_members(property_id,cleaner_id) values('{self.rooms[0]}','{uid}');")
   self.assertNotIn(j,scalar(f"select bloom_jobs('{self.day}','{self.day}');",sub))
   self.assertIn('NOT_FOUND',sql(f"select bloom_cleaning_report('{j}');",sub,ok=False).stderr)
   sql(f"insert into private.property_cleaner_members(property_id,cleaner_id) values('{self.rooms[1]}','{uid}');")
+  # Since 104 a team edit on one room reaches the whole house.
+  self.assertEqual(scalar(f"select count(*) from private.property_cleaner_members where cleaner_id='{uid}';"),'4')
   self.assertIn(j,scalar(f"select bloom_jobs('{self.day}','{self.day}');",sub))
   self.assertEqual(sql(f"select bloom_cleaning_report('{j}');",sub).returncode,0)
   self.assertIn('NOT_FOUND',sql(f"select bloom_room_visit('{j}');",sub,ok=False).stderr)

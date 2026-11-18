@@ -64,7 +64,7 @@ class OwnerHub(unittest.TestCase):
   replay=self.owner_rpc('add_source',p_input={**self.input,'fingerprint':'e'*64},p_key='different-export');self.assertEqual(data(replay)['id'],data(second)['id'])
   sql(f"update calendar_sources set enabled=false where id='{self.sid}';")
   third=self.owner_rpc('add_source',p_input={**self.input,'fingerprint':'f'*64},p_key='disabled-other-export');self.assertEqual(third.returncode,0,third.stderr);self.assertNotEqual(data(third)['id'],self.sid)
-  rotated=self.owner_rpc('add_source',p_input={**self.input,'urlDigest':'e'*64},p_key='rotate-disabled');self.assertEqual(rotated.returncode,0,rotated.stderr);self.assertFalse(data(rotated)['enabled']);self.assertEqual(data(rotated)['id'],self.sid)
+  rotated=self.owner_rpc('add_source',p_input={**self.input,'urlDigest':uuid.uuid4().hex*2},p_key='rotate-disabled');self.assertEqual(rotated.returncode,0,rotated.stderr);self.assertFalse(data(rotated)['enabled']);self.assertEqual(data(rotated)['id'],self.sid)
   sql(f"update calendar_sources set enabled=true where id='{self.sid}';")
   vrbo_added=self.owner_rpc('add_source',p_input={**self.input,'provider':'vrbo'},p_key='vrbo');self.assertEqual(vrbo_added.returncode,0,vrbo_added.stderr)
   self.assertIn('VALIDATION_ERROR',self.owner_rpc('add_source',p_input={**self.input,'provider':'other'},p_key='unsupported-provider').stderr)

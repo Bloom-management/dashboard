@@ -40,6 +40,7 @@ if [[ "${1:-}" == "--room-visits" ]]; then
   python3 -B "$BLOOM_REPO/supabase/tests/test_pending_owners.py"
   python3 -B "$BLOOM_REPO/supabase/tests/test_room_drafts.py"
   python3 -B "$BLOOM_REPO/supabase/tests/test_room_visits.py"
+  python3 -B "$BLOOM_REPO/supabase/tests/test_rental_model.py"
   exit 0
 fi
 if [[ "${1:-}" == "--push-acceptance" ]]; then
@@ -49,6 +50,7 @@ if [[ "${1:-}" == "--push-acceptance" ]]; then
 fi
 "$BLOOM_PSQL" -h 127.0.0.1 -p "$BLOOM_TEST_PORT" -d postgres -X -q -v ON_ERROR_STOP=1 -f "$BLOOM_REPO/supabase/tests/property_airbnb.sql"
 python3 -B "$BLOOM_REPO/supabase/tests/test_room_drafts.py"
+python3 -B "$BLOOM_REPO/supabase/tests/test_rental_model.py"
 python3 -B "$BLOOM_REPO/supabase/tests/test_database.py"
 
 python3 -B "$BLOOM_REPO/supabase/tests/test_calendar_database.py"

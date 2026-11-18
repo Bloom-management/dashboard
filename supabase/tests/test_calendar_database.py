@@ -28,7 +28,7 @@ def snapshot(events,complete=True):return dict(events=events,issues=[] if comple
 def source(actor=None,prop=None,provider='airbnb',fingerprint=None):
     if actor is None:_,actor=make_user('admin')
     if prop is None:prop=scalar(f"insert into public.properties(city_id,name,address) values('{CITY}','Synthetic calendar unit','Development fixture') returning id;")
-    body=dict(propertyId=prop,provider=provider,encryptedUrl='v1.'+'a'*16+'.'+'b'*22+'.'+'c'*80,fingerprint=fingerprint or uuid.uuid4().hex*2,urlDigest='d'*64)
+    body=dict(propertyId=prop,provider=provider,encryptedUrl='v1.'+'a'*16+'.'+'b'*22+'.'+'c'*80,fingerprint=fingerprint or uuid.uuid4().hex*2,urlDigest=uuid.uuid4().hex*2)  # Distinct links: one link maps to one live listing
     result=data(rpc('bloom_calendar_add_source',dict(p_actor=actor,p_input=body,p_key=uuid.uuid4().hex)))
     return actor,prop,result['id'],body
 
@@ -40,14 +40,14 @@ class CalendarDatabaseTests(unittest.TestCase):
     def error(self,result,code):
         self.assertNotEqual(result.returncode,0,result.stdout);self.assertIn(code,result.stderr)
     def test_source_setup_receipts_rotation_and_redaction(self):
-        actor,prop,sid,body=source();key='setup'
+        actor,prop,sid,body=source();key='setup';rotated_digest=uuid.uuid4().hex*2
         first=data(rpc('bloom_calendar_add_source',dict(p_actor=actor,p_input=body,p_key=key)))
         body2={**body,'encryptedUrl':'v1.'+'d'*16+'.'+'e'*22+'.'+'f'*80}
         self.assertEqual(data(rpc('bloom_calendar_add_source',dict(p_actor=actor,p_input=body2,p_key=key))),first)
         self.assertEqual(scalar(f"select count(*) from public.calendar_sources where property_id='{prop}';"),'1')
-        self.error(rpc('bloom_calendar_add_source',dict(p_actor=actor,p_input={**body,'urlDigest':'e'*64},p_key=key),False),'CONFLICT')
+        self.error(rpc('bloom_calendar_add_source',dict(p_actor=actor,p_input={**body,'urlDigest':rotated_digest},p_key=key),False),'CONFLICT')
         lease=begin(actor,sid)
-        rpc('bloom_calendar_add_source',dict(p_actor=actor,p_input={**body2,'urlDigest':'e'*64},p_key='rotate'))
+        rpc('bloom_calendar_add_source',dict(p_actor=actor,p_input={**body2,'urlDigest':rotated_digest},p_key='rotate'))
         self.error(finish(actor,lease,snapshot([]),ok=False),'CONFLICT')
         page=data(rpc('bloom_calendar_sources',dict(p_actor=actor,p_cursor=None)))
         self.assertEqual(set(first),{'id','propertyId','provider','enabled','lastSuccessAt','lastAttemptAt','errorCode','action'})
@@ -169,7 +169,7 @@ class CalendarDatabaseTests(unittest.TestCase):
         if cr.returncode==0:self.assertEqual(scalar(f"select completed_pay_cents from public.assignments where job_id='{job}';"),'7500')
         else:self.assertIn('REVIEW_REQUIRED',cr.stderr);self.assertEqual(scalar(f"select status from public.jobs where id='{job}';"),'open')
     def test_admin_reschedule_sync_and_setup_begin_lock_order(self):
-        actor,prop,sid,body=source();admin=scalar(f"select clerk_user_id from public.users where id='{actor}';")
+        actor,prop,sid,body=source();admin=scalar(f"select clerk_user_id from public.users where id='{actor}';");rotated_digest=uuid.uuid4().hex*2
         sync(actor,sid,[event()]);job=scalar(f"select id from public.jobs where property_id='{prop}';")
         sql(f"update public.jobs set review_required=true where id='{job}';")
         lease=begin(actor,sid);payload=json.dumps({'reason':'Synthetic resolution','checkoutDate':'2030-05-05'})
@@ -181,7 +181,7 @@ class CalendarDatabaseTests(unittest.TestCase):
         self.assertNotIn('deadlock',ar.stderr+fr.stderr)
         self.assertEqual(scalar(f"select count(*) from public.jobs where property_id='{prop}';"),'1')
         with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
-            a=pool.submit(rpc,'bloom_calendar_add_source',dict(p_actor=actor,p_input={**body,'urlDigest':'e'*64},p_key='rotate-race'),False)
+            a=pool.submit(rpc,'bloom_calendar_add_source',dict(p_actor=actor,p_input={**body,'urlDigest':rotated_digest},p_key='rotate-race'),False)
             b=pool.submit(rpc,'bloom_calendar_begin_sync',dict(p_actor=actor,p_source=sid,p_key='begin-race'),False)
             ar,br=a.result(),b.result()
         self.assertEqual(ar.returncode,0,ar.stderr);self.assertEqual(br.returncode,0,br.stderr)
