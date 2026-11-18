@@ -63,4 +63,10 @@ export async function dispatch(only?:string){
   }catch{await finish('pending','TRANSIENT');return 'pending';}
  }));return {attempted:rows.length,outcomes};
 }
-export function checkSchedule(request:Request){const secret=process.env.BLOOM_PUSH_SCHEDULER_SECRET;if(!secret||secret.length<32)throw new BackendError('CONFIGURATION_ERROR');const a=Buffer.from(request.headers.get('authorization')??''),b=Buffer.from(`Bearer ${secret}`);if(a.length!==b.length||!timingSafeEqual(a,b))throw new BackendError('UNAUTHENTICATED');}
+/** Accepts the Bloom scheduler secret or Vercel Cron's CRON_SECRET bearer token. */
+export function checkSchedule(request:Request){
+ const secrets=[process.env.BLOOM_PUSH_SCHEDULER_SECRET,process.env.CRON_SECRET].filter((value):value is string=>!!value&&value.length>=32);
+ if(secrets.length===0)throw new BackendError('CONFIGURATION_ERROR');
+ const a=Buffer.from(request.headers.get('authorization')??'');
+ if(!secrets.some(secret=>{const b=Buffer.from(`Bearer ${secret}`);return a.length===b.length&&timingSafeEqual(a,b);}))throw new BackendError('UNAUTHENTICATED');
+}
