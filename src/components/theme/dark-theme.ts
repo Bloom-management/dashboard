@@ -77,7 +77,8 @@ function mapColor(c: RGBA, kind: Kind, button = false): string {
   const chroma = (Math.max(c.r, c.g, c.b) - Math.min(c.r, c.g, c.b)) / 255;
   // Bloom's neutrals are warm beiges (cream, sand, olive): only strongly saturated yellows/oranges in that band count as colour.
   const beige = h >= 30 && h < 65;
-  const chromatic = L < 0.96 && s > 0.28 && chroma >= 0.04 && (!beige || (chroma >= 0.15 && s > 0.5));
+  // Strong chroma counts as colour even when HSL saturation is low (muted greens like the 'full' supply bar).
+  const chromatic = L < 0.96 && (s > 0.28 || chroma >= 0.2) && chroma >= 0.04 && (!beige || (chroma >= 0.15 && s > 0.5));
   if (chromatic) {
     const f = family(h);
     if (kind === 'text') return withAlpha(f.ink, c.a);
