@@ -1001,10 +1001,19 @@ dialog.bloom-job-frame.bloom-job-frame > [data-bloom-dialog-scroll] { flex:1 1 a
 .bloom-staff-text span { font-size:13px; color:var(--muted); }
 .bloom-staffing .bloom-staff-slot.open .bloom-staff-text strong { color:var(--bloom-deep); }
 .bloom-staff-chevron { flex-shrink:0; color:var(--muted); }
-.bloom-staff-form .bloom-staff-options { display:grid; gap:8px; margin:0; padding:0; border:0; }
-.bloom-staff-form .bloom-staff-options legend { padding:0; margin-bottom:8px; font-weight:600; }
-.bloom-staff-option { display:flex; align-items:center; gap:12px; min-height:56px; padding:8px 14px; border:1px solid var(--line-2); border-radius:14px; background:#fff; cursor:pointer; }
-.bloom-staff-option:has(input:checked) { border-color:#4a4538; box-shadow:inset 0 0 0 1px #4a4538; }
-.bloom-staff-option:hover { border-color:#b85563; }
-.bloom-staff-option input { accent-color:#b85563; }
+.bloom-staff-avatar.small { width:32px; height:32px; flex-basis:32px; }
+/* Open-slot popover (rendered inside the job dialog) and the reassign picker: search on top, cleaners below. */
+.bloom-staff-positioner { z-index:100; }
+.bloom-staff-popover { box-sizing:border-box; display:flex; flex-direction:column; width:min(340px, calc(100vw - 32px)); max-height:min(380px, var(--available-height, 380px)); padding:10px; border:1px solid var(--line-2); border-radius:16px; background:#fff; box-shadow:0 12px 32px #2d2a1f24; outline:none; }
+.bloom-staff-search { display:flex; flex-direction:column; gap:8px; min-height:0; }
+.bloom-staff-search .bloom-staff-search-input { box-sizing:border-box; width:100%; min-height:42px; padding:10px 12px; border:1px solid #dedbd2; border-radius:12px; background:#fff; color:var(--ink); font:inherit; font-size:15px; outline:none; }
+.bloom-staff-search .bloom-staff-search-input:focus-visible { border-color:#cb7c8b; }
+.bloom-staff-search .bloom-staff-results { list-style:none; margin:0; padding:0; display:grid; gap:2px; min-height:0; overflow-y:auto; overscroll-behavior:contain; }
+.bloom-staff-form .bloom-staff-results { max-height:260px; padding:2px; border:1px solid var(--line); border-radius:14px; }
+.bloom-staff-results .bloom-staff-result { display:flex; align-items:center; gap:10px; width:100%; min-height:48px; padding:6px 10px; border:1px solid transparent; border-radius:12px; background:transparent; color:var(--ink); font:inherit; font-size:15px; font-weight:600; text-align:left; cursor:pointer; }
+.bloom-staff-results .bloom-staff-result:hover, .bloom-staff-results .bloom-staff-result:focus-visible { background:#faf8f4; outline:none; }
+.bloom-staff-results .bloom-staff-result[aria-selected="true"] { border-color:#4a4538; background:#fff; }
+.bloom-staff-results .bloom-staff-empty { padding:14px 10px; font-size:14px; color:var(--muted); }
+.bloom-staff-form .bloom-staff-label { margin:0; font-weight:600; }
+.bloom-staff-form .bloom-staff-chosen { display:flex; align-items:center; gap:10px; margin:0; font-weight:600; }
 @media(prefers-reduced-motion:reduce) { .bloom-staff-slot { transition:none; } }
