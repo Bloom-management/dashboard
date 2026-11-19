@@ -229,7 +229,9 @@
 .bloom-cleaner .day-pill {
     display: flex; align-items: center; gap: 6px;
     background: var(--gray-fill); border-radius: var(--r-full);
-    padding: 4px 12px 4px 4px; width: 100%; min-width: 0; min-height: 30px;
+    /* Every variant shares the open pill's geometry: same border width and inset, badge, then label. */
+    border: 1.5px solid transparent;
+    padding: 4px 12px 4px 8px; width: 100%; min-width: 0; min-height: 30px;
     transition: all 130ms ease; overflow: hidden;
   }
 
@@ -250,7 +252,15 @@
 
 .bloom-cleaner .day-pill.selected .dp-label { color: #fff; }
 
-.bloom-cleaner .day-pill.open { background: transparent; border: 1.5px dashed var(--bloom); padding-left: 8px; }
+/* Leading badge: an 18px circle on every variant (plus for open, check for mine, count for full). */
+.bloom-cleaner .day-pill .dp-plus {
+    width: 18px; height: 18px; border-radius: 50%; background: rgba(255,255,255,0.75);
+    color: var(--ink-2); font-size: 10px; font-weight: 700; flex-shrink: 0;
+  }
+.bloom-cleaner .day-pill.mine .dp-plus { background: #fff; color: var(--bloom-deep); }
+.bloom-cleaner .day-pill.selected .dp-plus { background: rgba(255,255,255,0.18); color: #fff; }
+
+.bloom-cleaner .day-pill.open { background: transparent; border: 1.5px dashed var(--bloom); }
 
 .bloom-cleaner .day-pill.open .dp-label { color: var(--bloom-deep); font-weight: 700; }
 
@@ -678,9 +688,8 @@
   .cleaner-hub .topbar:has(.phone-toolbar) > .brand { order:0; }
   .cleaner-hub .topbar:has(.phone-toolbar) > .topbar-right { order:1; width:auto; margin-left:auto; }
   .cleaner-hub .phone-toolbar { order:2; display:flex; align-items:center; gap:8px; width:100%; min-width:0; }
-  .cleaner-hub .phone-toolbar > .city-tabs, .cleaner-hub .phone-toolbar > .bloom-city { flex:0 1 auto; min-width:0; overflow:hidden; }
+  .cleaner-hub .phone-toolbar > .city-tabs, .cleaner-hub .phone-toolbar > .bloom-city { flex:0 1 auto; min-width:0; overflow:visible; }
   .cleaner-hub .phone-toolbar .cleaner-city-trigger { max-width:100%; min-width:0; min-height:44px; padding:8px 12px; gap:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .cleaner-hub .phone-toolbar .cleaner-city-trigger > svg:last-child { display:none; }
   .cleaner-hub .phone-cal-actions { display:flex; gap:8px; margin-left:auto; flex-shrink:0; }
   .cleaner-hub .phone-cal-actions .bloom-button { min-height:44px; padding:8px 14px; white-space:nowrap; }
 }
@@ -692,7 +701,7 @@
   /* Beat the compact-header grid and the city tab's legacy order/width/pill so the toolbar reads: city … Today Filters. */
   .bloom-cleaner .topbar.bloom-compact-header:has(.phone-toolbar) { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; }
   .bloom-cleaner .topbar.bloom-compact-header:has(.phone-toolbar) > .topbar-right { margin-left:auto; width:auto; }
-  .bloom-cleaner .phone-toolbar > .city-tabs, .bloom-cleaner .phone-toolbar > .bloom-city { order:0; width:auto; max-width:none; flex:0 1 auto; min-width:0; margin:0; padding:0; background:transparent; border-radius:0; overflow:hidden; }
+  .bloom-cleaner .phone-toolbar > .city-tabs, .bloom-cleaner .phone-toolbar > .bloom-city { order:0; width:auto; max-width:none; flex:0 1 auto; min-width:0; margin:0; padding:0; background:transparent; border-radius:0; overflow:visible; }
 }
 @media (max-width: 600px) {
   .bloom-cleaner .topbar.bloom-compact-header:has(.phone-toolbar) > .topbar-right { justify-content:flex-end; gap:10px; }

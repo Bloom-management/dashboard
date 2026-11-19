@@ -39,10 +39,11 @@
 :is(.bloom-cleaner, .bloom-owner) :is(button, a, input, select, textarea):focus-visible { outline: 2px solid #cf7f8d; outline-offset: 3px; }
 :is(.bloom-cleaner, .bloom-owner) button:disabled { opacity: .5; cursor: not-allowed; }
 :is(.bloom-cleaner, .bloom-owner) .bloom-button { display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: var(--r-full); padding: 12px 20px; background: var(--ink); color: #fff; font: inherit; font-weight: 700; text-decoration: none; min-height: 44px; }
-:is(.bloom-cleaner, .bloom-owner) .bloom-button.secondary { background: #fff; color: var(--ink); box-shadow: inset 0 0 0 1px #d6cdbb; }
-/* Secondary buttons: white fill with a tan outline (inset, so sizes match primary buttons). */
-:is(.bloom-cleaner, .bloom-owner) .bloom-button.secondary:hover:not(:disabled) { background: var(--cream); }
-.bloom-notice { padding: 12px 16px; border: 1px solid var(--line-2); border-radius: var(--r-md); background: var(--cream); color: var(--ink-2); overflow-wrap: anywhere; }
+:is(.bloom-cleaner, .bloom-owner) .bloom-button.secondary { background: #fff; color: var(--ink); box-shadow: inset 0 0 0 1px #d6cdbb, var(--shadow-sm, 0 1px 2px rgba(45,42,31,0.05), 0 2px 6px rgba(45,42,31,0.04)); }
+/* Secondary buttons: white fill, tan outline (inset, so sizes match primary buttons) and the card shadow. Hover dims the white slightly. */
+:is(.bloom-cleaner, .bloom-owner) .bloom-button.secondary:hover:not(:disabled) { background: #faf8f4; }
+/* Notices (loading, errors, booking changes) are filled cards like the Empty state: card fill, soft shadow, light edge. */
+.bloom-notice { padding: 12px 16px; border: 1px solid var(--line, rgba(45,42,31,0.10)); border-radius: var(--r-md); background: var(--card, #fff); box-shadow: var(--shadow-sm, 0 1px 2px rgba(45,42,31,0.05), 0 2px 6px rgba(45,42,31,0.04)); color: var(--ink-2); overflow-wrap: anywhere; }
 .bloom-notice p { margin: 0 0 8px; }
 .bloom-notice small { display: block; margin-bottom: 8px; }
 .bloom-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
@@ -535,8 +536,11 @@ dialog.cleaner-city-dialog { width:min(480px,calc(100vw - 24px)); border-radius:
 .bloom-button.accept-invite-button:hover:not(:disabled) { background:#fff; border-color:#2d2a1f; color:#2d2a1f; }
 
 .bloom-cleaner .topbar > .city-tabs { width:fit-content; flex:0 0 auto; justify-self:start; background:transparent; padding:0; margin:0; border-radius:0; }
-.bloom-cleaner .bloom-button.cleaner-city-trigger { width:auto; min-height:44px; border:1px solid #4a4538; border-radius:8px; background:#fff; color:#4a4538; padding:10px 14px; }
-.bloom-cleaner .bloom-button.cleaner-city-trigger:hover { background:#fff; border-color:#2d2a1f; color:#2d2a1f; }
+/* Location picker: a regular outlined dropdown, matching the shared Select (border, radius, fill, chevron). */
+.bloom-cleaner .bloom-button.cleaner-city-trigger { width:auto; min-height:44px; border:1px solid #dedbd2; border-radius:12px; box-shadow:none; background:#fff; color:#2d2a1f; font-weight:600; padding:10px 14px; gap:8px; }
+.bloom-cleaner .bloom-button.cleaner-city-trigger:hover:not(:disabled) { background:#fff; border-color:#c9c2b4; box-shadow:none; }
+.bloom-cleaner .bloom-button.cleaner-city-trigger:focus-visible { border-color:#cb7c8b; outline:none; }
+.bloom-cleaner .cleaner-city-trigger .cleaner-city-chevron { flex-shrink:0; margin-left:2px; }
 
 .bloom-cleaner.cleaner-hub .rail-list .rail-item { display:flex; align-items:center; justify-content:center; padding:0; background:#fff; color:#4a4538; font:600 14px/1 "Plus Jakarta Sans",sans-serif; letter-spacing:0; }
 .bloom-cleaner.cleaner-hub .rail-list .rail-item.active { background:#fff; transform:none; }
@@ -666,7 +670,7 @@ dialog.cleaner-city-dialog { width:min(480px,calc(100vw - 24px)); border-radius:
 .cleaner-day-card-heading strong { min-width:0; }
 .cleaner-day-jobs button.cleaner-day-card { flex-direction:row; align-items:flex-start; gap:16px; }
 .cleaner-day-card-body { display:flex; flex-direction:column; gap:8px; flex:1; min-width:0; }
-@media(max-width:480px) { .cleaner-day-jobs button.cleaner-day-card { gap:12px; } .cleaner-day-card .cleaner-day-card-heading { flex-direction:column; gap:8px; } .cleaner-day-card .cleaner-day-badges { justify-content:flex-start; max-width:none; } .cleaner-day-card > span:first-child { width:72px; min-height:76px; } }
+@media(max-width:480px) { .cleaner-day-jobs button.cleaner-day-card { gap:12px; } .cleaner-day-card .cleaner-day-card-heading { flex-direction:column; gap:8px; } .cleaner-day-card .cleaner-day-badges { justify-content:flex-start; max-width:none; } }
 @media(min-width:481px) { .bloom-cleaner .cleaner-day-jobs li > button.cleaner-day-link { margin-left:120px; max-width:calc(100% - 140px); } }
 .cleaner-day-jobs .cleaner-day-completed { flex-shrink:0; padding:4px 8px; border-radius:6px; background:#e8eee5; color:#42533d; font-size:11px; font-weight:600; line-height:1.4; }
 @media(prefers-reduced-motion:reduce) { .bloom-cleaner .cleaner-day-jobs li { transition:none; } }
@@ -685,6 +689,8 @@ dialog.cleaner-city-dialog { width:min(480px,calc(100vw - 24px)); border-radius:
 
 .bloom-job-sections { grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
 .bloom-job-sections > .pill-row { grid-column:1 / -1; }
+.bloom-cleaner .bloom-job-sections > .pill-row { background:#fff; border:1px solid #ece7dc; box-shadow:var(--shadow-sm); }
+.bloom-cleaner .bloom-job-sections > .pill-row:hover { background:#fff; border-color:#d9d2c4; }
 .bloom-cleaner button.bloom-section-folder { display:flex; flex-direction:column; align-items:center; gap:12px; min-width:0; padding:16px; border:1px solid #e5e0d6; border-radius:22px; background:#fff; color:var(--ink); box-shadow:0 2px 6px #302f260a; cursor:pointer; font:inherit; }
 .bloom-section-preview { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; width:100%; }
 .bloom-section-mini { display:grid; place-items:center; aspect-ratio:1; min-width:0; box-sizing:border-box; border:1px solid #4a4538; border-radius:12px; background:#fff; }
