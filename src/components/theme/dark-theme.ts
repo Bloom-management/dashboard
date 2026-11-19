@@ -221,7 +221,7 @@ function convertRules(rules: CSSRuleList, out: string[]) {
 
 /** Dark neutral colours hardcoded as SVG attributes in the source, plus any found on the page at build time. */
 const knownSvgDarks = ['#000', '#000000', 'black', '#020202', '#2d2a1f', '#302f26', '#4a4538'];
-const LOGO = '.brand-logo,.brand-logo *,[class*="startup-module__"][class*="__flower"],[class*="startup-module__"][class*="__flower"] *';
+const LOGO = '[data-bloom-logo],[data-bloom-logo] *,.brand-logo,.brand-logo *,[class*="startup-module__"][class*="__flower"],[class*="startup-module__"][class*="__flower"] *';
 function svgAttributeRules(doc: Document) {
   const values = new Set(knownSvgDarks);
   for (const node of Array.from(doc.querySelectorAll('svg[fill],svg [fill],svg[stroke],svg [stroke]'))) for (const name of ['fill', 'stroke']) { const v = node.getAttribute(name); if (v) values.add(v); }

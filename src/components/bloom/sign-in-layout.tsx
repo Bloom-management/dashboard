@@ -10,7 +10,7 @@ const panels = [
 ];
 
 function BloomMark({ className }: { className?: string }) {
-  return <svg className={className} width="44" height="44" viewBox="0 0 40 40" aria-hidden="true"><g transform="translate(20 20)">
+  return <svg className={className} data-bloom-logo="" width="44" height="44" viewBox="0 0 40 40" aria-hidden="true"><g transform="translate(20 20)">
     <ellipse cx="0" cy="-10" rx="6" ry="9" fill="#f0c4cb" />
     <ellipse cx="9.5" cy="-3.1" rx="6" ry="9" fill="#e89ba9" transform="rotate(72)" />
     <ellipse cx="5.9" cy="8.1" rx="6" ry="9" fill="#d97a85" transform="rotate(144)" />
