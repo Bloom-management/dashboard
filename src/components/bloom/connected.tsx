@@ -1,7 +1,8 @@
  'use client';
 import {StartupBoundary} from './startup/startup-boundary';
 import { useMemo } from 'react';
-import { useAuth, UserButton } from '@clerk/nextjs';
+import { useAuth } from '@clerk/nextjs';
+import { ProfileMenu } from './profile-menu';
 import { request, ApiError } from './api';
 import { CleanerHub } from './cleaner';
 import { OwnerHub } from './owner';
@@ -12,7 +13,7 @@ function query(cursor:string|null) { return cursor?`?${new URLSearchParams({curs
 export function ConnectedHub({role,initialPropertyId}:{role:Role;initialPropertyId?:string}) {
  const {getToken}=useAuth();
  const integration=useMemo<BloomIntegration>(()=>({
-  accountControl:()=> <UserButton/>,
+  accountControl:()=> <ProfileMenu designGallery={role==='admin'}/>,
   renameProperty:(propertyId,name,key)=>request<{id:string;name:string}>(`/properties/${encodeURIComponent(propertyId)}/rename`,{body:{name},key}),
   listCities:signal=>request<CityOption[]>('/cities',{signal}),
   getMyCityRequest:signal=>request('/city-change-requests/current',{signal}),
@@ -61,6 +62,6 @@ export function ConnectedHub({role,initialPropertyId}:{role:Role;initialProperty
    createProperty:async(property,key)=>{const {active:_active,...body}=property;return request<{id:string}>('/admin/properties',{body,key});},
    assignments:(jobId,signal)=>request(`/admin/jobs/${encodeURIComponent(jobId)}/assignments`,{signal}),
   }
- }),[getToken]);
+ }),[getToken,role]);
  return <StartupBoundary>{role==='cleaner'?<CleanerHub integration={integration}/>:role==='owner'?<OwnerHub integration={integration}/>:<AdminHub integration={integration} initialPropertyId={initialPropertyId}/>}</StartupBoundary>;
 }
