@@ -12,6 +12,8 @@ export type CleanerJob = { houseId?:string|null;scopeRevision?:number;roomIdenti
   checkoutDate: LocalDate; startAt: Instant; endAt: Instant; timezone: string;
   /** Next guest arrival after this cleaning; null when no stay is booked. */
   checkInAt?: Instant | null;
+  /** True once a cleaner has started this cleaning. */
+  started?: boolean;
   status: 'open' | 'completed' | 'cancelled'; reviewRequired: boolean; version: number;
   soloRateCents: number; sharedRateCents: number; activeCleanerCount: number;
   myAssignmentId: string | null; myCompletedPayCents: number | null;

@@ -27,12 +27,24 @@ function useNow(intervalMs=30000){
  return now;
 }
 
+const HOUR=3600000;
+export type CheckInTone='none'|'calm'|'soon'|'urgent';
+
+/** Tile urgency: only today/tomorrow check-ins show; colour warms as an unstarted cleaning nears check-in. */
+export function checkInTone(job:CleanerJob,now:number):CheckInTone{
+ const label=checkInLabel(job,now);
+ if(!label||(label.day!=='today'&&label.day!=='tomorrow'))return 'none';
+ const left=Date.parse(job.checkInAt!)-now;
+ if(job.started||job.status!=='open'||left<=0)return 'calm';
+ return left<=3*HOUR?'urgent':left<=8*HOUR?'soon':'calm';
+}
+
 /** Leading time column on a claim card: the guest check-in that bounds the cleaning. */
 export function CheckInTile({job}:{job:CleanerJob}){
- const now=useNow(60000),label=checkInLabel(job,now);
- return <span className={styles.tile} data-empty={!label||undefined}>
+ const now=useNow(60000),label=checkInLabel(job,now),tone=checkInTone(job,now);
+ return <span className={styles.tile} data-tone={tone}>
   <span className={styles.tileCap}>Check-in</span>
-  {label?<><span className={styles.tileTime}>{label.time}</span><span className={styles.tileDay}>{label.meridiem} {label.day}</span></>:<><span className={styles.tileTime}>—</span><span className={styles.tileDay}>None booked</span></>}
+  {tone!=='none'&&label?<><span className={styles.tileTime}>{label.time}</span><span className={styles.tileDay}>{label.meridiem} {label.day}</span></>:<><span className={styles.tileTime}>None</span><span className={styles.tileDay}>scheduled</span></>}
  </span>;
 }
 

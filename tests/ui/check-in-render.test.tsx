@@ -2,7 +2,7 @@ import React from 'react';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { CheckInTile, CheckInNote, CleaningWindow, checkInLabel } from '../../src/components/bloom/check-in';
+import { CheckInTile, CheckInNote, CleaningWindow, checkInLabel, checkInTone } from '../../src/components/bloom/check-in';
 import type { CleanerJob } from '../../src/contracts';
 
 const job = (checkInAt: string | null): CleanerJob => ({
@@ -22,7 +22,7 @@ test('check-in label is property-local and relative to today', () => {
 });
 
 test('claim card tile and info note show check-in or none booked', () => {
-  assert.match(renderToStaticMarkup(<CheckInTile job={job(null)} />), /None booked/);
+  assert.match(renderToStaticMarkup(<CheckInTile job={job(null)} />), /None.*scheduled/);
   assert.match(renderToStaticMarkup(<CheckInNote job={job('2026-11-18T21:00:00Z')} now={noon40} />), /Guest check-in.*4:00 PM/);
 });
 
@@ -32,4 +32,15 @@ test('cleaning window shows the check-in flag whenever a stay follows', () => {
   assert.match(html, /11:00 AM.*3:00 PM/);
   assert.doesNotMatch(renderToStaticMarkup(<CleaningWindow job={job(null)} />), /Check-in/);
   assert.match(renderToStaticMarkup(<CleaningWindow job={job("2026-11-18T20:00:00Z")} />), /Check-in (<!-- -->)?3:00 PM/);
+});
+
+test('tile tone follows how close an unstarted cleaning is to check-in', () => {
+  const at = (iso: string) => Date.parse(iso);
+  const fourPm = job('2026-11-18T21:00:00Z');
+  assert.equal(checkInTone(job(null), noon40), 'none');
+  assert.equal(checkInTone(job('2026-11-25T21:00:00Z'), noon40), 'none');
+  assert.equal(checkInTone(fourPm, at('2026-11-18T19:30:00Z')), 'urgent');
+  assert.equal(checkInTone(fourPm, at('2026-11-18T15:00:00Z')), 'soon');
+  assert.equal(checkInTone(job('2026-11-19T21:00:00Z'), at('2026-11-18T15:00:00Z')), 'calm');
+  assert.equal(checkInTone({ ...fourPm, started: true }, at('2026-11-18T19:30:00Z')), 'calm');
 });
