@@ -43,7 +43,9 @@ export function OwnerMonth({calendarType='bookings',month,blocks:allBlocks,onSel
  const selectedDay=day===undefined?localDay:day;const setSelectedDay=onDayChange??setLocalDay;
  const dayBlocks=selectedDay?blocks.filter(block=>block.startDate<=selectedDay&&(block.endDate>selectedDay||(block.startDate===selectedDay&&block.endDate===selectedDay))):[];
  const weeks=useMemo(()=>ownerWeekSegments(month,allBlocks),[month,allBlocks]);
- const weekLanes=(date:string)=>{const week=calendarDate(date);week.setUTCDate(week.getUTCDate()-week.getUTCDay());const start=calendarValue(week);const end=new Date(week);end.setUTCDate(end.getUTCDate()+7);const counts=new Map<string,number>();for(const job of cleanings){if(job.date>=start&&job.date<calendarValue(end))counts.set(job.date,(counts.get(job.date)??0)+1);}return Math.max(0,...(weeks.get(start)??[]).map(segment=>segment.lane+1),...counts.values());};
+ const weekLanes=(date:string)=>{const week=calendarDate(date);week.setUTCDate(week.getUTCDate()-week.getUTCDay());const start=calendarValue(week);const end=new Date(week);end.setUTCDate(end.getUTCDate()+7);const counts=new Map<string,number>();if(calendarType==='cleanings'){for(const job of cleanings){if(job.date>=start&&job.date<calendarValue(end))counts.set(job.date,(counts.get(job.date)??0)+1);}return Math.max(0,...counts.values());}
+  // Only lanes for what this view draws: stay bars in Bookings, cleaning pills in Cleanings.
+  return Math.max(0,...(weeks.get(start)??[]).map(segment=>segment.lane+1));};
  const minHeight=(date:string)=>40+weekLanes(date)*24;
  return <><BookingCalendar month={month} connected dayLabel={calendarType} onDaySelect={value=>{setAdding(false);setStarted(false);setSelectedDay(value);}} dayMinHeight={minHeight}>{date=>{
   const week=calendarDate(date);week.setUTCDate(week.getUTCDate()-week.getUTCDay());
