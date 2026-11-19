@@ -5,6 +5,7 @@ import {Select} from '../ui/select';
 import type { ReactNode } from 'react';
 import { Modal } from './primitives';
 import { useCallback, useRef, useState } from 'react';
+import { useJobTeam } from './cleaner-identity';
 import type { CleaningConfig, PhotoCategory, JobJourney } from '../../contracts';
 import { ApiError, request } from './api';
 import { ErrorNotice, Icon, Loading, useResource } from './primitives';
@@ -74,5 +75,6 @@ function ConfigForm({section,path,owner,bedroomCount,bathroomCount,initial,saved
 }
 export function CompletionReport({jobId,propertyName,date}:{jobId:string;propertyName:string;date:string}) {
   const load=useCallback((signal:AbortSignal)=>request<JobJourney>(`/jobs/${jobId}/journey`,{signal}),[jobId]);const data=useResource(load);
-  return data.loading?<Loading/>:data.error?<ErrorNotice error={data.error} retry={data.reload}/>:data.data?.receipt?<CompletionReportContent report={{jobId,propertyName,date,receipt:data.data.receipt}}/>:null;
+  const team=useJobTeam(jobId,data.data?.job.version??0,false);
+  return data.loading?<Loading/>:data.error?<ErrorNotice error={data.error} retry={data.reload}/>:data.data?.receipt?<CompletionReportContent report={{jobId,propertyName,date,receipt:data.data.receipt,cleaners:team.data}}/>:null;
 }

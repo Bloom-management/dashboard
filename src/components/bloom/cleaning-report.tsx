@@ -16,7 +16,7 @@ import {formatDate} from './dates';
 import styles from './cleaner-journey.module.css';
 import {CleanerAvatar} from './cleaner-identity';
 import {BackButton} from './back-button';
-type Report={jobId:string;propertyName:string;date:string;receipt:CompletionReceipt|null;roomSummary?:RoomCompletionSummary;cleaners?:{id:string;displayName:string;avatarUrl:string|null}[]};
+type Report={jobId:string;propertyName:string;date:string;receipt:CompletionReceipt|null;roomSummary?:RoomCompletionSummary;cleaners?:{id:string;displayName:string;avatarUrl?:string|null}[]};
 export function CleaningReport({jobId,onClose}:{jobId:string;onClose:()=>void}) {
  const load=useCallback((signal:AbortSignal)=>request<Report>(`/jobs/${jobId}/report`,{signal}),[jobId]);
  const resource=useResource(load);
