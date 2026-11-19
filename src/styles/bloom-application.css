@@ -983,3 +983,28 @@ dialog.bloom-job-frame.bloom-job-frame > [data-bloom-dialog-scroll] { flex:1 1 a
   .bloom-owner .phone-toolbar .view-toggle { flex:1 1 auto; min-width:0; }
   .bloom-owner .phone-toolbar .view-toggle .vt-btn { min-width:0; padding-inline:10px; overflow:hidden; text-overflow:ellipsis; }
 }
+
+/* Admin job: "Who's working" — one slot per seat; each slot opens Reassign/Remove or Assign. */
+.bloom-staffing .bloom-staffing-head { display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:14px; }
+.bloom-staffing .bloom-staffing-head h3 { margin:0; }
+.bloom-staffing .bloom-staffing-head span { font-size:13px; font-weight:600; color:var(--muted); }
+.bloom-staff-slots { list-style:none; margin:0; padding:0; display:grid; gap:10px; }
+.bloom-staffing .bloom-staff-slot { display:flex; align-items:center; gap:12px; width:100%; min-height:60px; padding:10px 14px 10px 10px; border:1px solid var(--line-2); border-radius:16px; background:#fff; color:var(--ink); font:inherit; text-align:left; cursor:pointer; transition:border-color 160ms ease, background-color 160ms ease; }
+.bloom-staffing .bloom-staff-slot:hover, .bloom-staffing .bloom-staff-slot[data-popup-open] { border-color:#b85563; }
+.bloom-staffing .bloom-staff-slot:focus-visible { outline:2px solid #cf7f8d; outline-offset:2px; }
+.bloom-staffing .bloom-staff-slot.open { border:1.5px dashed #e3b3bd; background:transparent; }
+.bloom-staffing .bloom-staff-slot.open:hover, .bloom-staffing .bloom-staff-slot.open[data-popup-open] { border-color:#b85563; }
+.bloom-staff-avatar { display:grid; place-items:center; width:40px; height:40px; flex:0 0 40px; border-radius:50%; overflow:hidden; }
+.bloom-staff-avatar.open { border:1.5px dashed var(--bloom); background:var(--bloom-soft); color:var(--bloom-deep); }
+.bloom-staff-text { display:grid; gap:2px; min-width:0; flex:1; }
+.bloom-staff-text strong { font-size:15px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.bloom-staff-text span { font-size:13px; color:var(--muted); }
+.bloom-staffing .bloom-staff-slot.open .bloom-staff-text strong { color:var(--bloom-deep); }
+.bloom-staff-chevron { flex-shrink:0; color:var(--muted); }
+.bloom-staff-form .bloom-staff-options { display:grid; gap:8px; margin:0; padding:0; border:0; }
+.bloom-staff-form .bloom-staff-options legend { padding:0; margin-bottom:8px; font-weight:600; }
+.bloom-staff-option { display:flex; align-items:center; gap:12px; min-height:56px; padding:8px 14px; border:1px solid var(--line-2); border-radius:14px; background:#fff; cursor:pointer; }
+.bloom-staff-option:has(input:checked) { border-color:#4a4538; box-shadow:inset 0 0 0 1px #4a4538; }
+.bloom-staff-option:hover { border-color:#b85563; }
+.bloom-staff-option input { accent-color:#b85563; }
+@media(prefers-reduced-motion:reduce) { .bloom-staff-slot { transition:none; } }

@@ -15,7 +15,7 @@
     "test:properties": "node --conditions=react-server --import tsx --test tests/properties/*.test.ts",
     "test:backend": "NODE_OPTIONS=--conditions=react-server tsx --test src/server/photos/validation.test.ts src/server/db/http.test.ts src/server/auth/token-configuration.test.ts src/server/auth/account-lookup.test.ts src/server/auth/account-diagnostics.test.ts src/server/owner/query.test.ts src/server/auth/onboarding-policy.test.ts && node --import tsx --test src/server/auth/proxy-response.test.ts",
     "test:calendar": "node --import tsx --test tests/calendar/*.test.ts",
-    "test:ui": "node --import tsx --test tests/ui/*.test.mjs && node --import ./tests/ui/register-css.mjs --import tsx --test tests/ui/recovery-render.test.tsx tests/ui/calendar-review.test.tsx tests/ui/owner-render.test.tsx tests/ui/rental-model-render.test.tsx tests/ui/check-in-render.test.tsx tests/ui/cleaning-report-render.test.tsx tests/ui/owner-create-render.test.tsx tests/ui/onboarding-render.test.tsx tests/ui/owner-source-retry.test.ts",
+    "test:ui": "node --import tsx --test tests/ui/*.test.mjs && node --import ./tests/ui/register-css.mjs --import tsx --test tests/ui/recovery-render.test.tsx tests/ui/calendar-review.test.tsx tests/ui/owner-render.test.tsx tests/ui/rental-model-render.test.tsx tests/ui/check-in-render.test.tsx tests/ui/cleaning-report-render.test.tsx tests/ui/job-staffing-render.test.tsx tests/ui/owner-create-render.test.tsx tests/ui/onboarding-render.test.tsx tests/ui/owner-source-retry.test.ts",
     "test:db": "supabase/tests/run-local.sh",
     "calendar:sync": "node --env-file=.env.local --import tsx src/server/calendar/cli.ts",
     "test:http": "node tests/integration/http-smoke.mjs",

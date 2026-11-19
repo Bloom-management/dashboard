@@ -38,17 +38,19 @@ import { LocationDropdown } from './location-dropdown';
 import { BookingCalendar } from '../ui/calendar';
 import {CalendarFilters,CleanerPhoneMonth,PhoneMonthSection,PhoneMonths,useIsPhone} from './cleaner-mobile-calendar';
 import {DropdownMenu,DropdownMenuContent,DropdownMenuRadioGroup,DropdownMenuRadioItem,DropdownMenuTrigger} from '../ui/dropdown-menu';
+import {Paginated,Result,useMutation} from './admin-shared';
+import {JobStaffing} from './job-staffing';
 import styles from './admin-jobs.module.css';
 
-import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCalendar } from './use-calendar';
 import { parseSoloRate, propertyOwnership } from './property-form';
 import type { CleanerJob, Role, SessionUser } from '../../contracts';
-import { ApiError, request } from './api';
+import { request } from './api';
 import { formatDate, formatTime, monthRange, money, shiftMonth, todayIn } from './dates';
-import type { AdminPerson, BloomIntegration, CityRequest, Page, PropertyOption, SourceHealth } from './integration';
+import type { AdminPerson, BloomIntegration, CityRequest, PropertyOption, SourceHealth } from './integration';
 import { Account, Brand, HubSelector, Changes, Empty, ErrorNotice, Icon, Loading, Modal, MonthHead, RoleGate, useResource } from './primitives';
 import { Photos } from './photos';
 import { CalendarReviewList } from './calendar-review';
@@ -58,34 +60,6 @@ import {ButtonContent} from './button-content';
 
 const noIntegration: BloomIntegration = {};
 const unavailable = <Empty title="This admin tool is not available yet">The management service must be connected before you can use this tool.</Empty>;
-type Run = (input: unknown, operation: (key: string) => Promise<unknown>) => Promise<boolean>;
-function useMutation(): { busy: boolean; error: unknown; success: boolean; run: Run } {
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<unknown>();
-  const [success, setSuccess] = useState(false);
-  const receipt = useRef<{ input: string; key: string } | null>(null);
-  const lock = useRef(false);
-  const run: Run = async (input, operation) => {
-    if (lock.current) return false;
-    lock.current = true; setBusy(true); setError(undefined); setSuccess(false);
-    const hash = JSON.stringify(input);
-    if (receipt.current?.input !== hash) receipt.current = { input: hash, key: crypto.randomUUID() };
-    try { await operation(receipt.current.key); receipt.current = null; setSuccess(true); return true; }
-    catch (failure) { setError(failure); if (failure instanceof ApiError && !['NETWORK_ERROR', 'SOURCE_UNAVAILABLE', 'SERVICE_UNAVAILABLE'].includes(failure.code)) receipt.current = null; return false; }
-    finally { lock.current = false; setBusy(false); }
-  };
-  return { busy, error, success, run };
-}
-function Result({ mutation }: { mutation: ReturnType<typeof useMutation> }) {
-  return <>{!!mutation.error && <ErrorNotice error={mutation.error} />}{mutation.success && <p role="status">Saved.</p>}</>;
-}
-function Paginated<T>({ loader, render }: { loader: (cursor: string | null, signal: AbortSignal) => Promise<Page<T>>; render: (items: T[], reload: () => void) => ReactNode }) {
-  const [cursor, setCursor] = useState<string | null>(null);
-  const [history, setHistory] = useState<(string | null)[]>([]);
-  const load = useCallback((signal: AbortSignal) => loader(cursor, signal), [loader, cursor]);
-  const resource = useResource(load);
-  return <>{resource.loading ? <Loading /> : resource.error ? <ErrorNotice error={resource.error} retry={resource.reload} /> : resource.data && <>{render(resource.data.items, resource.reload)}<div className="bloom-actions"><button type="button" className="bloom-button secondary" disabled={!history.length} onClick={() => { setCursor(history[history.length - 1]); setHistory(previous => previous.slice(0, -1)); }}>Previous page</button><button type="button" className="bloom-button secondary" disabled={!resource.data.nextCursor} onClick={() => { setHistory(previous => [...previous, cursor]); setCursor(resource.data!.nextCursor); }}>Next page</button></div></>}</>;
-}
 function UserRow({ user, currentUser, reload }: { user: AdminPerson; currentUser: SessionUser; reload: () => void }) {
   const mutation = useMutation();
   return <tr><th scope="row">{user.displayName}</th><td>{user.email??'Not available'}</td><td>
@@ -253,21 +227,19 @@ function Properties({integration,initialPropertyId}:{integration:BloomIntegratio
 
 function AdminJob({ job, user, integration, close, reload }: { job: CleanerJob; user: SessionUser; integration: BloomIntegration; close: () => void; reload: () => void }) {
   const [reason, setReason] = useState('');
-  const [cleanerId, setCleanerId] = useState('');
-  const [removeAssignmentId, setRemoveAssignmentId] = useState('');
   const [checkoutDate, setCheckoutDate] = useState(job.checkoutDate);
   const mutation = useMutation();
   const load = useCallback((signal: AbortSignal) => integration.admin ? integration.admin.assignments(job.id, signal) : Promise.resolve(null), [integration, job.id]);
   const assignments = useResource(load);
-  async function change(action: 'cancel' | 'reassign' | 'keep' | 'reschedule' | 'resolve-cancel' | 'assign' | 'remove') {
+  /** Job-level actions; staffing changes live in JobStaffing. */
+  async function change(action: 'cancel' | 'keep' | 'reschedule' | 'resolve-cancel') {
     const common = { reason: reason.trim(), expectedVersion: job.version };
     if (!common.reason) return;
-    const body = action === 'remove' ? {...common,assignmentId:removeAssignmentId} : action === 'reassign' ? { ...common, removeAssignmentId, cleanerId } : action === 'cancel' ? common : { ...common, action: action === 'resolve-cancel' ? 'cancel' : action, ...(action === 'reschedule' ? { checkoutDate } : {}) };
-    const done = await mutation.run({ job: job.id, action, body, cleanerId }, key => action === 'remove' ? request(`/jobs/${encodeURIComponent(job.id)}/remove-assignment`,{body,key}) : action === 'assign' ? integration.admin!.assignJob!(job.id, { ...common, cleanerId }, key) : request(`/admin/jobs/${encodeURIComponent(job.id)}/${action === 'cancel' || action === 'reassign' ? action : 'resolve-change'}`, { body, key }));
+    const body = action === 'cancel' ? common : { ...common, action: action === 'resolve-cancel' ? 'cancel' : action, ...(action === 'reschedule' ? { checkoutDate } : {}) };
+    const done = await mutation.run({ job: job.id, action, body }, key => request(`/admin/jobs/${encodeURIComponent(job.id)}/${action === 'cancel' ? 'cancel' : 'resolve-change'}`, { body, key }));
     if (done) { close(); reload(); } else { assignments.reload(); reload(); }
   }
-  return <article className={styles.detail}><div className={styles.detailToolbar}><h2>Manage job and view photos</h2></div><div className="detail-hero"><h2>{job.propertyName}</h2><p>{formatDate(job.checkoutDate)} · {formatTime(job.startAt, job.timezone)}–{formatTime(job.endAt, job.timezone)} · {job.timezone}</p><p>{job.status} · {job.activeCleanerCount}/2 assigned</p></div><div className="detail-body"><Changes changes={job.changes} />{job.jobInstructions&&<section aria-label="Job comments"><h3>Job comments</h3><p style={{whiteSpace:'pre-wrap'}}>{job.jobInstructions}</p></section>}{job.status==='open'?<AdminPricingEditor key={`${job.id}:${job.version}`} id={job.id} cents={job.soloRateCents} version={job.version} onSaved={reload}/>:<section className="bloom-admin-card"><h3>Cleaner payout</h3>{job.status==='completed'?(assignments.loading?<Loading/>:assignments.error?<ErrorNotice error={assignments.error} retry={assignments.reload}/>:assignments.data?.length?<ul className="bloom-job-payouts">{assignments.data.map(person=><li key={person.id}><span className="bloom-job-payout-avatar"><CleanerAvatar name={person.cleanerName} url={person.avatarUrl}/></span><span>{person.cleanerName}: <strong>{person.completedPayCents!=null?money(person.completedPayCents):'Payout unavailable'}</strong></span></li>)}</ul>:<p>No cleaner payouts recorded.</p>):<p>Solo {money(job.soloRateCents)} · Shared {money(job.sharedRateCents)} per cleaner</p>}</section>}{job.status==='completed'?<CompletionReport jobId={job.id} propertyName={job.propertyName} date={job.checkoutDate}/>:<Photos job={job} user={user} integration={integration} />}{job.status === 'open' && <div className="bloom-form"><label>Reason for change<textarea required value={reason} onChange={event => setReason(event.target.value)} /></label>{job.reviewRequired && <><p className="bloom-notice">Resolve the booking change before claiming or completion can resume.</p><DatePicker label="New checkout date" value={checkoutDate} onChange={setCheckoutDate} /><div className="bloom-actions"><button className="bloom-button" disabled={mutation.busy || !reason.trim()} onClick={() => change('keep')}>Keep schedule</button><button className="bloom-button" disabled={mutation.busy || !reason.trim() || !checkoutDate} onClick={() => change('reschedule')}>Reschedule</button><button className="bloom-button secondary" disabled={mutation.busy || !reason.trim()} onClick={() => change('resolve-cancel')}>Resolve by cancelling</button></div></>}
-      {integration.admin ? <><Paginated loader={integration.admin.users} render={users => <fieldset><legend>Cleaner</legend>{users.filter(item => item.role === 'admin' || (item.role === 'cleaner' && item.approvedCityId === job.cityId)).map(cleaner => <label className="bloom-check" key={cleaner.id}><input type="radio" name="assignment-cleaner" checked={cleanerId === cleaner.id} onChange={() => setCleanerId(cleaner.id)} /><span style={{width:36,height:36,display:'inline-flex',flexShrink:0,alignItems:'center',justifyContent:'center',borderRadius:'50%',background:'#efebe1'}}><CleanerAvatar name={cleaner.displayName} url={cleaner.avatarUrl}/></span>{cleaner.displayName}</label>)}</fieldset>} />{assignments.loading ? <Loading /> : assignments.error ? <ErrorNotice error={assignments.error} retry={assignments.reload} /> : <label>Assigned cleaner<Select value={removeAssignmentId} onChange={event => setRemoveAssignmentId(event.target.value)}><option value="">Choose assignment</option>{assignments.data?.map(item => <option key={item.id} value={item.id}>{item.cleanerName}</option>)}</Select></label>}<div className="bloom-actions"><button className="bloom-button" disabled={!integration.admin.assignJob || mutation.busy || !cleanerId || !reason.trim() || job.activeCleanerCount >= 2} onClick={() => change('assign')}>Assign open slot</button><button className="bloom-button" disabled={mutation.busy || !cleanerId || !reason.trim() || !removeAssignmentId} onClick={() => change('reassign')}>Reassign cleaner</button><button className="bloom-button secondary" disabled={mutation.busy || !reason.trim() || !removeAssignmentId} onClick={() => change('remove')}>Remove cleaner</button><p>Removal leaves the place open and records your reason. The cleaner withdrawal deadline does not apply.</p></div></> : <p>Assignment management is not available yet.</p>}
+  return <article className={styles.detail}><div className={styles.detailToolbar}><h2>Manage job and view photos</h2></div><div className="detail-hero"><h2>{job.propertyName}</h2><p>{formatDate(job.checkoutDate)} · {formatTime(job.startAt, job.timezone)}–{formatTime(job.endAt, job.timezone)} · {job.timezone}</p><p>{job.status} · {job.activeCleanerCount}/2 assigned</p></div><div className="detail-body"><Changes changes={job.changes} />{job.status==='open'&&<JobStaffing job={job} integration={integration} assignments={assignments} onChanged={reload}/>}{job.jobInstructions&&<section aria-label="Job comments"><h3>Job comments</h3><p style={{whiteSpace:'pre-wrap'}}>{job.jobInstructions}</p></section>}{job.status==='open'?<AdminPricingEditor key={`${job.id}:${job.version}`} id={job.id} cents={job.soloRateCents} version={job.version} onSaved={reload}/>:<section className="bloom-admin-card"><h3>Cleaner payout</h3>{job.status==='completed'?(assignments.loading?<Loading/>:assignments.error?<ErrorNotice error={assignments.error} retry={assignments.reload}/>:assignments.data?.length?<ul className="bloom-job-payouts">{assignments.data.map(person=><li key={person.id}><span className="bloom-job-payout-avatar"><CleanerAvatar name={person.cleanerName} url={person.avatarUrl}/></span><span>{person.cleanerName}: <strong>{person.completedPayCents!=null?money(person.completedPayCents):'Payout unavailable'}</strong></span></li>)}</ul>:<p>No cleaner payouts recorded.</p>):<p>Solo {money(job.soloRateCents)} · Shared {money(job.sharedRateCents)} per cleaner</p>}</section>}{job.status==='completed'?<CompletionReport jobId={job.id} propertyName={job.propertyName} date={job.checkoutDate}/>:<Photos job={job} user={user} integration={integration} />}{job.status === 'open' && <div className="bloom-form"><h3>Job changes</h3><label>Reason for change<textarea required value={reason} onChange={event => setReason(event.target.value)} /></label>{job.reviewRequired && <><p className="bloom-notice">Resolve the booking change before claiming or completion can resume.</p><DatePicker label="New checkout date" value={checkoutDate} onChange={setCheckoutDate} /><div className="bloom-actions"><button className="bloom-button" disabled={mutation.busy || !reason.trim()} onClick={() => change('keep')}>Keep schedule</button><button className="bloom-button" disabled={mutation.busy || !reason.trim() || !checkoutDate} onClick={() => change('reschedule')}>Reschedule</button><button className="bloom-button secondary" disabled={mutation.busy || !reason.trim()} onClick={() => change('resolve-cancel')}>Resolve by cancelling</button></div></>}
       <button className="bloom-button secondary" disabled={mutation.busy || !reason.trim()} onClick={() => change('cancel')}>Cancel job</button></div>}<Result mutation={mutation} /></div></article>;
 }
 function bookingLabel(block: OwnerCalendarBlock) {
