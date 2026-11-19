@@ -267,6 +267,8 @@ function build(doc: Document) {
     `${ROOT} [class*="sign-in-module__"][class*="__story"] [class*="__carousel-arrows"] button:hover{border-color:${BUTTON_OUTLINE_HOVER}}`,
     `${ROOT} [class*="sign-in-module__"][class*="__story"] [class*="__product-tabs"] button:not([aria-selected="true"]){background:transparent;color:#C2B6BB;border-color:#6E6268}`,
     `${ROOT} [class*="sign-in-module__"][class*="__story"] [class*="__product-tabs"] button[aria-selected="true"]{background:#F6EFF1;color:#1D181B;border-color:#F6EFF1}`,
+    // Mapbox control icons are SVG images with a baked-in #333 fill: invert them to near-white on the dark buttons.
+    `${ROOT} .mapboxgl-ctrl button .mapboxgl-ctrl-icon{filter:invert(1) brightness(1.4)}`,
     // Cleanings / Bookings: white label on the deep pink indicator.
     `${ROOT} .calendar-type-toggle .bloom-selector-indicator{background:#B4506F;box-shadow:none}`,
     `${ROOT} .calendar-type-toggle.bloom-selector-pill .vt-btn.active{color:#FFFFFF}`,
