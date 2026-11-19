@@ -296,3 +296,11 @@ dialog.sharedReport.sharedReport { width:840px; max-width:calc(100vw - 24px); ma
 /* "View room photos" on the cleaning report: white fill with a brown outline. */
 .sharedReport :global(.bloom-button.secondary).mobilePhotoAction { background:#fff; border:1px solid #2d2a1f; box-shadow:none; color:#2d2a1f; }
 .sharedReport :global(.bloom-button.secondary).mobilePhotoAction:hover { background:#faf8f4; }
+
+/* Completed report: who did the cleaning. */
+.reportCleaners { display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; margin:0 0 16px; }
+.reportCleanersLabel { font-size:13px; font-weight:600; color:var(--muted, #8a8270); }
+.reportCleaners ul { display:flex; flex-wrap:wrap; gap:8px; margin:0; padding:0; list-style:none; }
+.reportCleaners li { display:inline-flex; align-items:center; gap:8px; padding:4px 12px 4px 4px; border:1px solid var(--line, rgba(45,42,31,0.10)); border-radius:999px; background:var(--card, #fff); font-size:14px; font-weight:600; color:var(--ink, #2d2a1f); }
+.reportCleanerAvatar { display:grid; place-items:center; width:28px; height:28px; border-radius:50%; overflow:hidden; flex-shrink:0; }
+.reportCleanerAvatar img { width:100%; height:100%; object-fit:cover; display:block; }

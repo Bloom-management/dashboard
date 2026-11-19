@@ -14,8 +14,9 @@ import {SupplyIcon} from './supply-setup-grid';
 import {supplyLevels} from './journey-draft';
 import {formatDate} from './dates';
 import styles from './cleaner-journey.module.css';
+import {CleanerAvatar} from './cleaner-identity';
 import {BackButton} from './back-button';
-type Report={jobId:string;propertyName:string;date:string;receipt:CompletionReceipt|null;roomSummary?:RoomCompletionSummary};
+type Report={jobId:string;propertyName:string;date:string;receipt:CompletionReceipt|null;roomSummary?:RoomCompletionSummary;cleaners?:{id:string;displayName:string;avatarUrl:string|null}[]};
 export function CleaningReport({jobId,onClose}:{jobId:string;onClose:()=>void}) {
  const load=useCallback((signal:AbortSignal)=>request<Report>(`/jobs/${jobId}/report`,{signal}),[jobId]);
  const resource=useResource(load);
@@ -36,6 +37,7 @@ export function CompletionReportContent({report,onClose,details}:{report:Report;
  return <div ref={root} className={styles.sharedReport}>
  {section?<header className={styles.heading}><BackButton onClick={()=>open(null)}>Back to cleaning</BackButton><h1 ref={heading} tabIndex={-1}>{section}</h1></header>:<header className={styles.heading}><div className={styles.headingRow}><span className={styles.kicker}>Completed</span>{details}</div><h1>Cleaning complete.</h1><p>Completed for the whole job. No admin approval is needed.</p>{receipt?.guestReview&&<ol className={styles.completionSteps} aria-label="Cleaning completion progress">{['Room photos','Supplies check','Maintenance','Condition after checkout','Done'].map((label,index)=><li key={label} aria-current={index===4?'step':undefined}><span className={styles.stepCircle} aria-hidden="true">{index===4?'5':'✓'}</span><span>{label}</span></li>)}</ol>}</header>}
  <div className={styles.content}><p>{formatDate(report.date)} · {report.propertyName}</p>
+ {!section&&!!report.cleaners?.length&&<div className={styles.reportCleaners}><span className={styles.reportCleanersLabel}>Cleaned by</span><ul>{report.cleaners.map(cleaner=><li key={cleaner.id}><span className={styles.reportCleanerAvatar}><CleanerAvatar name={cleaner.displayName} url={cleaner.avatarUrl}/></span>{cleaner.displayName}</li>)}</ul></div>}
  {section==='Review and notes'?<ReviewNotes receipt={receipt}/>:section==='Maintenance'?roomSummary?<><RoomReportItems summary={roomSummary} kind="maintenance" jobId={jobId} issues={issues.data??undefined} onResolved={issues.reload}/><NoteReport jobId={jobId} section="maintenance"/></>:<>{receipt?.notes&&<section><h3>Anything that needs attention?</h3><p className="bloom-prewrap">{receipt.notes}</p></section>}<MaintenanceGrid showHeading={false} reports={receipt?.maintenance??[]}/><NoteReport jobId={jobId} section="maintenance"/></>:section==='Room photos'?roomSummary?<RoomReportPhotos jobId={jobId} summary={roomSummary}/>:<CompletionPhotos jobId={jobId}/>:section==='Supplies'?roomSummary?<><RoomReportItems summary={roomSummary} kind="supply"/><NoteReport jobId={jobId} section="supplies"/></>:<><NoteReport jobId={jobId} section="supplies"/><div className={styles.receiptSupplies}>{receipt?.reports.map(item=><article className={styles.receiptSupply} key={item.supplyId}><SupplyIcon/><strong>{item.name}</strong><span>{supplyLevels[item.level]}</span><SupplyLevelBar level={item.level}/></article>)}{!receipt?.reports.length&&<p>No supply report was provided.</p>}</div></>:<>
  <ReviewNotes receipt={receipt} onMore={trigger=>open('Review and notes',trigger)}/>
  <button type="button" data-report-section="Room photos" className={`bloom-button secondary ${styles.mobilePhotoAction}`} onClick={()=>open('Room photos')}>View room photos</button>
