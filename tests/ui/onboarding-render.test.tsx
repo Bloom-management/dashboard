@@ -15,8 +15,10 @@ test('existing listing setup embeds without creating a nested native dialog',()=
  const props={open:true,listings:[],onClose:()=>{},onCreated:()=>{},onChanged:()=>{}};
  const embedded=renderToStaticMarkup(<OwnerCreateListing {...props} embedded/>);
  assert.doesNotMatch(embedded,/<dialog/);assert.match(embedded,/Do this later/);assert.match(embedded,/Street address/);
- const details=renderToStaticMarkup(<OwnerCreateListing {...props} embedded initialPage={1}/>);
- assert.doesNotMatch(details,/<dialog/);assert.match(details,/Do this later/);assert.match(details,/Listing name/);assert.match(details,/Rooms/);assert.match(details,/Supplies/);assert.match(details,/Calendar links/);
+ const details=renderToStaticMarkup(<OwnerCreateListing {...props} embedded initialPage={2}/>);
+ assert.doesNotMatch(details,/<dialog/);assert.match(details,/Do this later/);assert.match(details,/Listing name/);assert.match(details,/Rooms/);
+ const calendar=renderToStaticMarkup(<OwnerCreateListing {...props} embedded initialPage={6}/>);
+ assert.doesNotMatch(calendar,/<dialog/);assert.match(calendar,/Do this later/);assert.match(calendar,/Calendar links/);
  const standalone=renderToStaticMarkup(<OwnerCreateListing {...props}/>);
  assert.equal((standalone.match(/<dialog/g)||[]).length,1);assert.doesNotMatch(standalone,/Do this later/);
 });
