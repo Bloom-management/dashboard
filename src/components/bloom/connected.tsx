@@ -61,6 +61,7 @@ export function ConnectedHub({role,initialPropertyId}:{role:Role;initialProperty
    sources:async(cursor,signal)=>{const page=await request<Page<SourceHealth & {action:string|null}>>(`/admin/calendar/sources${query(cursor)}`,{signal});return {...page,items:page.items.map(s=>({...s,errorMessage:s.action}))};},
    createProperty:async(property,key)=>{const {active:_active,...body}=property;return request<{id:string}>('/admin/properties',{body,key});},
    assignments:(jobId,signal)=>request(`/admin/jobs/${encodeURIComponent(jobId)}/assignments`,{signal}),
+   assignJob:async(jobId,input,key)=>{await request(`/admin/jobs/${encodeURIComponent(jobId)}/assign`,{body:input,key});},
   }
  }),[getToken,role]);
  return <StartupBoundary>{role==='cleaner'?<CleanerHub integration={integration}/>:role==='owner'?<OwnerHub integration={integration}/>:<AdminHub integration={integration} initialPropertyId={initialPropertyId}/>}</StartupBoundary>;

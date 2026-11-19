@@ -24,7 +24,7 @@ export async function dispatch(operation: string, request: Request, params: Reco
       propertyRename: ['name'], onboard: ['cityId'], cityRequest: ['cityId'], cityResolve: ['decision'], claim: [], withdraw: ['comment'], complete: ['configVersion', 'answers', 'notes', 'maintenance', 'guestReview', 'handoffRevision'],
       upload: ['category', 'mime', 'bytes', 'roomId', 'noteContext'], finalize: [], readUrl: [],
       propertyCreate: ['cityId', 'name', 'timezone', 'address', 'isBloomOwned', 'soloRateCents', 'ownerIds', 'instructions', 'pendingOwnerEmail'],
-      role: ['role'], cancel: ['reason', 'expectedVersion'], reassign: ['reason', 'expectedVersion', 'removeAssignmentId', 'cleanerId'],
+      role: ['role'], cancel: ['reason', 'expectedVersion'], reassign: ['reason', 'expectedVersion', 'removeAssignmentId', 'cleanerId'], assign: ['reason', 'expectedVersion', 'cleanerId'],
       resolveChange: ['action', 'checkoutDate', 'reason', 'expectedVersion'],
     };
     if (!(operation in allowed)) throw new BackendError('NOT_FOUND');
@@ -58,6 +58,7 @@ export async function dispatch(operation: string, request: Request, params: Reco
     }
     const expected = integer(b.expectedVersion, 1, 2_147_483_647); const reason = text(b.reason);
     if (operation === 'cancel') return adminJobAction(jobId, 'cancel', expected, { reason }, key);
+    if (operation === 'assign') return adminJobAction(jobId, 'assign', expected, { reason, cleanerId: uuid(b.cleanerId) }, key);
     if (operation === 'reassign') return adminJobAction(jobId, 'reassign', expected, { reason, removeAssignmentId: uuid(b.removeAssignmentId), cleanerId: uuid(b.cleanerId) }, key);
     if (operation === 'resolveChange') {
       const action = choice(b.action, ['keep', 'reschedule', 'cancel']);

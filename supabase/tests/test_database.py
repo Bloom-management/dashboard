@@ -197,6 +197,28 @@ class BackendDatabaseTests(unittest.TestCase):
         self.assertEqual(scalar(f"select end_reason from public.assignments where id='{assignment}';"),'reassigned')
         self.assertEqual(scalar(f"select after_snapshot->'context'->>'reason' from public.job_history where job_id='{job}';"),'Synthetic reassignment')
         self.error(action(admin,job,'cancel',extra=",1,'{\"reason\":\"stale\"}'"),'CONFLICT')
+    def test_admin_assign_open_slot(self):
+        admin,_=make_user('admin');first,firstid=make_user();second,secondid=make_user();third,thirdid=make_user()
+        job,_=make_job()
+        assign=lambda subject,cleaner,version,key=None,reason='Synthetic staffing': action(subject,job,'assign',key=key,extra=f",{version},'"+json.dumps({'reason':reason,'cleanerId':cleaner})+"'")
+        self.error(assign(first,secondid,1),'FORBIDDEN')
+        self.error(assign(admin,firstid,9),'CONFLICT')
+        self.error(assign(admin,firstid,1,reason=''),'VALIDATION_ERROR')
+        key=uuid.uuid4().hex
+        self.assertEqual(assign(admin,firstid,1,key=key).returncode,0)
+        self.assertEqual(scalar(f"select slot from public.assignments where job_id='{job}' and cleaner_id='{firstid}' and ended_at is null;"),'1')
+        self.assertEqual(scalar(f"select version from public.jobs where id='{job}';"),'2')
+        self.assertEqual(scalar(f"select after_snapshot->'context'->>'reason' from public.job_history where job_id='{job}' and action='assign';"),'Synthetic staffing')
+        # Same key replays the receipt instead of assigning twice.
+        self.assertEqual(assign(admin,firstid,1,key=key).returncode,0)
+        self.assertEqual(scalar(f"select count(*) from public.assignments where job_id='{job}' and ended_at is null;"),'1')
+        self.error(assign(admin,firstid,2),'ALREADY_ASSIGNED')
+        elsewhere=scalar("insert into public.cities(name) values('Elsewhere-'||gen_random_uuid()) returning id;")
+        _,farid=make_user(city=elsewhere)
+        self.error(assign(admin,farid,2),'CITY_MISMATCH')
+        self.assertEqual(assign(admin,secondid,2).returncode,0)
+        self.assertEqual(scalar(f"select slot from public.assignments where job_id='{job}' and cleaner_id='{secondid}' and ended_at is null;"),'2')
+        self.error(assign(admin,thirdid,3),'JOB_FULL')
     def test_claim_completion_race(self):
         first,firstid=make_user();second,_=make_user()
         zone=scalar("select name from pg_timezone_names where (clock_timestamp() at time zone name)::time between time '11:15' and time '14:45' limit 1;")

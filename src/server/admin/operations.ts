@@ -8,5 +8,5 @@ export const listProperties = (limit = 50, offset = 0) => userRpc<AdminProperty[
 export const createProperty = (data: PropertySetup, key: string) => userRpc<AdminProperty>('bloom_admin_property', { p_data: data, p_key: key });
 export const grantRole = (userId: string, role: Role, key: string) => userRpc<SessionUser>('bloom_admin_role', { p_user: userId, p_role: role, p_key: key });
 export const resolveCity = (id: string, decision: 'approved' | 'rejected', key: string) => userRpc<CityChangeRequest>('bloom_city_resolve', { p_request: id, p_decision: decision, p_key: key });
-export const adminJobAction = (jobId: string, action: 'cancel' | 'reassign' | 'keep' | 'reschedule', expectedVersion: number, payload: Record<string, unknown>, key: string) =>
+export const adminJobAction = (jobId: string, action: 'cancel' | 'reassign' | 'assign' | 'keep' | 'reschedule', expectedVersion: number, payload: Record<string, unknown>, key: string) =>
   userRpc<CleanerJob>('bloom_job_action', { p_job: jobId, p_action: action, p_expected_version: expectedVersion, p_payload: payload, p_key: key });
