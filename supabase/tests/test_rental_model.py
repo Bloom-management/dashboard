@@ -1,4 +1,4 @@
-"""Entire unit <-> room model conversions (migration 104) against real disposable PostgreSQL.
+"""Entire unit <-> room model conversions (migrations 106 and 109) against real disposable PostgreSQL.
 Verified JWT claims are simulated; no hosted writes."""
 import concurrent.futures,json,unittest,uuid
 from test_database import sql,scalar,make_user,CITY
@@ -233,5 +233,99 @@ class RentalModel(unittest.TestCase):
   self.ok(self.merge(survivor,survivor))
   rpc('bloom_calendar_add_source',dict(p_actor=self.aid,p_input=body(b),p_key=uuid.uuid4().hex))
   sql(f"update properties set airbnb_listing_url='{url}' where id='{b}';")
+
+ # Room draft setup (migration 109) -----------------------------------------------------------
+ def setup_call(self,prop,action='read',payload=None,sub=None,key=None):
+  return sql(f"select bloom_room_setup('{prop}','{action}',{js(payload) if payload is not None else 'null'},{repr(key or uuid.uuid4().hex) if action!='read' else 'null'});",sub or self.owner,ok=False)
+ def activate(self,prop):
+  rev=scalar(f"select draft_revision from properties where id='{prop}';")
+  return sql(f"select bloom_listing_drafts('{prop}','activate',null,{rev},'{uuid.uuid4().hex}');",self.owner,ok=False)
+ def test_room_draft_setup_creates_pricing_shared_spaces_and_bedroom_then_activates(self):
+  house=scalar(f"insert into houses(name,address,timezone,created_by) values('TEST bare house {uuid.uuid4().hex[:6]}','Synthetic Lincoln','America/Detroit','{self.oid}') returning id;")
+  rooms=[]
+  for i in (1,2):
+   p=scalar(f"insert into properties(city_id,name,address,timezone,house_id,listing_type,room_identifier,active,draft_data) values('{CITY}','TEST bare DH {i}','Synthetic Lincoln','America/Detroit','{house}','room','DH {i}',false,'{{\"instructions\":\"Synthetic steps\"}}') returning id;")
+   sql(f"insert into property_owners values('{p}','{self.oid}') on conflict do nothing;");rooms.append(p)
+  a,b=rooms
+  self.assertEqual(self.ok(self.setup_call(a)),{'sharedKinds':[],'pricing':None,'hasAccess':False,'canEdit':True})
+  self.assertIn('REVIEW_REQUIRED',self.activate(a).stderr)
+  for who in (self.outsider,self.cleaner):self.assertIn('NOT_FOUND',self.setup_call(a,sub=who).stderr)
+  self.assertIn('VALIDATION_ERROR',self.setup_call(a,'pricing',{**PRICING,'firstPoolCents':4501}).stderr)
+  self.assertIn('VALIDATION_ERROR',self.setup_call(a,'shared',{'kinds':['bedroom']}).stderr)
+  key=uuid.uuid4().hex;first=self.ok(self.setup_call(a,'pricing',PRICING,key=key))
+  self.assertEqual(first['pricing'],PRICING);self.assertEqual(self.ok(self.setup_call(a,'pricing',PRICING,key=key)),first)
+  self.assertEqual(self.ok(self.setup_call(b,'pricing',{**PRICING,'firstHostCents':7000}))['pricing']['firstHostCents'],7000)
+  self.assertEqual(scalar(f"select revision from house_visit_pricing where house_id='{house}';"),'1')
+  self.assertEqual(sorted(self.ok(self.setup_call(a,'shared',{'kinds':['kitchen','bathroom','outdoor']}))['sharedKinds']),['bathroom','kitchen','outdoor'])
+  self.assertEqual(sorted(self.ok(self.setup_call(a,'shared',{'kinds':['kitchen','bathroom']}))['sharedKinds']),['bathroom','kitchen'])
+  # A shared space already used by a listing stays.
+  kitchen=scalar(f"select id from house_spaces where house_id='{house}' and kind='kitchen';")
+  sql(f"insert into listing_spaces(property_id,space_id) values('{a}','{kitchen}');")
+  self.assertIn('CONFLICT',self.setup_call(a,'shared',{'kinds':['bathroom']}).stderr)
+  # Each room gets its own bedroom; every room's checklist sees the shared spaces.
+  self.assertEqual(scalar(f"select string_agg(label,',' order by label) from house_spaces where house_id='{house}' and kind='bedroom';"),'DH 1 bedroom,DH 2 bedroom')
+  self.assertEqual(scalar(f"select jsonb_array_length(cleaning_config->'rooms') from properties where id='{b}';"),'3')
+  self.assertIn('REVIEW_REQUIRED',self.activate(a).stderr)  # no access yet
+  self.ok(sql(f"select bloom_property_access_info('{a}',{js({**ACCESS,'version':0})});",self.owner,ok=False))
+  self.assertTrue(self.ok(self.setup_call(a))['hasAccess'])
+  self.ok(self.activate(a))
+  self.assertEqual(scalar(f"select active||'|'||(draft_data is null) from properties where id='{a}';"),'true|true')
+  self.assertEqual(scalar(f"select private.listing_status(p) from properties p where id='{a}';"),'needs_channel_link')
+ def test_room_draft_activation_creates_missing_bedroom(self):
+  house=scalar(f"insert into houses(name,address,timezone,created_by) values('TEST bedroom house {uuid.uuid4().hex[:6]}','Synthetic','America/Detroit','{self.oid}') returning id;")
+  sql(f"insert into house_visit_pricing values('{house}',6500,2500,4500,2000,0);insert into house_spaces(house_id,kind,label) values('{house}','kitchen','Kitchen');")
+  p=scalar(f"insert into properties(city_id,name,address,timezone,house_id,listing_type,room_identifier,active,draft_data) values('{CITY}','TEST R9','Synthetic','America/Detroit','{house}','room','R9',false,'{{\"instructions\":\"Synthetic steps\"}}') returning id;")
+  sql(f"insert into property_owners values('{p}','{self.oid}');insert into property_entry_instructions(property_id,instructions,access_info) values('{p}','',{js({**ACCESS,'version':1})});")
+  self.ok(self.activate(p))
+  self.assertEqual(scalar(f"select label from house_spaces where property_id='{p}' and kind='bedroom';"),'R9 bedroom')
+
+ def draft_room(self,label):
+  house=scalar(f"insert into houses(name,address,timezone,created_by) values('TEST cal house {uuid.uuid4().hex[:6]}','Synthetic','America/Detroit','{self.oid}') returning id;")
+  p=scalar(f"insert into properties(city_id,name,address,timezone,house_id,listing_type,room_identifier,active,draft_data) values('{CITY}','TEST {label}','Synthetic','America/Detroit','{house}','room','{label}',false,'{{\"instructions\":\"Synthetic steps\"}}') returning id;")
+  sql(f"insert into property_owners values('{p}','{self.oid}');");return house,p
+ def test_room_draft_calendar_stores_bookings_and_creates_cleanings_only_after_publishing(self):
+  house,p=self.draft_room('DC1')
+  _,_,sid,_=source(actor=self.aid,prop=p)
+  ev=event(uid='draft-'+uuid.uuid4().hex,start='2030-06-01',end='2030-06-04');sync(self.aid,sid,[ev])
+  self.assertEqual(scalar(f"select count(*) from calendar_events where source_id='{sid}' and source_status='active';"),'1')
+  self.assertEqual(scalar(f"select (select count(*) from jobs where property_id='{p}' or house_id='{house}')+(select count(*) from private.room_turnovers where property_id='{p}');"),'0')
+  self.ok(self.setup_call(p,'pricing',PRICING));self.ok(self.setup_call(p,'shared',{'kinds':['kitchen']}))
+  self.ok(sql(f"select bloom_property_access_info('{p}',{js({**ACCESS,'version':0})});",self.owner,ok=False))
+  self.ok(self.activate(p))
+  self.assertEqual(scalar(f"select count(*) from jobs where house_id='{house}';"),'0')
+  sync(self.aid,sid,[ev])  # unchanged booking, now published
+  self.assertEqual(scalar(f"select checkout_date||'|'||status from jobs where house_id='{house}';"),'2030-06-04|open')
+  self.assertEqual(scalar(f"select count(*) from private.room_turnovers where property_id='{p}' and included;"),'1')
+ def test_discarding_a_room_draft_turns_its_calendar_off_and_entire_home_drafts_still_wait(self):
+  _,p=self.draft_room('DC2');_,_,sid,_=source(actor=self.aid,prop=p)
+  rev=scalar(f"select draft_revision from properties where id='{p}';")
+  self.ok(sql(f"select bloom_listing_drafts('{p}','discard',null,{rev},'{uuid.uuid4().hex}');",self.owner,ok=False))
+  self.assertEqual(scalar(f"select enabled from calendar_sources where id='{sid}';"),'f')
+  home=scalar(f"insert into properties(city_id,name,address,timezone,active,draft_data) values('{CITY}','TEST home draft','Synthetic','America/Detroit',false,'{{}}') returning id;")
+  r=rpc('bloom_calendar_add_source',dict(p_actor=self.aid,p_input=dict(propertyId=home,provider='airbnb',encryptedUrl='v1.'+'a'*16+'.'+'b'*22+'.'+'c'*80,fingerprint=uuid.uuid4().hex*2,urlDigest=uuid.uuid4().hex*2),p_key=uuid.uuid4().hex),ok=False)
+  self.assertIn('VALIDATION_ERROR',r.stderr)
+
+ # House shared entry (migration 110) ----------------------------------------------------------
+ def test_shared_entry_is_set_once_per_house_and_counts_as_room_access(self):
+  house,a=self.draft_room('SE1')
+  b=scalar(f"insert into properties(city_id,name,address,timezone,house_id,listing_type,room_identifier,active,draft_data) values('{CITY}','TEST SE2','Synthetic','America/Detroit','{house}','room','SE2',false,'{{\"instructions\":\"Synthetic steps\"}}') returning id;")
+  sql(f"insert into property_owners values('{b}','{self.oid}');")
+  shared=lambda p,data,who=None:sql(f"select bloom_house_shared_entry('{p}',{js(data)});",who or self.owner,ok=False)
+  info=lambda p,who=None:json.loads(scalar(f"select bloom_property_access_info('{p}');",who or self.owner))
+  self.assertEqual(info(a)['shared'],{'entryType':'other','code':'','entryNotes':'','version':0})
+  door={'entryType':'keypad','code':'MAIN-1','entryNotes':'Front door','version':0}
+  for bad in ({**door,'parking':[]},{**door,'entryType':'magic'},{**door,'code':1}):self.assertIn('VALIDATION_ERROR',shared(a,bad).stderr)
+  self.assertIn('NOT_FOUND',shared(a,door,self.outsider).stderr)
+  self.assertEqual(self.ok(shared(a,door))['shared']['code'],'MAIN-1')
+  self.assertIn('CONFLICT',shared(b,door).stderr)  # stale version
+  self.assertEqual(info(b)['shared'],{**door,'version':1})
+  self.assertEqual(info(b)['info']['code'],'')  # room entries stay separate
+  self.ok(self.setup_call(a,'pricing',PRICING));self.ok(self.setup_call(a,'shared',{'kinds':['kitchen']}))
+  self.assertTrue(self.ok(self.setup_call(b))['hasAccess'])
+  self.ok(self.activate(b))
+  # Entire-home listings have no shared entry.
+  home=scalar(f"insert into properties(city_id,name,address,timezone,active) values('{CITY}','TEST SE home','Synthetic','America/Detroit',true) returning id;")
+  sql(f"insert into property_owners values('{home}','{self.oid}');")
+  self.assertNotIn('shared',info(home));self.assertIn('VALIDATION_ERROR',shared(home,door).stderr)
 
 if __name__=='__main__':unittest.main()

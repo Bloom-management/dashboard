@@ -1,5 +1,5 @@
 'use client';
-import {useCallback,useState} from 'react';
+import {useCallback,useState,type FormEvent} from 'react';
 import {request} from './api';
 import {ErrorNotice,Loading,Modal,useResource, Icon} from './primitives';
 import {Select} from '../ui/select';
@@ -29,7 +29,10 @@ export function AccessEntryFields({value,onChange}:{value:AccessDetails;onChange
 export function AccessParkingFields({value,onChange}:{value:AccessDetails;onChange:(value:AccessDetails)=>void}){
  return <div className={styles.fields}>{Object.entries(parkingTypes).map(([key,label])=><label className={styles.check} key={key}><input type="checkbox" checked={value.parking.includes(key as keyof typeof parkingTypes)} onChange={event=>onChange({...value,parking:event.target.checked?[...value.parking,key as keyof typeof parkingTypes]:value.parking.filter(item=>item!==key)})}/>{label}</label>)}{value.parking.includes('garage')&&<label>Garage entry code (optional)<input maxLength={2000} value={value.garageCode} onChange={event=>onChange({...value,garageCode:event.target.value})}/></label>}<label>Parking details<textarea maxLength={2000} value={value.parkingNotes} onChange={event=>onChange({...value,parkingNotes:event.target.value})}/></label></div>;
 }
-type Access={info:AccessDetails;instructions:string;canEdit:boolean};
+export type SharedEntry=Pick<AccessDetails,'entryType'|'code'|'entryNotes'|'version'>;
+/** Rooms in a house also get the house's shared entry (the main door). */
+type Access={info:AccessDetails;instructions:string;canEdit:boolean;shared?:SharedEntry};
+type Kind='shared'|'entry'|'parking';
 const entryIcon=<svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="#020202" strokeWidth="1.91" strokeMiterlimit="10" aria-hidden="true"><path d="M15.82,11.05v9.54a1.91,1.91,0,0,1-1.91,1.91H4.36a1.91,1.91,0,0,1-1.91-1.91V3.41A1.91,1.91,0,0,1,4.36,1.5h9.55a1.91,1.91,0,0,1,1.91,1.91V7.23"/><path d="M19.64,7.23H11.26a2.86,2.86,0,1,0,0,3.82h8.38a1.91,1.91,0,0,0,0-3.82Z"/><path d="M5.32 16.77h7.63"/></svg>;
 const parkingIcon=<svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={'M3 11 12 3l9 8v10H3zM6 21v-9h12v9M6 15h12M6 18h12'}/></svg>;
 
@@ -37,16 +40,28 @@ const parkingIcon=<svg viewBox="0 0 24 24" width="36" height="36" fill="none" st
 export function AccessInfoPlaceholder({note}:{note:string}){
  return <div className={styles.grid}>{(['entry','parking'] as const).map(kind=><article className={`${styles.card} ${styles.placeholder}`} key={kind}><header>{kind==='entry'?entryIcon:parkingIcon}</header><h3>{kind==='entry'?'Entry':'Parking'}</h3><p className={styles.summary}><span>{note}</span></p></article>)}</div>;
 }
-export function AccessInfo({propertyId}:{propertyId:string}){
+export function AccessInfo({propertyId,onSaved}:{propertyId:string;onSaved?:()=>void}){
  const load=useCallback((signal:AbortSignal)=>request<Access|null>(`/properties/${propertyId}/access-info`,{signal}),[propertyId]);
- const resource=useResource(load);const [editing,setEditing]=useState<'entry'|'parking'|null>(null),[draft,setDraft]=useState<AccessDetails|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState<unknown>(),[expanded,setExpanded]=useState<'entry'|'parking'|null>(null);
+ const resource=useResource(load);const [editing,setEditing]=useState<Kind|null>(null),[draft,setDraft]=useState<AccessDetails|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState<unknown>(),[expanded,setExpanded]=useState<Kind|null>(null);
  if(resource.loading)return <Loading/>;
  if(resource.error)return <ErrorNotice error={resource.error} retry={resource.reload}/>;
  if(!resource.data)return <AccessInfoPlaceholder note="Not added yet"/>;
- const {info,instructions,canEdit}=resource.data;
- const body=(kind:'entry'|'parking')=>kind==='entry'?<>{info.code&&<p><strong>Entry code:</strong> {info.code}</p>}<p className="bloom-prewrap">{info.entryNotes||(!info.code?'No entry details provided.':'')}</p>{instructions&&<p className="bloom-prewrap">{instructions}</p>}</>:<>{info.parking.map(type=><p key={type}>{parkingTypes[type]}</p>)}{!info.parking.length&&<p>No parking information provided.</p>}{info.parking.includes('garage')&&info.garageCode&&<p><strong>Garage entry code:</strong> {info.garageCode}</p>}<p className="bloom-prewrap">{info.parkingNotes}</p></>;
- return <><div className={styles.grid}>{(['entry','parking'] as const).map(kind=><article className={styles.card} key={kind}><header>{kind==='entry'?entryIcon:parkingIcon}{canEdit&&<button type="button" aria-label={`Edit ${kind==='entry'?'entry':'parking'} information`} onClick={()=>{setDraft(info);setError(undefined);setEditing(kind);}}>✎</button>}</header><h3>{kind==='entry'?entryTypes[info.entryType]:'Parking'}</h3><button className={styles.summary} type="button" onClick={()=>setExpanded(kind)}><span>{kind==='entry'?(info.code?`Entry code: ${info.code}`:info.entryNotes||instructions||'View entry information'):(info.parking.map(type=>parkingTypes[type]).join(' · ')||'View parking information')}</span><Icon name="right"/></button></article>)}</div>
- {expanded&&<Modal title={expanded==='entry'?'Access info':'Parking'} className={`detail-card ${styles.dialog}`} onClose={()=>setExpanded(null)}><BackButton className={styles.back} onClick={()=>setExpanded(null)}>Back to access info</BackButton><h2>{expanded==='entry'?entryTypes[info.entryType]:'Parking'}</h2>{body(expanded)}</Modal>}
- {editing&&draft&&<Modal title={`Edit ${editing} information`} className={`detail-card ${styles.dialog}`} onClose={()=>{if(!busy)setEditing(null);}}><h2>{editing==='entry'?'Entry information':'Parking information'}</h2><form onSubmit={async event=>{event.preventDefault();if(busy)return;setBusy(true);setError(undefined);try{await request(`/properties/${propertyId}/access-info`,{body:draft});setEditing(null);resource.reload();}catch(e){setError(e);}finally{setBusy(false);}}}><fieldset disabled={busy}>{editing==='entry'?<AccessEntryFields value={draft} onChange={setDraft}/>:<><legend>Available parking</legend><AccessParkingFields value={draft} onChange={setDraft}/></>}</fieldset>{!!error&&<ErrorNotice error={error}/>}<button className="bloom-button" disabled={busy}>{busy?'Saving…':'Save access info'}</button></form></Modal>}
+ const {info,instructions,canEdit,shared}=resource.data;
+ const kinds:Kind[]=shared?['shared','entry','parking']:['entry','parking'];
+ const title=(kind:Kind)=>kind==='shared'?'Shared entry':kind==='parking'?'Parking':shared?'Room entry':entryTypes[info.entryType];
+ const entryBody=(e:SharedEntry,extra?:string)=><>{shared&&<p>{entryTypes[e.entryType]}</p>}{e.code&&<p><strong>Entry code:</strong> {e.code}</p>}<p className="bloom-prewrap">{e.entryNotes||(!e.code?'No entry details provided.':'')}</p>{extra&&<p className="bloom-prewrap">{extra}</p>}</>;
+ const body=(kind:Kind)=>kind==='shared'&&shared?entryBody(shared):kind==='entry'?entryBody(info,instructions):<>{info.parking.map(type=><p key={type}>{parkingTypes[type]}</p>)}{!info.parking.length&&<p>No parking information provided.</p>}{info.parking.includes('garage')&&info.garageCode&&<p><strong>Garage entry code:</strong> {info.garageCode}</p>}<p className="bloom-prewrap">{info.parkingNotes}</p></>;
+ const summary=(kind:Kind)=>kind==='shared'&&shared?(shared.code?`Entry code: ${shared.code}`:shared.entryNotes||'View entry information'):kind==='entry'?(info.code?`Entry code: ${info.code}`:info.entryNotes||instructions||'View entry information'):(info.parking.map(type=>parkingTypes[type]).join(' · ')||'View parking information');
+ async function save(event:FormEvent){
+  event.preventDefault();if(busy||!draft)return;setBusy(true);setError(undefined);
+  try{
+   if(editing==='shared')await request(`/properties/${propertyId}/shared-entry`,{body:{entryType:draft.entryType,code:draft.code,entryNotes:draft.entryNotes,version:draft.version}});
+   else await request(`/properties/${propertyId}/access-info`,{body:draft});
+   setEditing(null);resource.reload();onSaved?.();
+  }catch(e){setError(e);}finally{setBusy(false);}
+ }
+ return <><div className={styles.grid}>{kinds.map(kind=><article className={styles.card} key={kind}><header>{kind==='parking'?parkingIcon:entryIcon}{canEdit&&<button type="button" aria-label={`Edit ${title(kind).toLowerCase()} information`} onClick={()=>{setDraft(kind==='shared'&&shared?{...emptyAccess,...shared}:info);setError(undefined);setEditing(kind);}}>✎</button>}</header><h3>{title(kind)}</h3><button className={styles.summary} type="button" onClick={()=>setExpanded(kind)}><span>{summary(kind)}</span><Icon name="right"/></button></article>)}</div>
+ {expanded&&<Modal title={expanded==='parking'?'Parking':'Access info'} className={`detail-card ${styles.dialog}`} onClose={()=>setExpanded(null)}><BackButton className={styles.back} onClick={()=>setExpanded(null)}>Back to access info</BackButton><h2>{title(expanded)}</h2>{body(expanded)}</Modal>}
+ {editing&&draft&&<Modal title={`Edit ${title(editing).toLowerCase()} information`} className={`detail-card ${styles.dialog}`} onClose={()=>{if(!busy)setEditing(null);}}><h2>{editing==='parking'?'Parking information':editing==='shared'?'Shared entry':'Entry information'}</h2><form onSubmit={save}><fieldset disabled={busy}>{editing==='parking'?<><legend>Available parking</legend><AccessParkingFields value={draft} onChange={setDraft}/></>:<AccessEntryFields value={draft} onChange={setDraft}/>}</fieldset>{!!error&&<ErrorNotice error={error}/>}<button className="bloom-button" disabled={busy}>{busy?'Saving…':'Save access info'}</button></form></Modal>}
  </>;
 }

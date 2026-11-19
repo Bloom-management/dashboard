@@ -17,7 +17,7 @@ export function retainOwnerSourceReceipt(action: 'add' | 'sync', failure: unknow
  return ['NETWORK_ERROR','SOURCE_UNAVAILABLE','SERVICE_UNAVAILABLE'].includes(failure.code);
 }
 
-export function OwnerSources({listing,onChanged}:{listing:OwnerListing;onChanged:()=>void}){
+export function OwnerSources({listing,onChanged,showExport=true}:{listing:Pick<OwnerListing,'id'|'name'|'timezone'|'sources'>;onChanged:()=>void;showExport?:boolean}){
  const [provider,setProvider]=useState<'airbnb'|'vrbo'>('airbnb');
  const [addConflict,setAddConflict]=useState(false);
  const [url,setUrl]=useState('');const [busy,setBusy]=useState(false);const [error,setError]=useState<unknown>();const [result,setResult]=useState('');
@@ -35,5 +35,5 @@ export function OwnerSources({listing,onChanged}:{listing:OwnerListing;onChanged
   finally{lock.current=false;setBusy(false);}
  }
  return <><section aria-label={`${listing.name} calendar connection`}><h3>Connected calendars</h3><p>Import bookings from Airbnb and Vrbo into Bloom.</p>{listing.sources.length?listing.sources.map(source=><div className="owner-source" key={source.id}><strong><CalendarSourceBrand provider={source.provider}/></strong><p>{source.enabled?'Enabled':'Disabled'} · Last successful sync: {source.lastSuccessAt?new Intl.DateTimeFormat('en-US',{dateStyle:'medium',timeStyle:'short',timeZone:listing.timezone}).format(new Date(source.lastSuccessAt)):'Not yet synced'}</p>{source.message&&<p className="bloom-notice">{source.message}</p>}{<button type="button" className="bloom-button secondary" disabled={busy||!source.enabled} onClick={()=>void mutate('sync',source)}>{busy?'Working…':'Sync now'}</button>}</div>):<p>No calendar sources connected.</p>}
- <form className="bloom-form" onSubmit={event=>{event.preventDefault();void mutate('add');}}><CalendarSetupCard provider={provider} url={url} onProvider={setProvider} onUrl={setUrl} required disabled={busy}/><button className="bloom-button" disabled={busy||!url.trim()}>{busy?'Working…':provider==='airbnb'?'Connect Airbnb calendar':'Connect Vrbo calendar'}</button></form>{!!error&&<ErrorNotice error={error}/>} {addConflict&&<p className="bloom-notice">The calendar connection could not be updated. Refresh the listing and check its saved calendars before retrying.</p>}<p role="status">{result}</p></section><CalendarExport key={listing.id} propertyId={listing.id}/></>;
+ <form className="bloom-form" onSubmit={event=>{event.preventDefault();void mutate('add');}}><CalendarSetupCard provider={provider} url={url} onProvider={setProvider} onUrl={setUrl} required disabled={busy}/><button className="bloom-button" disabled={busy||!url.trim()}>{busy?'Working…':provider==='airbnb'?'Connect Airbnb calendar':'Connect Vrbo calendar'}</button></form>{!!error&&<ErrorNotice error={error}/>} {addConflict&&<p className="bloom-notice">The calendar connection could not be updated. Refresh the listing and check its saved calendars before retrying.</p>}<p role="status">{result}</p></section>{showExport&&<CalendarExport key={listing.id} propertyId={listing.id}/>}</>;
 }
