@@ -349,4 +349,11 @@ class RentalModel(unittest.TestCase):
   data(finish(self.aid,begin(self.aid,s2),None))
   self.assertEqual(scalar(f"select count(*) from jobs where house_id='{h2}';"),'0')
 
+ def test_sync_history_keeps_the_real_refusal_reason(self):
+  _,p=self.draft_room('ER1');_,_,sid,_=source(actor=self.aid,prop=p);lease=begin(self.aid,sid)
+  rpc('bloom_calendar_fail_sync',dict(p_actor=self.aid,p_source=sid,p_run=lease['runId'],p_version=lease['version'],p_code='REVIEW_REQUIRED'))
+  self.assertEqual(scalar(f"select last_error_code from calendar_sources where id='{sid}';"),'REVIEW_REQUIRED')
+  lease=begin(self.aid,sid)
+  self.assertNotEqual(rpc('bloom_calendar_fail_sync',dict(p_actor=self.aid,p_source=sid,p_run=lease['runId'],p_version=lease['version'],p_code='SQL_DETAIL'),ok=False).returncode,0)
+
 if __name__=='__main__':unittest.main()

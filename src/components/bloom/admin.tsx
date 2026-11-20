@@ -170,18 +170,8 @@ function PropertyForm({ integration, created, houses=[], draftSaved }: { integra
     {calendarMessages.map((message,index)=><p role="status" key={index}>{message}</p>)}{importMessage&&<p className="bloom-notice" role="alert">{importMessage}</p>}{savedProperty&&<button type="button" className="bloom-button secondary" onClick={()=>created(savedProperty)}>Open saved property</button>}{validation && <p className="bloom-notice" role="alert">{validation}</p>}{listingType==='room'?<button className="bloom-button" disabled={draftMutation.busy||cities.loading||!!cities.error}>{draftMutation.busy?'Saving…':'Save draft'}</button>:<div className="bloom-actions"><button className="bloom-button" disabled={mutation.busy||draftMutation.busy||cities.loading||!!cities.error||!cities.data?.some(c=>c.active)||!propertyOwnership(draft.isBloomOwned,ownerMode,draft.ownerIds,ownerEmail)}>{mutation.busy?'Saving…':savedProperty?'Retry calendar links':'Save property'}</button>{!savedProperty&&<button type="button" className="bloom-button secondary" disabled={mutation.busy||draftMutation.busy} onClick={()=>void saveDraft()}>{draftMutation.busy?'Saving…':'Save draft'}</button>}</div>}<Result mutation={mutation}/><Result mutation={draftMutation}/></>}
   </form>;
 }
-function SourceRow({source,reload,onOutcome}:{source:SourceHealth;reload:()=>void;onOutcome:(message:string)=>void}) {
- const mutation=useMutation();
- async function sync(){
-  onOutcome('');
-  const saved=await mutation.run({sync:source.id},async key=>{
-   const result=await request<import('../../contracts').SyncResult & {status?:'success'|'partial'|'not_modified'}>(`/admin/properties/${encodeURIComponent(source.propertyId)}/calendar-sources/${encodeURIComponent(source.id)}/sync`,{body:{},key});
-   const status=result.status==='partial'?'Incomplete calendar; existing stays and jobs were preserved':result.status==='not_modified'?'Calendar unchanged':'Sync finished';
-   onOutcome(`${source.provider==='airbnb'?'Airbnb':'Vrbo'}: ${status}. Calendar entries: ${result.created} created, ${result.updated} updated, ${result.removed} removed, ${result.unchanged} unchanged; ${result.conflicts} conflicts. These are calendar counts, not cleaning-job counts.`);
-  });
-  if(saved)reload();
- }
- return <article className="bloom-admin-card"><h3><CalendarSourceBrand provider={source.provider}/></h3><p>{source.enabled?'Enabled':'Disabled'} · Last successful sync: {source.lastSuccessAt?new Date(source.lastSuccessAt).toISOString():'Never'}</p><p>Last attempt: {source.lastAttemptAt?new Date(source.lastAttemptAt).toISOString():'Never'}</p>{source.errorMessage&&<p className="bloom-notice" role="alert">{source.errorMessage}</p>}<button className="bloom-button" disabled={mutation.busy||!source.enabled} onClick={sync}>{mutation.busy?'Syncing…':'Sync now'}</button><button type="button" className="bloom-button secondary" disabled={mutation.busy} onClick={reload}>Refresh sync status</button><Result mutation={mutation}/></article>;
+function SourceRow({source,reload}:{source:SourceHealth;reload:()=>void;onOutcome?:(message:string)=>void}) {
+ return <article className="bloom-admin-card"><h3><CalendarSourceBrand provider={source.provider}/></h3><p>{source.enabled?'Enabled':'Disabled'} · Last successful sync: {source.lastSuccessAt?new Date(source.lastSuccessAt).toISOString():'Never'}</p><p>Last attempt: {source.lastAttemptAt?new Date(source.lastAttemptAt).toISOString():'Never'}</p>{source.errorMessage&&<p className="bloom-notice" role="alert">{source.errorMessage}</p>}<button type="button" className="bloom-button secondary" onClick={reload}>Refresh sync status</button></article>;
 }
 function SourceForm({propertyId,reload}:{propertyId:string;reload:()=>void}) {
  const [provider,setProvider]=useState('airbnb');const [url,setUrl]=useState('');const mutation=useMutation();const [syncMessage,setSyncMessage]=useState('');

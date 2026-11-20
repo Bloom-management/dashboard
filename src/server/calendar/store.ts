@@ -1,5 +1,5 @@
 import type { CalendarStore, Lease, SourceHealth, SyncOutcome } from './types';
-import { CalendarError, actions } from './errors';
+import { CalendarError, actions, databaseCodes } from './errors';
 export type Rpc = <T>(name: string, args: Record<string, unknown>) => Promise<T>;
 /** actor is set ONLY from requireAdmin(), or null for an authenticated scheduler/local trusted command. */
 export function rpcStore(rpc: Rpc, actor: string | null): CalendarStore {
@@ -42,6 +42,8 @@ export function serviceRpc(): Rpc {
         try { message = (await response.json()).message; } catch { /* Unknown upstream body fails closed. */ }
         const statuses: Record<string,number> = {VALIDATION_ERROR:400,UNAUTHENTICATED:401,FORBIDDEN:403,NOT_FOUND:404,CONFLICT:409,CONFIGURATION_ERROR:503};
         if(typeof message==='string' && Object.hasOwn(statuses,message) && response.status===statuses[message]) throw new CalendarError(message,response.status);
+        // Plain RAISE codes (REVIEW_REQUIRED, INVALID_STATE, CONFLICT, …) arrive as HTTP 400; keep the code, never the SQL detail.
+        if(response.status===400 && typeof message==='string' && (databaseCodes as readonly string[]).includes(message)) throw new CalendarError(message,statuses[message]??409);
         throw new CalendarError('CONFIGURATION_ERROR',503);
       }
       if(response.status===204)return undefined as T;

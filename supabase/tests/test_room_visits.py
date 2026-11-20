@@ -31,7 +31,7 @@ class RoomVisits(unittest.TestCase):
    self.assertEqual(len(v['spaces']),i+4)
   self.assertEqual(scalar(f"select count(*) from jobs where house_id='{self.house}';"),'1')
   self.assertEqual(self.attach(3),j)
-  self.assertEqual(v['job']['propertyName'],'TEST Dearborn · DH1 & DH2 & DH3 & DH4')
+  self.assertEqual(v['job']['propertyName'],'TEST Dearborn DH1 & DH2 & DH3 & DH4')
  def test_claim_retry_does_not_reissue_scope_offers(self):
   j=self.attach(0);self.claim(j,0);self.attach(1)
   r=self.claim(j,1,key='second-claim');self.assertEqual(r.returncode,0,r.stderr)
@@ -318,5 +318,12 @@ class RoomVisits(unittest.TestCase):
  def test_claimed_earlier_visit_is_not_pulled(self):
   first=self.attach(1,self.d(1));self.claim(first);j=self.attach(0,self.d(2))
   self.assertNotEqual(first,j);self.assertEqual(self.job_of(1).split('|')[0],first)
+
+ def test_visit_titles_and_notices_use_the_street_address_only(self):
+  sql(f"update houses set name='4903 Lincoln Blvd, Dearborn Heights, MI 48125' where id='{self.house}';")
+  j=self.attach(0,self.d(2));self.attach(3,self.d(2))
+  self.assertEqual(self.visit(j)['job']['propertyName'],'4903 Lincoln Blvd DH1 & DH4')
+  body=scalar(f"select body from private.visit_notices where job_id='{j}' and user_id='{self.oid}' and event_key like 'grouped:%';")
+  self.assertTrue(body.startswith('4903 Lincoln Blvd · '),body)
 
 if __name__=='__main__':unittest.main(verbosity=2)

@@ -11,6 +11,11 @@ test('RPC transport preserves only exact safe status/code pairs and hides upstre
    globalThis.fetch=async()=>Response.json({message:code,details:'must-not-escape'},{status});
    await assert.rejects(serviceRpc()('test_rpc',{}),{code,status,message:code});
   }
+  // Plain database refusals arrive as HTTP 400 and keep their code, so sync errors say what failed.
+  for(const [code,status] of [['REVIEW_REQUIRED',409],['INVALID_STATE',409],['CONFLICT',409]] as const){
+   globalThis.fetch=async()=>Response.json({message:code,details:'must-not-escape'},{status:400});
+   await assert.rejects(serviceRpc()('test_rpc',{}),{code,status,message:code});
+  }
   for(const [status,body] of [[400,{message:'private SQL detail'}],[404,{message:'FORBIDDEN'}],[500,{message:'CONFLICT'}]] as const){
    globalThis.fetch=async()=>Response.json(body,{status});
    await assert.rejects(serviceRpc()('test_rpc',{}),{code:'CONFIGURATION_ERROR',status:503});

@@ -23,11 +23,11 @@ test('listing supplies distinguish configuration from missing reports and exclud
  assert.match(html,/Default level · No cleaner report yet/);assert.match(html,/Low/);assert.match(html,/data-level="full"/);assert.match(html,/data-level="low"/);assert.match(html,/class="bar" data-level="low"/);assert.doesNotMatch(html,/DO-NOT-RENDER|7500|SECRET/);
 });
 
-test('listing source controls offer Airbnb and Vrbo sync',()=>{
+test('listing sources show Airbnb and Vrbo with no manual sync',()=>{
  const base={propertyId:'unit',enabled:true,lastSuccessAt:null,lastAttemptAt:null,message:null};
  const listing:OwnerListing={id:'unit',name:'Local test',timezone:'America/Detroit',active:true,nightlyGuestRateCents:null,hostPayoutCents:null,currency:'USD',supplies:[],sources:[{...base,id:'airbnb-source',provider:'airbnb'},{...base,id:'vrbo-source',provider:'vrbo'}]};
  const html=renderToStaticMarkup(<OwnerSources listing={listing} onChanged={()=>{}}/>);
- assert.match(html,/Vrbo/);assert.match(html,/Airbnb/);assert.equal((html.match(/Sync now<\/button>/g)||[]).length,2);assert.doesNotMatch(html,/public listing URL/);assert.doesNotMatch(html,/listing stays saved/);
+ assert.match(html,/Vrbo/);assert.match(html,/Airbnb/);assert.doesNotMatch(html,/Sync now/);assert.doesNotMatch(html,/public listing URL/);assert.doesNotMatch(html,/listing stays saved/);
  const share=renderToStaticMarkup(<OwnerPlatformShare totals={totals}/>);
  assert.match(share,/Share of known occupied nights/);assert.doesNotMatch(share,/not a measure of complete calendar coverage/);assert.match(share,/60%/);
 });

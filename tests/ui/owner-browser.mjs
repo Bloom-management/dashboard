@@ -91,9 +91,8 @@ try {
   assert.equal(await page.getByRole('button',{name:'Add supply',exact:true}).isVisible(),false);
 
 
-  await page.getByLabel('Private Airbnb iCal export link',{exact:true}).fill('https://example.invalid/isolated.ics');await page.getByRole('button',{name:'Connect Airbnb calendar'}).click();await page.getByText('Airbnb link saved. Choose Sync now to import its calendar.',{exact:true}).waitFor();
-  await page.getByRole('button',{name:'Sync now'}).click();await page.getByText('Calendar unavailable. Retry sync.',{exact:true}).waitFor();assert.equal(await page.getByRole('navigation',{name:'Properties',exact:true}).getByRole('button').filter({hasText:properties[0].name}).count(),1);
-  await page.getByRole('button',{name:'Sync now'}).click();await page.getByText(/Synced calendar entries: 2 added/).waitFor();
+  await page.getByLabel('Private Airbnb iCal export link',{exact:true}).fill('https://example.invalid/isolated.ics');await page.getByRole('button',{name:'Connect Airbnb calendar'}).click();await page.getByText(/Calendar link saved/).waitFor();assert.equal(await page.getByRole('button',{name:'Sync now'}).count(),0);
+  assert.equal(await page.getByRole('navigation',{name:'Properties',exact:true}).getByRole('button').filter({hasText:properties[0].name}).count(),1);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false,'no page horizontal overflow');
   assert.deepEqual(errors,[]);await page.locator('.owner-main').evaluate(el=>el.scrollTop=0);await page.screenshot({path:`${out}/listings-${width}.png`,fullPage:true});
   if(role==='owner'){
