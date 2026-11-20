@@ -2,7 +2,7 @@
 Verified JWT claims are simulated; no hosted writes."""
 import concurrent.futures,json,unittest,uuid
 from test_database import sql,scalar,make_user,CITY
-from test_calendar_database import source,sync,event,rpc,data
+from test_calendar_database import source,sync,event,rpc,data,begin,finish,snapshot
 
 def js(v):return "'"+json.dumps(v).replace("'","''")+"'::jsonb"
 ACCESS={'entryType':'keypad','code':'2468','entryNotes':'','parking':['driveway'],'garageCode':'','parkingNotes':''}
@@ -327,5 +327,26 @@ class RentalModel(unittest.TestCase):
   home=scalar(f"insert into properties(city_id,name,address,timezone,active) values('{CITY}','TEST SE home','Synthetic','America/Detroit',true) returning id;")
   sql(f"insert into property_owners values('{home}','{self.oid}');")
   self.assertNotIn('shared',info(home));self.assertIn('VALIDATION_ERROR',shared(home,door).stderr)
+
+ # Not-modified syncs (migration 112) -----------------------------------------------------------
+ def test_published_room_gets_cleanings_when_the_feed_is_not_modified(self):
+  house,p=self.draft_room('NM1')
+  _,_,sid,_=source(actor=self.aid,prop=p)
+  ev=event(uid='nm-'+uuid.uuid4().hex,start='2030-07-01',end='2030-07-05')
+  data(finish(self.aid,begin(self.aid,sid),snapshot([ev]),{'etag':'"v1"'}))
+  self.ok(self.setup_call(p,'pricing',PRICING));self.ok(self.setup_call(p,'shared',{'kinds':['kitchen']}))
+  self.ok(sql(f"select bloom_property_access_info('{p}',{js({**ACCESS,'version':0})});",self.owner,ok=False))
+  self.ok(self.activate(p))
+  self.assertEqual(scalar(f"select count(*) from jobs where house_id='{house}';"),'0')
+  r=data(finish(self.aid,begin(self.aid,sid),None))  # 304
+  self.assertEqual(r['status'],'not_modified')
+  self.assertEqual(scalar(f"select checkout_date||'|'||status from jobs where house_id='{house}';"),'2030-07-05|open')
+  data(finish(self.aid,begin(self.aid,sid),None))  # repeat adds nothing
+  self.assertEqual(scalar(f"select count(*) from private.room_turnovers where property_id='{p}';"),'1')
+  # Still a draft elsewhere: nothing is attached.
+  h2,d=self.draft_room('NM2');_,_,s2,_=source(actor=self.aid,prop=d)
+  data(finish(self.aid,begin(self.aid,s2),snapshot([event(uid='nm2-'+uuid.uuid4().hex,start='2030-07-01',end='2030-07-05')]),{'etag':'"v1"'}))
+  data(finish(self.aid,begin(self.aid,s2),None))
+  self.assertEqual(scalar(f"select count(*) from jobs where house_id='{h2}';"),'0')
 
 if __name__=='__main__':unittest.main()

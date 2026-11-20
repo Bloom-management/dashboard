@@ -207,7 +207,7 @@ class RoomVisits(unittest.TestCase):
   self.assertEqual(report(0,'issue').returncode,0);self.assertEqual(report(1,'same-issue').returncode,0)
   self.assertEqual(scalar(f"select count(*) from house_item_reports where item_id='{item}';"),'1')
   self.assertEqual(scalar(f"select count(*) from private.visit_space_completion where job_id='{j}';"),'0')
-  self.assertEqual(scalar(f"select count(*) from private.visit_notices where job_id='{j}' and user_id='{self.oid}';"),'1')
+  self.assertEqual(scalar(f"select count(*) from private.visit_notices where job_id='{j}' and user_id='{self.oid}' and event_key not like 'grouped:%';"),'1')
  def test_pending_cancellation_preserves_accepted_price(self):
   j=self.attach(0);self.claim(j);self.attach(1);sql(f"update house_visit_pricing set first_pool_cents=9900,revision=revision+1 where house_id='{self.house}';")
   tid=scalar(f"select id from private.room_turnovers where property_id='{self.rooms[1]}';");sql(f"select private.room_turnover_cancel('{tid}','Synthetic pending cancellation');")
@@ -276,5 +276,47 @@ class RoomVisits(unittest.TestCase):
   self.assertEqual(scalar(f"select solo_rate_cents_snapshot from jobs where id='{j}';"),'6500')
   self.assertEqual(scalar(f"select count(*) from jobs where house_id='{self.house}';"),'1')
   self.assertEqual(self.visit(j)['rooms'][2]['state'],'unresolved')
+
+ # One-day grouping (migration 111) -----------------------------------------------------------
+ def d(self,n):return scalar(f"select '{self.day}'::date+{n};")
+ def job_of(self,i):return scalar(f"select job_id||'|'||checkout_date||'|'||own_checkout||'|'||included from private.room_turnovers where property_id='{self.rooms[i]}' and state<>'cancelled' order by created_at desc limit 1;")
+ def open_jobs(self):return scalar(f"select string_agg(checkout_date::text,',' order by checkout_date) from jobs where house_id='{self.house}' and status='open';")
+ def test_room_checking_out_a_day_earlier_waits_for_the_next_days_visit(self):
+  later=self.attach(0,self.d(2));j=self.attach(1,self.d(1))
+  self.assertEqual(j,later);self.assertEqual(self.job_of(1),f"{later}|{self.d(2)}|{self.d(1)}|true")
+  self.assertEqual(len(self.visit(j)['rooms']),2);self.assertEqual(self.open_jobs(),self.d(2))
+  body=scalar(f"select body from private.visit_notices where job_id='{j}' and user_id='{self.oid}' and event_key like 'grouped:%';")
+  self.assertIn('DH1 & DH2 will be cleaned in one visit.',body);self.assertIn('DH2 checks out',body)
+  self.assertEqual(scalar(f"select count(*) from private.visit_notices where job_id='{j}' and user_id='{self.aid}' and event_key like 'grouped:%';"),'1')
+  self.assertEqual(self.attach(1,self.d(1)),j)  # repeat is stable and does not notify twice
+  self.assertEqual(scalar(f"select count(*) from private.visit_notices where job_id='{j}' and event_key like 'grouped:%' and user_id='{self.oid}';"),'1')
+ def test_next_day_checkout_pulls_a_lone_unclaimed_room_forward(self):
+  first=self.attach(1,self.d(1));j=self.attach(0,self.d(2))
+  self.assertNotEqual(first,j);self.assertEqual(scalar(f"select status from jobs where id='{first}';"),'cancelled')
+  self.assertEqual(self.job_of(1),f"{j}|{self.d(2)}|{self.d(1)}|true");self.assertEqual(self.open_jobs(),self.d(2))
+ def test_two_days_apart_and_chains_stay_separate(self):
+  self.attach(0,self.d(1));self.attach(1,self.d(3))
+  self.assertEqual(self.open_jobs(),f"{self.d(1)},{self.d(3)}")
+  self.attach(2,self.d(2))  # pairs with one neighbour only
+  self.assertEqual(scalar(f"select count(*) from jobs where house_id='{self.house}' and status='open';"),'2')
+  self.assertEqual(scalar(f"select max(n) from (select count(*) n from private.room_turnovers where house_id='{self.house}' and included group by job_id) x;"),'2')
+ def test_guest_arriving_on_the_earlier_checkout_day_keeps_its_own_cleaning(self):
+  sql(f"insert into private.manual_bookings(property_id,check_in,checkout,checkin_time,checkout_time,timezone,created_by) values('{self.rooms[1]}','{self.d(1)}','{self.d(6)}','15:00','11:00','America/Detroit','{self.aid}');")
+  self.attach(0,self.d(2));self.attach(1,self.d(1))
+  self.assertEqual(self.job_of(1).split('|')[1],self.d(1))
+  # A new arrival after grouping sends the earlier room back to its own day.
+  self.attach(3,self.d(4));self.attach(2,self.d(3))
+  self.assertEqual(self.job_of(2).split('|')[1],self.d(4))
+  sql(f"insert into private.manual_bookings(property_id,check_in,checkout,checkin_time,checkout_time,timezone,created_by) values('{self.rooms[2]}','{self.d(3)}','{self.d(9)}','15:00','11:00','America/Detroit','{self.aid}');")
+  self.attach(2,self.d(3))
+  self.assertEqual(self.job_of(2).split('|')[1],self.d(3))
+ def test_cancelling_the_later_room_returns_the_earlier_room_to_its_own_day(self):
+  j=self.attach(0,self.d(2));self.attach(1,self.d(1))
+  t=scalar(f"select id from private.room_turnovers where property_id='{self.rooms[0]}' and state<>'cancelled';")
+  sql(f"select private.room_turnover_cancel('{t}','test');")
+  self.assertEqual(self.job_of(1).split('|')[1],self.d(1));self.assertEqual(scalar(f"select status from jobs where id='{j}';"),'cancelled')
+ def test_claimed_earlier_visit_is_not_pulled(self):
+  first=self.attach(1,self.d(1));self.claim(first);j=self.attach(0,self.d(2))
+  self.assertNotEqual(first,j);self.assertEqual(self.job_of(1).split('|')[0],first)
 
 if __name__=='__main__':unittest.main(verbosity=2)
