@@ -914,6 +914,8 @@ html body input:focus-visible + :is(span, svg, .onboarding-role-body) {
   outline: none !important;
   box-shadow: none !important;
 }
+/* The selected property keeps its ring while it has focus (it is focused right after the click). */
+html body :is(.bloom-cleaner,.bloom-owner) .rail-item.active:is(:focus,:focus-visible) { box-shadow:0 0 0 2.5px var(--bloom),0 6px 16px rgba(217,122,133,.3) !important; }
 .maintenance-grid button.bloom-more-supplies { display:flex; align-items:center; justify-content:center; width:100%; min-height:160px; border:1px dashed #d9d2c6; border-radius:24px; background:#f6f3ec; color:#2d2a1f; font:inherit; font-weight:600; cursor:pointer; }
 .maintenance-grid button.bloom-more-supplies:hover { border-color:#b85563; color:#b85563; }
 
