@@ -1,5 +1,5 @@
 'use client';
-import {useCallback,useEffect,useRef,useState} from 'react';
+import {useCallback,useEffect,useRef,useState,type ReactNode} from 'react';
 import type {PropertyCover} from '../../server/properties/airbnb-cover';
 import {request,ApiError} from './api';
 import {ErrorNotice,Icon,Loading,useResource} from './primitives';
@@ -19,15 +19,16 @@ function useCover(id:string){
   return()=>{window.removeEventListener('bloom:property-cover',local);window.removeEventListener('storage',storage);window.removeEventListener('focus',focus);clearInterval(timer);};
  },[id,data.reload]);return data;
 }
-function ThumbnailImage({src}:{src:string}){
+function ThumbnailImage({src,fill,fallback=<Icon name="pin"/>}:{src:string;fill?:boolean;fallback?:ReactNode}){
  const [failed,setFailed]=useState(false);
- return failed?<Icon name="pin"/>:<img src={src} alt="" width={44} height={44} loading="lazy" referrerPolicy="no-referrer" onError={()=>setFailed(true)} style={{display:'block',objectFit:'cover',borderRadius:12,flexShrink:0}}/>;
+ return failed?<>{fallback}</>:<img src={src} alt="" width={44} height={44} loading="lazy" referrerPolicy="no-referrer" onError={()=>setFailed(true)} style={{display:'block',objectFit:'cover',borderRadius:fill?0:12,flexShrink:0,...(fill?{width:'100%',height:'100%'}:{})}}/>;
 }
 /** Cover thumbnail. `placeholder={false}` renders nothing without a cover, so cards keep their plain layout. */
-export function PropertyThumbnail({id,placeholder=true}:{id:string;placeholder?:boolean}){
+export function PropertyThumbnail({id,placeholder=true,fill=false,fallback}:{id:string;placeholder?:boolean;fill?:boolean;fallback?:ReactNode}){
  const data=useCover(id);
  if(!placeholder&&!data.data?.image)return null;
- return <span style={{display:'grid',placeItems:'center',width:44,height:44,flexShrink:0,borderRadius:12,overflow:'hidden'}}>{data.data?.image?<ThumbnailImage key={data.data.image+':'+data.data.revision} src={data.data.image}/>:<Icon name="pin"/>}</span>;
+ const icon=fallback??<Icon name="pin"/>;
+ return <span style={{display:'grid',placeItems:'center',width:fill?'100%':44,height:fill?'100%':44,flexShrink:0,borderRadius:fill?0:12,overflow:'hidden'}}>{data.data?.image?<ThumbnailImage key={data.data.image+':'+data.data.revision} src={data.data.image} fill={fill} fallback={icon}/>:icon}</span>;
 }
 /** Shared Airbnb listing URL input: Settings → cover photo and Add listing → import use the same field. */
 export function AirbnbListingUrlField({value,onChange,label='Airbnb listing URL',required}:{value:string;onChange:(value:string)=>void;label?:string;required?:boolean}){
