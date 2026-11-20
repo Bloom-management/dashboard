@@ -75,7 +75,8 @@ function UpcomingAvatars({job}:{job:CleanerJob}){
 }
 
 export function JobDetail(props:{job:CleanerJob;user:SessionUser;integration:BloomIntegration;onClose:()=>void;onUpdate:(job:CleanerJob)=>void;refresh:()=>void}){
- return props.job.houseId&&(props.job.myAssignmentId||props.user.role==='admin')?<RoomVisitDialog {...props}/>:<LegacyJobDetail {...props}/>;
+ // Everyone sees the standard cleaning card until they are on the visit; admins manage room visits from the Admin hub.
+ return props.job.houseId&&props.job.myAssignmentId?<RoomVisitDialog {...props}/>:<LegacyJobDetail {...props}/>;
 }
 function LegacyJobDetail({ job, user, integration, onClose, onUpdate, refresh }: { job: CleanerJob; user: SessionUser; integration: BloomIntegration; onClose: () => void; onUpdate: (job: CleanerJob) => void; refresh: () => void }) {
   const team=useJobTeam(job.id,job.version);
