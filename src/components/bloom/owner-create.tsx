@@ -31,13 +31,13 @@ const stepTitles:Record<SetupStep,string>={import:'Import and address',type:'Lis
 const entireHomeSteps:SetupStep[]=['import','type','rooms','supplies','maintenance','access','calendar'];
 const roomSteps:SetupStep[]=['import','type','room'];
 /** Kept mounted when closed so uncertain creation retries retain the original receipt. */
-export function OwnerCreateListing({open,listings,onClose,onCreated,onChanged,embedded=false,onBusyChange,onTitleChange,cleanerEmail:initialCleanerEmail='',initialPage=0}:{initialPage?:number;open:boolean;listings:OwnerListing[];onClose:()=>void;onCreated:(listing:OwnerListing)=>void;onChanged:()=>void;embedded?:boolean;onBusyChange?:(busy:boolean)=>void;onTitleChange?:(title:string)=>void;cleanerEmail?:string}) {
+export function OwnerCreateListing({open,listings,onClose,onCreated,onChanged,embedded=false,onBusyChange,onTitleChange,cleanerEmail:initialCleanerEmail='',initialPage=0,initialListingType='entire_home'}:{initialPage?:number;initialListingType?:ListingType;open:boolean;listings:OwnerListing[];onClose:()=>void;onCreated:(listing:OwnerListing)=>void;onChanged:()=>void;embedded?:boolean;onBusyChange?:(busy:boolean)=>void;onTitleChange?:(title:string)=>void;cleanerEmail?:string}) {
  const [cleanerEmail,setCleanerEmail]=useState(initialCleanerEmail);
  const [addressPin,setAddressPin]=useState<AddressPin|null>(null);const [createdAddress,setCreatedAddress]=useState('');
  const [unit,setUnit]=useState('');
  // One screen per step: import and address, listing type, then the type's own setup screens.
  const [page,setPage]=useState(initialPage);
- const [listingType,setListingType]=useState<ListingType>('entire_home');
+ const [listingType,setListingType]=useState<ListingType>(initialListingType);
  const [house,setHouse]=useState('');const [identifier,setIdentifier]=useState('');
  const steps=listingType==='room'?roomSteps:entireHomeSteps;
  const step=steps[Math.min(page,steps.length-1)];const lastStep=page>=steps.length-1;

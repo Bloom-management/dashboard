@@ -80,9 +80,9 @@ function RequestRow({ item, reload, integration }: { item: CityRequest; reload: 
   }
   return <article className="bloom-admin-card"><h3>{item.cleanerName}</h3><p>{item.type==='bloom_pool'?'Join Bloom':'City change'}</p><p>Requested city: {item.requestedCityName} · {item.status==='rejected'?'Declined':item.status}</p>{item.status === 'pending' && <div className="bloom-actions"><button className="bloom-button" disabled={mutation.busy} onClick={() => decide('approved')}>Approve</button><button className="bloom-button secondary" disabled={mutation.busy} onClick={() => decide('rejected')}>Decline</button></div>}<Result mutation={mutation} /></article>;
 }
-function PropertyForm({ integration, created, houses=[], draftSaved }: { integration: BloomIntegration; created: (id:string) => void; houses?:{id:string;name:string}[]; draftSaved?:()=>void }) {
+export function PropertyForm({ integration, created, houses=[], draftSaved, initialStep=0, initialListingType='entire_home' }: { integration: BloomIntegration; created: (id:string) => void; houses?:{id:string;name:string}[]; draftSaved?:()=>void; initialStep?:0|1; initialListingType?:'entire_home'|'room' }) {
   // Listing type, house and room identifier come from the draft form: room listings are saved as drafts and set up from Drafts.
-  const [listingType,setListingType]=useState<'entire_home'|'room'>('entire_home');
+  const [listingType,setListingType]=useState<'entire_home'|'room'>(initialListingType);
   const [house,setHouse]=useState('');const [identifier,setIdentifier]=useState('');
   const draftMutation=useMutation();
   const [draft, setDraft] = useState<Omit<PropertyOption, 'id'>>({ name:'',cityId:'',timezone:'America/Detroit',address:'',instructions:'',isBloomOwned:true,active:true,ownerIds:[],soloRateCents:7500 });
@@ -98,7 +98,7 @@ function PropertyForm({ integration, created, houses=[], draftSaved }: { integra
   const [ownerEmail,setOwnerEmail]=useState('');
   const [validation,setValidation]=useState('');
   // Step 1: optional Airbnb import + address. Step 2: everything else.
-  const [step,setStep]=useState<0|1>(0);
+  const [step,setStep]=useState<0|1>(initialStep);
   function next(){if(!draft.address.trim()){setValidation('Enter the property address.');return;}setValidation('');setStep(1);}
   const [imported,setImported]=useState<ImportedListing|null>(null);const [importMessage,setImportMessage]=useState('');const importReceipt=useImportReceipts();const importDone=useRef<string|null>(null);
   async function applyImport(id:string,type:'entire_home'|'room'){

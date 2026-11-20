@@ -36,7 +36,7 @@ const proposed: [string, string, string][] = [
   ['--success-ink', '#2F6A40', '#8FD19E'], ['--yellow-line', '#E0B020', '#E0B020'], ['--orange-line', '#E8742A', '#F08A45'], ['--danger-ink', '#B3263E', '#F59AAA'],
 ];
 
-const sections = ['Palette', 'Profile card', 'Brand & icons', 'Buttons', 'Form controls', 'Calendar', 'Status', 'Check-in', 'Claim cards', 'Claim dialog', 'Cleaning journey', 'Cleaner screen', 'Live screens'];
+const sections = ['Palette', 'Profile card', 'Brand & icons', 'Buttons', 'Form controls', 'Calendar', 'Status', 'Check-in', 'Claim cards', 'Claim dialog', 'Cleaning journey', 'Cleaner screen', 'Add listing · entire', 'Add listing · shared', 'Add listing · admin', 'Owner screens', 'Admin screens', 'Live screens'];
 const slug = (label: string) => label.toLowerCase().replace(/[^a-z]+/g, '-');
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
@@ -46,6 +46,11 @@ function Specimen({ label, children, width }: { label: string; children: ReactNo
   return <figure style={{ margin: 0, display: 'grid', gap: 10, alignContent: 'start', width }}><figcaption style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', fontFamily: 'ui-monospace, monospace' }}>{label}</figcaption><div>{children}</div></figure>;
 }
 const row = { display: 'flex', flexWrap: 'wrap', gap: 28, alignItems: 'flex-start' } as const;
+
+const entireSteps = ['Import and address', 'Listing type', 'Rooms', 'Supplies', 'Maintenance', 'Access', 'Calendar'];
+const sharedSteps = ['Import and address', 'Listing type', 'Room details'];
+const ownerViews: [string, string][] = [['payouts', 'Payouts'], ['calendar', 'Calendar'], ['performance', 'Performance'], ['listings', 'Listings'], ['people', 'People'], ['activity', 'Activity']];
+const adminViews: [string, string][] = [['payouts', 'Payouts'], ['jobs', 'Calendar'], ['properties', 'Properties'], ['users', 'People'], ['activity', 'Activity'], ['cities', 'Cities'], ['requests', 'Requests']];
 
 const SessionContext = createContext('signed-out');
 
@@ -193,11 +198,33 @@ export function DesignGallery() {
 
       <Section title="Cleaner screen"><PhoneAndDesktop src="/design/frame?view=hub" label="CleanerHub · fixtures" height={900} /></Section>
 
+      <Section title="Add listing · entire">
+        <div style={{ display: 'grid', gap: 40 }}>{entireSteps.map((name, step) => <PhoneAndDesktop key={name} src={`/design/frame?view=create&type=entire_home&step=${step}`} label={`OwnerCreateListing · entire · ${step + 1}/${entireSteps.length} ${name}`} />)}</div>
+      </Section>
+
+      <Section title="Add listing · shared">
+        <div style={{ display: 'grid', gap: 40 }}>{sharedSteps.map((name, step) => <PhoneAndDesktop key={name} src={`/design/frame?view=create&type=room&step=${step}`} label={`OwnerCreateListing · shared room · ${step + 1}/${sharedSteps.length} ${name}`} />)}</div>
+      </Section>
+
+      <Section title="Add listing · admin">
+        <div style={{ display: 'grid', gap: 40 }}>
+          <PhoneAndDesktop src="/design/frame?view=admin-create&step=0" label="PropertyForm · 1/2 Import and address" />
+          <PhoneAndDesktop src="/design/frame?view=admin-create&step=1&type=entire_home" label="PropertyForm · 2/2 entire home" height={1100} />
+          <PhoneAndDesktop src="/design/frame?view=admin-create&step=1&type=room" label="PropertyForm · 2/2 shared room" />
+        </div>
+      </Section>
+
+      <Section title="Owner screens">
+        <div style={{ display: 'grid', gap: 40 }}>{ownerViews.map(([view, name]) => <PhoneAndDesktop key={view} src={`/owner?view=${view}`} label={`/owner · ${name} · your data`} height={900} />)}</div>
+      </Section>
+
+      <Section title="Admin screens">
+        <div style={{ display: 'grid', gap: 40 }}>{adminViews.map(([view, name]) => <PhoneAndDesktop key={view} src={`/admin?view=${view}`} label={`/admin · ${name} · your data`} height={900} />)}</div>
+      </Section>
+
       <Section title="Live screens">
         <div style={{ display: 'grid', gap: 40 }}>
           <PhoneAndDesktop src="/cleaner" label="/cleaner · your data" height={900} />
-          <PhoneAndDesktop src="/owner" label="/owner · your data" height={900} />
-          <PhoneAndDesktop src="/admin" label="/admin · your data" height={900} />
         </div>
       </Section>
     </main>

@@ -43,6 +43,12 @@ const config = {
   supplies: [{ id: 's-tp', name: 'Toilet paper' }, { id: 's-soap', name: 'Dish soap' }, { id: 's-coffee', name: 'Coffee pods' }],
 };
 
+/** Existing listings, including one shared house, so the room flow can offer a house. */
+export const designListings = [
+  { id: 'design-l1', name: '3628 Trumbull', houseId: null, houseName: null },
+  { id: 'design-l2', name: 'Corktown House · Room A', houseId: 'design-house', houseName: 'Corktown House' },
+] as never[];
+
 export const designIntegration: BloomIntegration = {
   listCities: async () => [{ id: 'design-detroit', name: 'Detroit', active: true }, { id: 'design-ann-arbor', name: 'Ann Arbor', active: true }],
   getMyCityRequest: async () => null,
