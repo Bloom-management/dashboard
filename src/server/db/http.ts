@@ -66,7 +66,7 @@ const messages: Record<ErrorCode, string> = {
   JOB_FULL: 'All cleaning slots are filled.', ALREADY_ASSIGNED: 'You are already assigned.',
   WITHDRAWAL_DEADLINE: 'The withdrawal deadline has passed.', INVALID_STATE: 'This operation is unavailable in the current state.',
   REVIEW_REQUIRED: 'This job requires admin review.', PHOTO_COVERAGE_REQUIRED: 'Add a photo for each required room category.',
-  CONFLICT: 'The request conflicts with an earlier operation. Refresh and try again.', SOURCE_UNAVAILABLE: 'Calendar source unavailable.',
+  CONFLICT: 'The request conflicts with an earlier operation. Refresh and try again.', SOURCE_UNAVAILABLE: 'A connected service is unavailable. Try again shortly.',
   CONFIGURATION_ERROR: 'The service is not configured or is unavailable.',
 };
 export async function response<T>(operation: () => Promise<T>, conditionalRequest?: Request): Promise<Response> {

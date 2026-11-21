@@ -3,7 +3,7 @@ import {privilegedDatabase} from '@/server/db/privileged';
 import {response,mutation} from '@/server/db/http';
 import {BackendError,databaseError} from '@/server/db/errors';
 import {find} from 'geo-tz';
-import {encodePlace,decodePlace,type Place} from '@/server/locations/cities';
+import {encodePlace,decodePlace,mapboxServerToken,type Place} from '@/server/locations/cities';
 type Address=Place&{street:string;latitude:number;longitude:number};
 export async function GET(request:Request){return response(async()=>{
  const user=await currentUser();if(user.role!=='owner'&&user.role!=='admin')throw new BackendError('FORBIDDEN');
@@ -13,9 +13,9 @@ export async function GET(request:Request){return response(async()=>{
  const cached=await db.from('city_search_cache').select('places').eq('query_key',key).maybeSingle();if(cached.error)databaseError(cached.error);
  let places:Address[]=cached.data?.places;
  if(!places){
-  const token=process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;if(!token)throw new BackendError('CONFIGURATION_ERROR');
+  const token=mapboxServerToken();
   const url=new URL('https://api.mapbox.com/search/geocode/v6/forward');url.search=new URLSearchParams({q,country:'us',language:'en',types:'address',autocomplete:'true',permanent:'true',limit:'5',access_token:token}).toString();
-  const result=await fetch(url,{cache:'no-store',signal:AbortSignal.timeout(8000)});if(!result.ok)throw new BackendError('SOURCE_UNAVAILABLE');
+  const result=await fetch(url,{cache:'no-store',signal:AbortSignal.timeout(8000)});if(!result.ok)throw new BackendError('SOURCE_UNAVAILABLE',undefined,'mapbox:'+result.status);
   const data=await result.json();
   places=(data.features??[]).flatMap((f:{geometry?:{coordinates?:number[]};properties?:{full_address?:string;context?:{place?:{mapbox_id?:string;name?:string};region?:{name?:string};country?:{country_code?:string}}}})=>{
    const p=f.properties,c=p?.context,city=c?.place;const [longitude,latitude]=f.geometry?.coordinates??[];
