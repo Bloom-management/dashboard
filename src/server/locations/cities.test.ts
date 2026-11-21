@@ -19,3 +19,17 @@ test('search signs coordinate-derived timezones and rejects altered selections',
   assert.throws(()=>decodePlace(Buffer.from(JSON.stringify(body)).toString('base64url')+'.'+mac));
  }finally{globalThis.fetch=original;}
 });
+test('metro Detroit counties register as the Detroit service city',async()=>{
+ const {serviceArea}=await import('./cities');
+ const base={country:'US',region:'Michigan',timezone:'America/Detroit'};
+ for(const [name,district] of [['Dearborn Heights','Wayne County'],['Farmington Hills','Oakland County'],['Pontiac','Oakland County'],['Troy','Oakland County'],['Warren','Macomb County']]){
+  const place=serviceArea({...base,id:name,name,label:name+', Michigan, United States',district});
+  assert.equal(place.name,'Detroit');assert.equal(place.label,'Detroit, Michigan, United States');
+ }
+ const annArbor={...base,id:'aa',name:'Ann Arbor',label:'Ann Arbor, Michigan, United States',district:'Washtenaw County'};
+ assert.equal(serviceArea(annArbor),annArbor);
+ const otherWayne={...base,region:'Indiana',id:'w',name:'Fort Wayne',label:'Fort Wayne',district:'Allen County'};
+ assert.equal(serviceArea(otherWayne),otherWayne);
+ const address={...base,id:'dh',name:'Dearborn Heights',label:'x',district:'Wayne County',street:'1 Main St',latitude:42.3,longitude:-83.2};
+ assert.equal(serviceArea(address).street,'1 Main St');
+});

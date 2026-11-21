@@ -15,7 +15,7 @@ export function createCitySearch(cache:CityCache,search=searchCities){
  const pending=new Map<string,Promise<Place[]>>();
  return async(query:string)=>{
   const normalized=query.normalize('NFKC').trim().replace(/\s+/g,' ').toLowerCase();
-  const key='v1:us:en:place:'+normalized;
+  const key='v2:us:en:place:'+normalized;
   let task=pending.get(key);
   if(!task){
    task=(async()=>{const existing=await cache.read(key);if(existing)return existing;
